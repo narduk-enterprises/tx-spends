@@ -102,13 +102,11 @@ export function slugifyCategory(value: string | null | undefined, fallback = 'un
 }
 
 function categoryCodeSql(column: SqlValue, fallback: string) {
-  const fallbackLiteral = sql.raw(`'${fallback.replaceAll("'", "''")}'`)
-  return sql<string>`lower(regexp_replace(regexp_replace(coalesce(${column}, ${fallbackLiteral}), '[^A-Za-z0-9]+', '-', 'g'), '(^-|-$)', '', 'g'))`
+  return sql<string>`lower(regexp_replace(regexp_replace(coalesce(${column}, ${fallback}), '[^A-Za-z0-9]+', '-', 'g'), '(^-|-$)', '', 'g'))`
 }
 
 function categoryTitleSql(column: SqlValue, fallback: string) {
-  const fallbackLiteral = sql.raw(`'${fallback.replaceAll("'", "''")}'`)
-  return sql<string>`initcap(lower(coalesce(${column}, ${fallbackLiteral})))`
+  return sql<string>`initcap(lower(coalesce(${column}, ${fallback})))`
 }
 
 export function paymentCategoryCodeSql(column: SqlValue) {

@@ -34,7 +34,7 @@ export default defineEventHandler(async (event) => {
 
   return {
     filters_applied: query,
-    data: objects.map((t: any) => ({
+    data: objects.map((t) => ({
       ...t,
       amount: Number(t.amount || 0),
     })),

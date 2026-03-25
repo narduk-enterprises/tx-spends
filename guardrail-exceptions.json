@@ -8,5 +8,25 @@
     "owner": "template",
     "createdAt": "2026-03-23",
     "expiresAt": "2026-06-30"
+  },
+  {
+    "file": "apps/web/app/components/TrendChartCard.vue",
+    "line": 69,
+    "kind": "eslint-disable-next-line",
+    "rule": "narduk/no-inline-svg",
+    "reason": "Inline SVG is required because the chart is rendered programmatically via computed polyline points and circles.",
+    "owner": "app",
+    "createdAt": "2026-03-25",
+    "expiresAt": "2026-09-25"
+  },
+  {
+    "file": "apps/web/app/components/TexasCountyChoropleth.client.vue",
+    "line": 146,
+    "kind": "eslint-disable-next-line",
+    "rule": "narduk/no-inline-svg",
+    "reason": "Inline SVG is required because the choropleth map is rendered programmatically via D3 geo path projections.",
+    "owner": "app",
+    "createdAt": "2026-03-25",
+    "expiresAt": "2026-09-25"
   }
 ]

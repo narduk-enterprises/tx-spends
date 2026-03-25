@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
 
   return {
     filters_applied: query,
-    data: countyBreakdown.map((t: any) => ({
+    data: countyBreakdown.map((t) => ({
       ...t,
       county_name: formatCountyDisplayName(t.county_name, 'Unknown'),
       amount: Number(t.amount || 0),

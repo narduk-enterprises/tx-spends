@@ -24,7 +24,23 @@ export const globalQuerySchema = z.object({
   q: z.string().optional(),
   limit: z.coerce.number().min(1).max(100).default(25),
   offset: z.coerce.number().min(0).default(0),
-  sort: z.string().optional(),
+  sort: z
+    .enum([
+      'amount',
+      'agency_name',
+      'agency_code',
+      'payee_name',
+      'agency_count',
+      'county_name',
+      'fips_code',
+      'category_code',
+      'category_title',
+      'object_code',
+      'object_title',
+      'object_group',
+      'payment_date',
+    ])
+    .optional(),
   order: z.enum(['asc', 'desc']).default('desc'),
 })
 
