@@ -33,7 +33,21 @@ FROM stg_payments_to_payee_raw
 WHERE payee_name IS NOT NULL
 ON CONFLICT (payee_name_normalized, is_confidential) DO NOTHING;
 
--- 4. Ingest Facts with source_row_hash deduplication (SHA-256)
+-- 4. Seed missing comptroller object dimension rows directly from the payment feed
+INSERT INTO comptroller_objects (code, title, object_group)
+SELECT DISTINCT
+    left(s.comptroller_object, 4) AS code,
+    nullif(trim(regexp_replace(s.comptroller_object, '^[0-9]{4}\s*-\s*', '')), '') AS title,
+    NULL AS object_group
+FROM stg_payments_to_payee_raw s
+WHERE s.comptroller_object IS NOT NULL
+  AND left(s.comptroller_object, 4) ~ '^[0-9]{4}$'
+ON CONFLICT (code) DO UPDATE
+SET
+    title = COALESCE(comptroller_objects.title, EXCLUDED.title),
+    updated_at = now();
+
+-- 5. Ingest Facts with source_row_hash deduplication (SHA-256)
 INSERT INTO state_payment_facts (
     source_row_hash,
     payment_date,

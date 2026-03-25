@@ -1,0 +1,214 @@
+[
+  {
+    "route": "/",
+    "pageScreenshot": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/home/page-full.png",
+    "elementScreenshots": [
+      {
+        "name": "hero",
+        "path": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/home/hero.png"
+      },
+      {
+        "name": "filter-bar",
+        "path": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/home/filter-bar.png"
+      },
+      {
+        "name": "top-categories-card",
+        "path": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/home/top-categories-card.png"
+      },
+      {
+        "name": "recent-transactions-card",
+        "path": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/home/recent-transactions-card.png"
+      },
+      {
+        "name": "Fiscal year overlay",
+        "path": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/home/fiscal-year-overlay.png"
+      }
+    ]
+  },
+  {
+    "route": "/agencies",
+    "pageScreenshot": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/agencies/page-full.png",
+    "elementScreenshots": [
+      {
+        "name": "page-header",
+        "path": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/agencies/page-header.png"
+      },
+      {
+        "name": "agency-backfill-alert",
+        "path": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/agencies/agency-backfill-alert.png"
+      }
+    ]
+  },
+  {
+    "route": "/payees",
+    "pageScreenshot": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/payees/page-full.png",
+    "elementScreenshots": [
+      {
+        "name": "page-header",
+        "path": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/payees/page-header.png"
+      },
+      {
+        "name": "payee-backfill-alert",
+        "path": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/payees/payee-backfill-alert.png"
+      }
+    ]
+  },
+  {
+    "route": "/categories",
+    "pageScreenshot": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/categories/page-full.png",
+    "elementScreenshots": [
+      {
+        "name": "page-header",
+        "path": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/categories/page-header.png"
+      },
+      {
+        "name": "category-backfill-alert",
+        "path": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/categories/category-backfill-alert.png"
+      }
+    ]
+  },
+  {
+    "route": "/objects",
+    "pageScreenshot": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/objects/page-full.png",
+    "elementScreenshots": [
+      {
+        "name": "page-header",
+        "path": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/objects/page-header.png"
+      },
+      {
+        "name": "object-table",
+        "path": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/objects/object-table.png"
+      }
+    ]
+  },
+  {
+    "route": "/counties",
+    "pageScreenshot": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/counties/page-full.png",
+    "elementScreenshots": [
+      {
+        "name": "page-header",
+        "path": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/counties/page-header.png"
+      },
+      {
+        "name": "county-ranking-card",
+        "path": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/counties/county-ranking-card.png"
+      },
+      {
+        "name": "county-map-card",
+        "path": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/counties/county-map-card.png"
+      },
+      {
+        "name": "Fiscal year overlay",
+        "path": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/counties/fiscal-year-overlay.png"
+      }
+    ]
+  },
+  {
+    "route": "/transactions",
+    "pageScreenshot": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/transactions/page-full.png",
+    "elementScreenshots": [
+      {
+        "name": "page-header",
+        "path": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/transactions/page-header.png"
+      },
+      {
+        "name": "filter-bar",
+        "path": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/transactions/filter-bar.png"
+      },
+      {
+        "name": "transactions-backfill-alert",
+        "path": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/transactions/transactions-backfill-alert.png"
+      }
+    ]
+  },
+  {
+    "route": "/about",
+    "pageScreenshot": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/about/page-full.png",
+    "elementScreenshots": [
+      {
+        "name": "page-header",
+        "path": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/about/page-header.png"
+      },
+      {
+        "name": "what-this-app-is-card",
+        "path": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/about/what-this-app-is-card.png"
+      }
+    ]
+  },
+  {
+    "route": "/methodology",
+    "pageScreenshot": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/methodology/page-full.png",
+    "elementScreenshots": [
+      {
+        "name": "page-header",
+        "path": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/methodology/page-header.png"
+      },
+      {
+        "name": "data-model-card",
+        "path": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/methodology/data-model-card.png"
+      }
+    ]
+  },
+  {
+    "route": "/data-sources",
+    "pageScreenshot": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/data-sources/page-full.png",
+    "elementScreenshots": [
+      {
+        "name": "page-header",
+        "path": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/data-sources/page-header.png"
+      },
+      {
+        "name": "primary-sources-section",
+        "path": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/data-sources/primary-sources-section.png"
+      }
+    ]
+  },
+  {
+    "route": "/disclaimers",
+    "pageScreenshot": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/disclaimers/page-full.png",
+    "elementScreenshots": [
+      {
+        "name": "page-header",
+        "path": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/disclaimers/page-header.png"
+      },
+      {
+        "name": "scope-disclaimer-card",
+        "path": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/disclaimers/scope-disclaimer-card.png"
+      }
+    ]
+  },
+  {
+    "route": "/agencies",
+    "pageScreenshot": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/agency-detail-pending/page-full.png",
+    "elementScreenshots": [
+      {
+        "name": "detail-backfill-alert",
+        "path": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/agency-detail-pending/detail-backfill-alert.png"
+      }
+    ]
+  },
+  {
+    "route": "/payees",
+    "pageScreenshot": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/payee-detail-pending/page-full.png",
+    "elementScreenshots": [
+      {
+        "name": "detail-backfill-alert",
+        "path": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/payee-detail-pending/detail-backfill-alert.png"
+      }
+    ]
+  },
+  {
+    "route": "/counties",
+    "pageScreenshot": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/county-detail/page-full.png",
+    "elementScreenshots": [
+      {
+        "name": "detail-header",
+        "path": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/county-detail/detail-header.png"
+      },
+      {
+        "name": "county-disclaimer-card",
+        "path": "/Users/narduk/new-code/template-apps/tx-spends/output/playwright/visual-audit/county-detail/county-disclaimer-card.png"
+      }
+    ]
+  }
+]

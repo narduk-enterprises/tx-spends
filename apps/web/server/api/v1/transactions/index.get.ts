@@ -1,7 +1,9 @@
 import { getValidatedQuery } from 'h3'
-import { eq, desc, asc, sql, and, gte, lte } from 'drizzle-orm'
+import { and, asc, desc, eq, gte, like, lte, or, sql } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
-import { statePaymentFacts, agencies, payees, comptrollerObjects } from '#server/database/schema'
+import { normalizeSearchTerm, paymentCategoryCodeSql } from '#server/utils/explorer'
+import { isPaymentsBackfillActive } from '#server/utils/payments-backfill'
+import { agencies, comptrollerObjects, payees, statePaymentFacts } from '#server/database/schema'
 import { globalQuerySchema } from '#server/utils/query'
 
 export default defineEventHandler(async (event) => {
@@ -18,19 +20,46 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  if (await isPaymentsBackfillActive(db)) {
+    return {
+      filters_applied: query,
+      data: [],
+      meta: {
+        currency: 'USD',
+        limit: query.limit,
+        offset: query.offset,
+        returned: 0,
+        total: 0,
+        payments_backfill_active: true,
+      },
+    }
+  }
+
   const conditions = []
   if (query.fiscal_year) conditions.push(eq(statePaymentFacts.fiscalYear, query.fiscal_year))
   if (query.agency_id) conditions.push(eq(statePaymentFacts.agencyId, query.agency_id))
   if (query.payee_id) conditions.push(eq(statePaymentFacts.payeeId, query.payee_id))
   if (query.object_code)
     conditions.push(eq(statePaymentFacts.comptrollerObjectCode, query.object_code))
+  if (query.category_code) {
+    const categoryCode = paymentCategoryCodeSql(statePaymentFacts.objectCategoryRaw)
+    conditions.push(sql`${categoryCode} = ${query.category_code}`)
+  }
 
   if (query.date_start) conditions.push(gte(statePaymentFacts.paymentDate, query.date_start))
   if (query.date_end) conditions.push(lte(statePaymentFacts.paymentDate, query.date_end))
 
-  // NOTE: drizzle-orm string manipulation for numerics requires sql or cast
   if (query.min_amount) conditions.push(sql`${statePaymentFacts.amount} >= ${query.min_amount}`)
   if (query.max_amount) conditions.push(sql`${statePaymentFacts.amount} <= ${query.max_amount}`)
+  if (query.q) {
+    const normalizedSearch = `%${normalizeSearchTerm(query.q)}%`
+    conditions.push(
+      or(
+        like(agencies.agencyNameNormalized, normalizedSearch),
+        like(payees.payeeNameNormalized, normalizedSearch),
+      )!,
+    )
+  }
 
   if (!query.include_confidential) {
     conditions.push(eq(statePaymentFacts.isConfidential, false))
@@ -39,7 +68,13 @@ export default defineEventHandler(async (event) => {
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined
   const orderDirection = query.order === 'asc' ? asc : desc
   const sortCol =
-    query.sort === 'payment_date' ? statePaymentFacts.paymentDate : statePaymentFacts.amount
+    query.sort === 'payment_date'
+      ? statePaymentFacts.paymentDate
+      : query.sort === 'agency'
+        ? agencies.agencyName
+        : query.sort === 'payee'
+          ? payees.payeeNameRaw
+          : statePaymentFacts.amount
 
   const list = await db
     .select({
@@ -71,19 +106,33 @@ export default defineEventHandler(async (event) => {
     .limit(query.limit)
     .offset(query.offset)
 
+  const [summary] = await db
+    .select({
+      total: sql<number>`COUNT(DISTINCT ${statePaymentFacts.sourceRowHash})`,
+    })
+    .from(statePaymentFacts)
+    .leftJoin(agencies, eq(statePaymentFacts.agencyId, agencies.id))
+    .leftJoin(payees, eq(statePaymentFacts.payeeId, payees.id))
+    .where(whereClause)
+
   return {
     filters_applied: query,
-    data: list.map((t: any) => {
-      // 10.7 Confidential obfuscation
-      if (t.is_confidential && !query.include_confidential) {
-        t.payee_id = null
-        t.payee_name = 'CONFIDENTIAL'
-      }
+    data: list.map((transaction) => {
+      const isConfidential = Boolean(transaction.is_confidential)
       return {
-        ...t,
-        amount: Number(t.amount || 0),
+        ...transaction,
+        payee_id: isConfidential ? null : transaction.payee_id,
+        payee_name: isConfidential ? 'CONFIDENTIAL' : transaction.payee_name,
+        amount: Number(transaction.amount || 0),
       }
     }),
-    meta: { currency: 'USD' },
+    meta: {
+      currency: 'USD',
+      limit: query.limit,
+      offset: query.offset,
+      returned: list.length,
+      total: Number(summary?.total || 0),
+      payments_backfill_active: false,
+    },
   }
 })

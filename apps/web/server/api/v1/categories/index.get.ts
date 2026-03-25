@@ -1,41 +1,74 @@
 import { getValidatedQuery } from 'h3'
-import { eq, desc, sql, like, and } from 'drizzle-orm'
+import { and, asc, desc, eq, sql } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
-import { countyExpenditureFacts, expenditureCategories } from '#server/database/schema'
+import {
+  normalizeSearchTerm,
+  paymentCategoryCodeSql,
+  paymentCategoryTitleSql,
+} from '#server/utils/explorer'
+import { isPaymentsBackfillActive } from '#server/utils/payments-backfill'
+import { statePaymentFacts } from '#server/database/schema'
 import { globalQuerySchema } from '#server/utils/query'
 
 export default defineEventHandler(async (event) => {
   const query = await getValidatedQuery(event, globalQuerySchema.parse)
   const db = useAppDatabase(event)
 
-  const conditions = []
-  if (query.q) {
-    conditions.push(like(expenditureCategories.title, `%${query.q}%`))
+  if (await isPaymentsBackfillActive(db)) {
+    return {
+      filters_applied: query,
+      data: [],
+      meta: {
+        currency: 'USD',
+        limit: query.limit,
+        offset: query.offset,
+        returned: 0,
+        total: 0,
+        payments_backfill_active: true,
+      },
+    }
   }
-  const whereCats = conditions.length > 0 ? and(...conditions) : undefined
-  const countyConditions = query.fiscal_year
-    ? [eq(countyExpenditureFacts.fiscalYear, query.fiscal_year)]
-    : []
+
+  const categoryCode = paymentCategoryCodeSql(statePaymentFacts.objectCategoryRaw)
+  const categoryTitle = paymentCategoryTitleSql(statePaymentFacts.objectCategoryRaw)
+  const conditions = []
+  if (query.fiscal_year) {
+    conditions.push(eq(statePaymentFacts.fiscalYear, query.fiscal_year))
+  }
+  if (!query.include_confidential) {
+    conditions.push(eq(statePaymentFacts.isConfidential, false))
+  }
+  if (query.q) {
+    conditions.push(sql`upper(${categoryTitle}) like ${`%${normalizeSearchTerm(query.q)}%`}`)
+  }
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined
+  const sortColumn =
+    query.sort === 'category_code'
+      ? categoryCode
+      : query.sort === 'category_title'
+        ? categoryTitle
+        : sql`COALESCE(SUM(${statePaymentFacts.amount}), 0)`
+  const orderDirection = query.order === 'asc' ? asc : desc
 
   const list = await db
     .select({
-      category_code: expenditureCategories.code,
-      category_title: expenditureCategories.title,
-      amount: sql<string>`SUM(${countyExpenditureFacts.amount})`,
+      category_code: categoryCode,
+      category_title: categoryTitle,
+      amount: sql<string>`COALESCE(SUM(${statePaymentFacts.amount}), 0)`,
     })
-    .from(expenditureCategories)
-    .leftJoin(
-      countyExpenditureFacts,
-      and(
-        eq(expenditureCategories.code, countyExpenditureFacts.expenditureCategoryCode),
-        ...countyConditions,
-      ),
-    )
-    .where(whereCats)
-    .groupBy(expenditureCategories.code, expenditureCategories.title)
-    .orderBy(desc(sql`SUM(${countyExpenditureFacts.amount})`))
+    .from(statePaymentFacts)
+    .where(whereClause)
+    .groupBy(categoryCode, categoryTitle)
+    .orderBy(orderDirection(sortColumn))
     .limit(query.limit)
     .offset(query.offset)
+
+  const [summary] = await db
+    .select({
+      total: sql<number>`COUNT(DISTINCT ${categoryCode})`,
+    })
+    .from(statePaymentFacts)
+    .where(whereClause)
 
   return {
     filters_applied: query,
@@ -43,6 +76,13 @@ export default defineEventHandler(async (event) => {
       ...c,
       amount: Number(c.amount || 0),
     })),
-    meta: { currency: 'USD' },
+    meta: {
+      currency: 'USD',
+      limit: query.limit,
+      offset: query.offset,
+      returned: list.length,
+      total: Number(summary?.total || 0),
+      payments_backfill_active: false,
+    },
   }
 })

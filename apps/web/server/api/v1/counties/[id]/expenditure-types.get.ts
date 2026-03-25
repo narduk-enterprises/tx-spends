@@ -1,7 +1,8 @@
 import { getRouterParam, getValidatedQuery } from 'h3'
 import { eq, desc, sql, and } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
-import { countyExpenditureFacts, expenditureCategories } from '#server/database/schema'
+import { countyCategoryCodeSql, countyCategoryTitleSql } from '#server/utils/explorer'
+import { countyExpenditureFacts } from '#server/database/schema'
 import { globalQuerySchema } from '#server/utils/query'
 
 export default defineEventHandler(async (event) => {
@@ -14,20 +15,18 @@ export default defineEventHandler(async (event) => {
   const conditions = [eq(countyExpenditureFacts.countyId, id)]
   if (query.fiscal_year) conditions.push(eq(countyExpenditureFacts.fiscalYear, query.fiscal_year))
   const whereClause = and(...conditions)
+  const categoryCode = countyCategoryCodeSql(countyExpenditureFacts.expenditureTypeRaw)
+  const categoryTitle = countyCategoryTitleSql(countyExpenditureFacts.expenditureTypeRaw)
 
   const types = await db
     .select({
-      category_code: countyExpenditureFacts.expenditureCategoryCode,
-      category_title: expenditureCategories.title,
+      category_code: categoryCode,
+      category_title: categoryTitle,
       amount: sql<string>`SUM(${countyExpenditureFacts.amount})`,
     })
     .from(countyExpenditureFacts)
-    .leftJoin(
-      expenditureCategories,
-      eq(countyExpenditureFacts.expenditureCategoryCode, expenditureCategories.code),
-    )
     .where(whereClause)
-    .groupBy(countyExpenditureFacts.expenditureCategoryCode, expenditureCategories.title)
+    .groupBy(categoryCode, categoryTitle)
     .orderBy(desc(sql`SUM(${countyExpenditureFacts.amount})`))
     .limit(query.limit)
     .offset(query.offset)

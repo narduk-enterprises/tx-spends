@@ -1,58 +1,79 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+const props = withDefaults(
+  defineProps<{
+    items: Array<Record<string, string | number | null>>
+    labelKey: string
+    valueKey: string
+    title?: string
+    description?: string
+    valueFormatter?: (value: number) => string
+    emptyTitle?: string
+    emptyDescription?: string
+  }>(),
+  {
+    title: '',
+    description: '',
+    valueFormatter: undefined,
+    emptyTitle: 'No ranked data',
+    emptyDescription: 'There are no rows available for this breakdown under the current filters.',
+  },
+)
 
-const props = defineProps<{
-  items: any[]
-  labelKey: string
-  valueKey: string
-  title?: string
-  valueFormatter?: (val: number) => string
-}>()
+const maxVal = computed(() =>
+  Math.max(...props.items.map((item) => Number(item[props.valueKey]) || 0), 0),
+)
 
-const maxVal = computed(() => {
-  if (!props.items?.length) return 0
-  return Math.max(...props.items.map((i) => Number(i[props.valueKey]) || 0))
-})
+function formatValue(value: number) {
+  if (props.valueFormatter) {
+    return props.valueFormatter(value)
+  }
 
-function formatValue(val: number) {
-  if (props.valueFormatter) return props.valueFormatter(val)
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     maximumFractionDigits: 0,
-  }).format(val)
+  }).format(value)
 }
 </script>
 
 <template>
-  <UCard class="w-full">
-    <template v-if="title" #header>
-      <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-white">
-        {{ title }}
-      </h3>
+  <UCard class="card-base overflow-hidden">
+    <template #header>
+      <div class="space-y-1">
+        <p class="text-lg font-semibold text-default">{{ title }}</p>
+        <p v-if="description" class="text-sm text-muted">{{ description }}</p>
+      </div>
     </template>
 
-    <div class="flex flex-col gap-4">
-      <div v-for="(item, index) in items" :key="index" class="flex flex-col gap-1">
-        <div class="flex justify-between text-sm">
-          <span class="font-medium text-gray-700 dark:text-gray-300 truncate pr-4">{{
-            item[labelKey]
-          }}</span>
-          <span class="text-gray-500 dark:text-gray-400 tabular-nums shrink-0">{{
-            formatValue(Number(item[valueKey]))
-          }}</span>
+    <div v-if="items.length" class="space-y-4">
+      <div
+        v-for="(item, index) in items"
+        :key="`${String(item[labelKey])}-${index}`"
+        class="space-y-2"
+      >
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <p class="truncate text-sm font-semibold text-default">{{ item[labelKey] }}</p>
+            <p class="text-xs text-muted">Rank {{ index + 1 }}</p>
+          </div>
+          <span class="shrink-0 text-sm font-semibold text-primary">
+            {{ formatValue(Number(item[valueKey])) }}
+          </span>
         </div>
-        <div class="h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+        <div class="h-2.5 overflow-hidden rounded-full bg-elevated">
           <div
-            class="h-full bg-primary-500 dark:bg-primary-400 rounded-full transition-all duration-500"
+            class="h-full rounded-full bg-linear-to-r from-primary to-secondary transition-slow"
             :style="{ width: `${maxVal > 0 ? (Number(item[valueKey]) / maxVal) * 100 : 0}%` }"
           />
         </div>
       </div>
-
-      <div v-if="!items?.length" class="text-sm text-gray-500 py-4 text-center">
-        No data available
-      </div>
     </div>
+
+    <EmptyState
+      v-else
+      :title="emptyTitle"
+      :description="emptyDescription"
+      icon="i-lucide-bar-chart-3"
+    />
   </UCard>
 </template>

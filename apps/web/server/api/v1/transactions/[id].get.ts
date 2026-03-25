@@ -42,6 +42,8 @@ export default defineEventHandler(async (event) => {
   return {
     data: {
       ...t,
+      payee_id: t.is_confidential ? null : t.payee_id,
+      payee_name: t.is_confidential ? 'CONFIDENTIAL' : t.payee_name,
       amount: Number(t.amount || 0),
     },
   }

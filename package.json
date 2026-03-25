@@ -34,8 +34,10 @@
     "db:migrate": "pnpm --filter web run db:migrate",
     "dev:kill": "sh scripts/dev-kill.sh",
     "cleanup:node-leaks": "sh scripts/cleanup-node-leaks.sh",
+    "etl:payments": "pnpm exec tsx tools/etl/scraper.ts",
     "test:e2e": "playwright test",
     "test:e2e:web": "pnpm --filter web test:e2e",
+    "test:e2e:visual": "playwright test apps/web/tests/e2e/visual-audit.spec.ts --project=web --config=playwright.config.ts",
     "generate:favicons": "pnpm exec tsx tools/generate-favicons.ts",
     "format": "prettier --write \"**/*.{ts,mts,vue,js,mjs,json,yaml,yml,css,md}\"",
     "format:check": "prettier --check \"**/*.{ts,mts,vue,js,mjs,json,yaml,yml,css,md}\""
@@ -84,6 +86,7 @@
     "sharp": "^0.34.5",
     "tsx": "^4.21.0",
     "turbo": "^2.8.12",
-    "wait-on": "^8.0.5"
+    "wait-on": "^8.0.5",
+    "xlsx": "^0.18.5"
   }
 }

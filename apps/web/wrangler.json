@@ -13,8 +13,7 @@
   "hyperdrive": [
     {
       "binding": "HYPERDRIVE",
-      "id": "ba94ea0f566f462497dd1159f650300b",
-      "localConnectionString": "${DATABASE_URL}"
+      "id": "ba94ea0f566f462497dd1159f650300b"
     }
   ],
   "ratelimits": [

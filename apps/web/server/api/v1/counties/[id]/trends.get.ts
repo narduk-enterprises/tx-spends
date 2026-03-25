@@ -12,6 +12,9 @@ export default defineEventHandler(async (event) => {
   if (!id) throw createError({ statusCode: 400, message: 'Missing county_id' })
 
   const conditions = [eq(countyExpenditureFacts.countyId, id)]
+  if (query.fiscal_year) {
+    conditions.push(eq(countyExpenditureFacts.fiscalYear, query.fiscal_year))
+  }
   const whereClause = and(...conditions)
 
   const trends = await db

@@ -1,146 +1,201 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useSeoMeta, useAsyncData, useRoute, useRouter } from '#imports'
-
-useSeoMeta({
-  title: 'Texas State Payees - Spending Explorer',
-  description: 'Search state payments to vendors and payees.',
-  robots: 'noindex', // Large raw list
-})
+import {
+  cleanQueryObject,
+  DEFAULT_PAGE_SIZE,
+  FISCAL_YEAR_OPTIONS,
+  formatCount,
+  formatUsd,
+  formatUsdCompact,
+  getBooleanQueryValue,
+  getNumberQueryValue,
+  getStringQueryValue,
+  pageToOffset,
+} from '~/utils/explorer'
 
 const route = useRoute()
 const router = useRouter()
 
-const page = ref(Number(route.query.page) || 1)
-const sort = ref<{ column: string; direction: 'asc' | 'desc' }>({
-  column: String(route.query.sort || 'amount'),
-  direction: (route.query.dir as 'asc' | 'desc') || 'desc',
+const currentPage = computed(() => getNumberQueryValue(route.query.page) || 1)
+const fiscalYear = computed(() => getNumberQueryValue(route.query.fy))
+const searchQuery = computed(() => getStringQueryValue(route.query.q))
+const matchedVendorOnly = computed(() => getBooleanQueryValue(route.query.matchedVendorOnly))
+const sort = computed(() => getStringQueryValue(route.query.sort) || 'amount')
+const order = computed(() => (getStringQueryValue(route.query.order) === 'asc' ? 'asc' : 'desc'))
+
+const requestQuery = computed(() =>
+  cleanQueryObject({
+    fiscal_year: fiscalYear.value,
+    q: searchQuery.value,
+    matched_vendor_only: matchedVendorOnly.value ? 'true' : undefined,
+    limit: DEFAULT_PAGE_SIZE,
+    offset: pageToOffset(currentPage.value, DEFAULT_PAGE_SIZE),
+    sort: sort.value,
+    order: order.value,
+  }),
+)
+
+const { data, status } = await useFetch('/api/v1/payees', {
+  query: requestQuery,
 })
 
-const filters = ref({
-  fiscal_year: route.query.fy ? Number(route.query.fy) : 2025,
-  search: route.query.q ? String(route.query.q) : null,
+const payees = computed(() => data.value?.data || [])
+const meta = computed(() => data.value?.meta)
+const paymentsBackfillActive = computed(() => Boolean(meta.value?.payments_backfill_active))
+const emptyTitle = computed(() =>
+  paymentsBackfillActive.value ? 'Payment backfill in progress' : 'No payees match these filters',
+)
+const emptyDescription = computed(() =>
+  paymentsBackfillActive.value
+    ? 'Payee rankings will populate once the transaction-level payment feed finishes loading.'
+    : 'Try clearing the vendor-match toggle or broadening the search.',
+)
+const tableDescription = computed(() =>
+  paymentsBackfillActive.value
+    ? 'Payee rankings and vendor matches will appear here after the transaction-level payment feed finishes loading.'
+    : 'Payee pages show agency relationships, categories, trend lines, and optional procurement enrichment.',
+)
+
+const title = fiscalYear.value
+  ? `Texas Payees and Vendors for FY ${fiscalYear.value}`
+  : 'Texas Payees and Vendors'
+const description =
+  'Browse public Texas state payees and vendors, including optional procurement enrichment when matching succeeds.'
+
+useSeo({
+  title,
+  description,
+  ogImage: {
+    title,
+    description,
+    icon: 'i-lucide-briefcase-business',
+  },
 })
 
-// eslint-disable-next-line narduk/prefer-shallow-watch -- Exception: Deep watch required to observe nested filter object properties
-watch(
-  [page, sort, filters],
-  () => {
+useWebPageSchema({
+  name: title,
+  description,
+  type: 'CollectionPage',
+})
+
+const filters = computed({
+  get: () => ({
+    fiscal_year: fiscalYear.value ? String(fiscalYear.value) : null,
+    q: searchQuery.value || null,
+    matched_vendor_only: matchedVendorOnly.value,
+  }),
+  set: (value: {
+    fiscal_year: string | null
+    q: string | null
+    matched_vendor_only: boolean | null
+  }) => {
     router.replace({
-      query: {
+      query: cleanQueryObject({
         ...route.query,
-        page: page.value > 1 ? page.value : undefined,
-        sort: sort.value.column !== 'amount' ? sort.value.column : undefined,
-        dir: sort.value.direction !== 'desc' ? sort.value.direction : undefined,
-        fy: filters.value.fiscal_year !== 2025 ? filters.value.fiscal_year : undefined,
-        q: filters.value.search || undefined,
-      },
+        page: undefined,
+        fy:
+          value.fiscal_year && value.fiscal_year !== 'all' ? String(value.fiscal_year) : undefined,
+        q: value.q || undefined,
+        matchedVendorOnly: value.matched_vendor_only ? 'true' : undefined,
+      }),
     })
   },
-  { deep: true },
-)
+})
 
-const { data, pending } = await useAsyncData(
-  `payees-${page.value}-${sort.value.column}-${sort.value.direction}-${filters.value.fiscal_year}-${filters.value.search}`,
-  () => {
-    return Promise.resolve({
-      data: [
-        {
-          payee_id: 'p-1',
-          payee_name_normalized: 'MOCK VENDOR A',
-          amount: 500000.0,
-          hub_status: true,
-        },
-        {
-          payee_id: 'p-2',
-          payee_name_normalized: 'MOCK SCHOOL DISTRICT',
-          amount: 150000.0,
-          hub_status: false,
-        },
-        {
-          payee_id: 'p-3',
-          payee_name_normalized: 'MOCK CONSTRUCTION CO',
-          amount: 2500000.0,
-          hub_status: true,
-        },
-      ],
-      meta: {
-        limit: 50,
-        offset: (page.value - 1) * 50,
-        total: 58231,
-      },
-    })
-  },
-  { watch: [page, sort, filters] },
-)
+function updatePage(page: number) {
+  router.replace({
+    query: cleanQueryObject({
+      ...route.query,
+      page: page > 1 ? String(page) : undefined,
+    }),
+  })
+}
+
+function updateSort(value: { column: string; direction: 'asc' | 'desc' }) {
+  router.replace({
+    query: cleanQueryObject({
+      ...route.query,
+      sort: value.column === 'amount' ? undefined : value.column,
+      order: value.direction === 'desc' ? undefined : value.direction,
+    }),
+  })
+}
 </script>
 
 <template>
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 h-full flex flex-col gap-6">
+  <UContainer class="space-y-8 py-8">
     <PageHeader
-      title="State Payees & Vendors"
-      subtitle="Search aggregated state payments to individuals and organizations."
+      eyebrow="Payees"
+      title="Payee Explorer"
+      subtitle="Search public state recipients and view vendor enrichment where public matching succeeds."
       :breadcrumbs="[{ label: 'Home', to: '/' }, { label: 'Payees' }]"
+      badge="Public collection"
     />
 
     <DisclaimerStrip variant="payee" />
 
+    <UAlert
+      v-if="paymentsBackfillActive"
+      title="Payee rankings are temporarily syncing."
+      description="The transaction-level payment feed is still loading, so payee totals and vendor-match rankings are temporarily unavailable."
+      icon="i-lucide-database-zap"
+      color="warning"
+      variant="soft"
+      class="rounded-[1.25rem]"
+    />
+
     <FilterBar
       v-model="filters"
       :available-filters="[
+        { key: 'fiscal_year', label: 'Fiscal year', type: 'select', options: FISCAL_YEAR_OPTIONS },
         {
-          key: 'fiscal_year',
-          label: 'Fiscal Year',
-          type: 'select',
-          options: [
-            { label: 'FY 2025', value: 2025 },
-            { label: 'FY 2024', value: 2024 },
-            { label: 'FY 2023', value: 2023 },
-          ],
+          key: 'q',
+          label: 'Search payees',
+          type: 'input',
+          placeholder: 'Hospital, district, vendor…',
         },
-        { key: 'search', label: 'Search Payee Name', type: 'input' },
+        { key: 'matched_vendor_only', label: 'Matched vendor only', type: 'boolean' },
       ]"
     />
 
-    <UCard>
-      <div v-if="pending" class="flex justify-center p-12">
-        <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-primary-500" />
-      </div>
-
-      <DataTableCard
-        v-else
-        :columns="[
-          { key: 'payee_name_normalized', label: 'Payee Name', sortable: true },
-          { key: 'amount', label: 'Total Received', sortable: true },
-        ]"
-        :rows="data?.data || []"
-        :meta="data?.meta"
-        @page="page = $event"
-        @sort="sort = $event"
-      >
-        <template #payee_name_normalized-data="{ row }">
-          <ULink
+    <DataTableCard
+      title="Public payees"
+      :description="tableDescription"
+      :columns="[
+        { key: 'payee_name', label: 'Payee', sortable: true },
+        { key: 'agency_count', label: 'Agencies', sortable: true },
+        { key: 'amount', label: 'Total received', sortable: true },
+      ]"
+      :rows="payees"
+      :meta="meta"
+      :loading="status === 'pending'"
+      :empty-title="emptyTitle"
+      :empty-description="emptyDescription"
+      @page="updatePage"
+      @sort="updateSort"
+    >
+      <template #payee_name-data="{ row }">
+        <div class="flex items-center gap-2">
+          <UButton
             :to="`/payees/${row.payee_id}`"
-            class="text-primary-600 dark:text-primary-400 font-medium hover:underline flex items-center gap-2"
+            color="neutral"
+            variant="link"
+            class="px-0 font-semibold text-primary"
           >
-            {{ row.payee_name_normalized }}
-            <UIcon
-              v-if="row.hub_status"
-              name="i-heroicons-check-badge"
-              class="w-4 h-4 text-primary-500 shrink-0"
-            />
-          </ULink>
-        </template>
-        <template #amount-data="{ row }">
-          {{
-            new Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: 'USD',
-              maximumFractionDigits: 0,
-            }).format(row.amount)
-          }}
-        </template>
-      </DataTableCard>
-    </UCard>
-  </div>
+            {{ row.payee_name }}
+          </UButton>
+          <UBadge v-if="row.matched_vendor" color="primary" variant="soft">Matched vendor</UBadge>
+          <UBadge v-if="row.is_confidential" color="warning" variant="soft">Confidential</UBadge>
+        </div>
+      </template>
+      <template #agency_count-data="{ row }">
+        <span class="text-sm text-default">{{ formatCount(row.agency_count) }}</span>
+      </template>
+      <template #amount-data="{ row }">
+        <div class="space-y-1 text-right">
+          <p class="font-semibold text-default">{{ formatUsd(row.amount) }}</p>
+          <p class="text-xs text-muted">{{ formatUsdCompact(row.amount) }}</p>
+        </div>
+      </template>
+    </DataTableCard>
+  </UContainer>
 </template>

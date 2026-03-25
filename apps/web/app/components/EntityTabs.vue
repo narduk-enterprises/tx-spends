@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-
 const props = defineProps<{
   tabs: {
     label: string
@@ -9,27 +7,39 @@ const props = defineProps<{
     disabled?: boolean
   }[]
   modelValue: string
+  persistKey?: string
 }>()
 
 const emit = defineEmits<{
-  'update:modelValue': [value: string]
+  'update:modelValue': [value: string | number]
 }>()
 
-const nuxtUiItems = computed(() => {
-  return props.tabs.map((tab) => ({
+const items = computed(() =>
+  props.tabs.map((tab) => ({
     label: tab.label,
     value: tab.key,
     icon: tab.icon,
     disabled: tab.disabled,
-  }))
-})
+  })),
+)
+
+function handleUpdate(value: string | number | undefined) {
+  if (value === undefined) {
+    return
+  }
+
+  emit('update:modelValue', value)
+}
 </script>
 
 <template>
-  <UTabs
-    :items="nuxtUiItems"
+  <AppTabs
+    :items="items"
     :model-value="modelValue"
-    @update:model-value="emit('update:modelValue', $event as string)"
-    class="w-full mt-6 mb-8"
+    :persist-key="persistKey"
+    variant="pill"
+    color="primary"
+    class="mt-6 mb-8"
+    @update:model-value="handleUpdate"
   />
 </template>

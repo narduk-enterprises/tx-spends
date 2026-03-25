@@ -1,82 +1,120 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+type FilterValue = string | number | boolean | null
 
 const props = defineProps<{
   availableFilters: {
     key: string
     label: string
     type: 'select' | 'input' | 'boolean'
+    placeholder?: string
     options?: { label: string; value: string | number | boolean }[]
   }[]
-  modelValue: Record<string, string | number | boolean | null>
+  modelValue: Record<string, FilterValue>
 }>()
 
 const emit = defineEmits<{
-  'update:modelValue': [value: Record<string, string | number | boolean | null>]
+  'update:modelValue': [value: Record<string, FilterValue>]
 }>()
 
-const filters = computed({
-  get: () => props.modelValue,
-  set: (val) => emit('update:modelValue', val),
-})
+const filters = ref<Record<string, FilterValue>>({})
 
-function updateFilter(key: string, value: string | number | boolean | null) {
-  filters.value = { ...filters.value, [key]: value }
+watch(
+  () => props.modelValue,
+  (value) => {
+    filters.value = { ...value }
+  },
+  {
+    immediate: true,
+  },
+)
+
+function updateFilter(key: string, value: FilterValue) {
+  const nextFilters = { ...filters.value, [key]: value }
+  filters.value = nextFilters
+  emit('update:modelValue', nextFilters)
 }
 
 function clearFilters() {
-  const cleared = Object.keys(filters.value).reduce(
-    (acc, key) => {
-      acc[key] = null
-      return acc
-    },
-    {} as Record<string, string | number | boolean | null>,
-  )
-  emit('update:modelValue', cleared)
+  const clearedFilters = Object.fromEntries(
+    Object.keys(filters.value).map((key) => [key, null]),
+  ) as Record<string, FilterValue>
+  filters.value = clearedFilters
+  emit('update:modelValue', clearedFilters)
+}
+
+function getFilterId(key: string) {
+  return `explorer-filter-${key}`
 }
 </script>
 
 <template>
-  <div
-    class="sticky top-0 z-10 bg-white/90 dark:bg-gray-900/90 backdrop-blur border-b border-gray-200 dark:border-gray-800 p-4 mb-6 flex flex-col md:flex-row gap-4 items-end md:items-center justify-between"
+  <section
+    class="sticky top-[5.25rem] z-20 rounded-[1.5rem] border border-default bg-default/90 p-4 shadow-card backdrop-blur-xl"
   >
-    <div class="flex flex-wrap gap-4 items-center flex-1">
-      <div v-for="filter in availableFilters" :key="filter.key" class="min-w-[200px]">
+    <div class="mb-4 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-2">
+        <div
+          class="flex size-9 items-center justify-center rounded-full bg-primary/10 text-primary"
+        >
+          <UIcon name="i-lucide-sliders-horizontal" class="size-4" />
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-default">Filters</p>
+          <p class="text-xs text-muted">
+            Apply fiscal year, entity, and amount filters for this view.
+          </p>
+        </div>
+      </div>
+
+      <div class="flex shrink-0 items-center gap-2">
+        <UButton color="neutral" variant="ghost" class="rounded-full" @click="clearFilters">
+          Reset
+        </UButton>
+        <slot name="actions" />
+      </div>
+    </div>
+
+    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div v-for="filter in availableFilters" :key="filter.key" class="min-w-0">
         <UFormField v-if="filter.type !== 'boolean'" :label="filter.label" class="w-full">
           <USelect
             v-if="filter.type === 'select'"
-            :model-value="String(filters[filter.key] ?? '')"
-            @update:model-value="updateFilter(filter.key, $event as any)"
-            :options="filter.options"
+            :id="getFilterId(filter.key)"
+            :name="filter.key"
+            :model-value="String(filters[filter.key] ?? 'all')"
+            :items="filter.options || []"
             class="w-full"
             color="neutral"
             variant="outline"
+            @update:model-value="
+              updateFilter(filter.key, $event === 'all' ? null : ($event as FilterValue))
+            "
           />
 
           <UInput
-            v-else-if="filter.type === 'input'"
+            v-else
+            :id="getFilterId(filter.key)"
+            :name="filter.key"
             :model-value="String(filters[filter.key] ?? '')"
-            @update:model-value="updateFilter(filter.key, $event)"
+            :placeholder="filter.placeholder || filter.label"
             class="w-full"
             color="neutral"
             variant="outline"
+            @update:model-value="updateFilter(filter.key, $event || null)"
           />
         </UFormField>
 
         <UCheckbox
-          v-else-if="filter.type === 'boolean'"
+          v-else
+          :id="getFilterId(filter.key)"
+          :name="filter.key"
           :model-value="Boolean(filters[filter.key])"
-          @update:model-value="updateFilter(filter.key, $event)"
           :label="filter.label"
           color="primary"
-          class="mt-6"
+          class="pt-6"
+          @update:model-value="updateFilter(filter.key, $event)"
         />
       </div>
     </div>
-
-    <div class="flex gap-2 shrink-0">
-      <UButton variant="ghost" color="neutral" @click="clearFilters"> Clear Filters </UButton>
-      <slot name="actions" />
-    </div>
-  </div>
+  </section>
 </template>

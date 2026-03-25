@@ -1,21 +1,74 @@
 <script setup lang="ts">
-useSeoMeta({ title: 'Disclaimers | Texas Spends' })
+const title = 'Disclaimers'
+const description =
+  'Important scope, matching, confidentiality, and geography limitations for Texas State Spending Explorer.'
+
+useSeo({
+  title,
+  description,
+  ogImage: {
+    title,
+    description,
+    icon: 'i-lucide-triangle-alert',
+  },
+})
+
+useWebPageSchema({
+  name: title,
+  description,
+})
 </script>
 
 <template>
-  <UContainer class="py-12 max-w-3xl">
-    <h1 class="text-4xl font-bold mb-6">Disclaimers</h1>
-    <div class="prose dark:prose-invert">
-      <p>
-        While every attempt is made to preserve fidelity to the Comptroller's published reports,
-        parsing open data occasionally introduces alignment issues. Furthermore, fuzzy matching
-        Vendor identities across 14M rows carries an inherent risk of mis-attribution.
-      </p>
-      <p>
-        Do NOT rely on these values for legal, accounting, compliance, or regulatory functions
-        without verifying the transaction hashes directly utilizing FOIA or the official state
-        transparency portal.
-      </p>
-    </div>
+  <UContainer class="space-y-8 py-8">
+    <PageHeader
+      eyebrow="Disclaimers"
+      :title="title"
+      :subtitle="description"
+      :breadcrumbs="[{ label: 'Home', to: '/' }, { label: 'Disclaimers' }]"
+    />
+
+    <section class="grid gap-6 lg:grid-cols-2">
+      <UCard class="card-base">
+        <template #header>
+          <p class="text-lg font-semibold text-default">Scope disclaimer</p>
+        </template>
+        <p class="text-sm leading-7 text-muted">
+          This product explores Texas state spending data published by the Texas Comptroller and
+          related state transparency sources. It is not a complete ledger for all local governments
+          in Texas.
+        </p>
+      </UCard>
+
+      <UCard class="card-base">
+        <template #header>
+          <p class="text-lg font-semibold text-default">Geography disclaimer</p>
+        </template>
+        <p class="text-sm leading-7 text-muted">
+          County pages use annual county expenditure reports. They are not derived from geocoding
+          individual payment transactions, and transaction pages intentionally omit county fields.
+        </p>
+      </UCard>
+
+      <UCard class="card-base">
+        <template #header>
+          <p class="text-lg font-semibold text-default">Vendor enrichment disclaimer</p>
+        </template>
+        <p class="text-sm leading-7 text-muted">
+          Vendor enrichment depends on name matching because public payment outputs do not include
+          public vendor IDs. Some matches may be incomplete or approximate.
+        </p>
+      </UCard>
+
+      <UCard class="card-base">
+        <template #header>
+          <p class="text-lg font-semibold text-default">Confidentiality disclaimer</p>
+        </template>
+        <p class="text-sm leading-7 text-muted">
+          Some transactions are masked or aggregated in the public source data. When a row is marked
+          confidential, the explorer preserves that limitation instead of inventing hidden detail.
+        </p>
+      </UCard>
+    </section>
   </UContainer>
 </template>

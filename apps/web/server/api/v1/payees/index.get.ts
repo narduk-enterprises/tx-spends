@@ -1,52 +1,98 @@
 import { getValidatedQuery } from 'h3'
-import { eq, desc, sql, like, and } from 'drizzle-orm'
+import { and, asc, desc, eq, isNotNull, like, sql } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
-import { statePaymentFacts, payees } from '#server/database/schema'
+import { payeeVendorMatches, payees, statePaymentFacts } from '#server/database/schema'
+import { isPaymentsBackfillActive } from '#server/utils/payments-backfill'
 import { globalQuerySchema } from '#server/utils/query'
 
 export default defineEventHandler(async (event) => {
   const query = await getValidatedQuery(event, globalQuerySchema.parse)
   const db = useAppDatabase(event)
 
-  const payeeConditions = []
+  if (await isPaymentsBackfillActive(db)) {
+    return {
+      filters_applied: query,
+      data: [],
+      meta: {
+        currency: 'USD',
+        limit: query.limit,
+        offset: query.offset,
+        returned: 0,
+        total: 0,
+        payments_backfill_active: true,
+      },
+    }
+  }
+
+  const conditions = []
   if (query.q) {
-    payeeConditions.push(
+    conditions.push(
       like(payees.payeeNameNormalized, `%${query.q.toUpperCase().replaceAll(/[^A-Z0-9 ]/g, '')}%`),
     )
   }
+  if (query.fiscal_year) {
+    conditions.push(eq(statePaymentFacts.fiscalYear, query.fiscal_year))
+  }
   if (!query.include_confidential) {
-    payeeConditions.push(eq(payees.isConfidential, false))
+    conditions.push(eq(payees.isConfidential, false))
+  }
+  if (query.matched_vendor_only) {
+    conditions.push(isNotNull(payeeVendorMatches.id))
   }
 
-  const wherePayee = payeeConditions.length > 0 ? and(...payeeConditions) : undefined
-  const paymentConditions = query.fiscal_year
-    ? [eq(statePaymentFacts.fiscalYear, query.fiscal_year)]
-    : []
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined
+  const spendMetric = sql`COALESCE(SUM(${statePaymentFacts.amount}), 0)`
+  const agencyCountMetric = sql`COUNT(DISTINCT ${statePaymentFacts.agencyId})`
+  const sortColumn =
+    query.sort === 'payee_name'
+      ? payees.payeeNameRaw
+      : query.sort === 'agency_count'
+        ? agencyCountMetric
+        : spendMetric
+  const orderDirection = query.order === 'asc' ? asc : desc
 
   const list = await db
     .select({
       payee_id: payees.id,
       payee_name: payees.payeeNameRaw,
       is_confidential: payees.isConfidential,
-      amount: sql<string>`SUM(${statePaymentFacts.amount})`,
+      amount: sql<string>`COALESCE(SUM(${statePaymentFacts.amount}), 0)`,
+      agency_count: sql<number>`COUNT(DISTINCT ${statePaymentFacts.agencyId})`,
+      matched_vendor: sql<boolean>`MAX(CASE WHEN ${payeeVendorMatches.id} IS NOT NULL THEN 1 ELSE 0 END) = 1`,
     })
-    .from(payees)
-    .leftJoin(
-      statePaymentFacts,
-      and(eq(payees.id, statePaymentFacts.payeeId), ...paymentConditions),
-    )
-    .where(wherePayee)
+    .from(statePaymentFacts)
+    .innerJoin(payees, eq(payees.id, statePaymentFacts.payeeId))
+    .leftJoin(payeeVendorMatches, eq(payees.id, payeeVendorMatches.payeeId))
+    .where(whereClause)
     .groupBy(payees.id, payees.payeeNameRaw, payees.isConfidential)
-    .orderBy(desc(sql`SUM(${statePaymentFacts.amount})`))
+    .orderBy(orderDirection(sortColumn), asc(payees.payeeNameRaw))
     .limit(query.limit)
     .offset(query.offset)
+
+  const [summary] = await db
+    .select({
+      total: sql<number>`COUNT(DISTINCT ${statePaymentFacts.payeeId})`,
+    })
+    .from(statePaymentFacts)
+    .innerJoin(payees, eq(payees.id, statePaymentFacts.payeeId))
+    .leftJoin(payeeVendorMatches, eq(payees.id, payeeVendorMatches.payeeId))
+    .where(whereClause)
 
   return {
     filters_applied: query,
     data: list.map((p) => ({
       ...p,
       amount: Number(p.amount || 0),
+      agency_count: Number(p.agency_count || 0),
+      matched_vendor: Boolean(p.matched_vendor),
     })),
-    meta: { currency: 'USD' },
+    meta: {
+      currency: 'USD',
+      limit: query.limit,
+      offset: query.offset,
+      returned: list.length,
+      total: Number(summary?.total || 0),
+      payments_backfill_active: false,
+    },
   }
 })

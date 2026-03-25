@@ -1,214 +1,390 @@
 <script setup lang="ts">
-import { useSeoMeta, useAsyncData } from '#imports'
+import {
+  cleanQueryObject,
+  FISCAL_YEAR_OPTIONS,
+  formatCountyLabel,
+  formatCount,
+  formatUsd,
+  formatUsdCompact,
+  getBooleanQueryValue,
+  getNumberQueryValue,
+} from '~/utils/explorer'
 
-useSeoMeta({
-  title: 'Texas State Spending Explorer',
-  description:
-    'Explore Texas state treasury and accounting-oriented spending, agencies, payees, and trends over time.',
+const route = useRoute()
+const router = useRouter()
+
+const fiscalYear = computed(() => getNumberQueryValue(route.query.fy))
+const includeConfidential = computed(() => getBooleanQueryValue(route.query.includeConfidential))
+
+const overviewQuery = computed(() =>
+  cleanQueryObject({
+    fiscal_year: fiscalYear.value,
+    include_confidential: includeConfidential.value ? 'true' : undefined,
+  }),
+)
+
+const { data, status } = await useFetch('/api/v1/overview', {
+  query: overviewQuery,
 })
 
-// Mock or actual API call for overview data
-const { data, pending, error } = await useAsyncData('overview', () => {
-  // eslint-disable-next-line narduk/no-raw-fetch -- Exception: Raw fetch is safely wrapped inside useAsyncData
-  return $fetch('/api/v1/overview').catch(() => {
-    // Return mock fallback if API is not yet available
-    return {
-      filters_applied: {
-        fiscal_year: 2025,
-        include_confidential: false,
-      },
-      data: {
-        total_spend: 1234567890.12,
-        agency_count: 142,
-        payee_count: 58231,
-        top_agency: {
-          agency_id: 'mock-1',
-          agency_name: 'Health and Human Services Commission',
-          amount: 123456789.12,
-        },
-        top_payee: {
-          payee_id: 'mock-2',
-          payee_name: 'Example Vendor',
-          amount: 98765432.1,
-        },
-        top_category: {
-          category_code: '12',
-          category_title: 'Salaries and Wages',
-          amount: 456789123.45,
-        },
-        top_county: {
-          county_id: 'mock-3',
-          county_name: 'Travis',
-          amount: 76543210.11,
-        },
-        trends: [
-          { year: 2021, amount: 800000000 },
-          { year: 2022, amount: 950000000 },
-          { year: 2023, amount: 1100000000 },
-          { year: 2024, amount: 1150000000 },
-          { year: 2025, amount: 1234567890.12 },
-        ],
-        top_agencies_list: [
-          { agency_name: 'Health and Human Services Commission', amount: 123456789.12 },
-          { agency_name: 'Texas Education Agency', amount: 98000000.0 },
-          { agency_name: 'Department of Transportation', amount: 75000000.0 },
-        ],
-        recent_transactions: [
-          {
-            transaction_id: '1',
-            payment_date: '2025-01-15',
-            agency_name: 'HHSC',
-            payee_name: 'Example Vendor',
-            amount: 12345.67,
-            object_title: 'Services',
-          },
-          {
-            transaction_id: '2',
-            payment_date: '2025-01-14',
-            agency_name: 'TEA',
-            payee_name: 'School District',
-            amount: 50000.0,
-            object_title: 'Grants',
-          },
-        ],
-      },
-      meta: { currency: 'USD' },
-    }
-  })
+const overview = computed(() => data.value?.data)
+const overviewMeta = computed(() => data.value?.meta)
+const paymentsBackfillActive = computed(() => Boolean(overviewMeta.value?.payments_backfill_active))
+
+const pageTitle = computed(() =>
+  fiscalYear.value
+    ? `Texas State Spending Overview for FY ${fiscalYear.value}`
+    : 'Texas State Spending Overview',
+)
+const pageDescription = computed(() =>
+  fiscalYear.value
+    ? `See Texas state spending totals, top agencies, payees, categories, and county distribution for fiscal year ${fiscalYear.value}.`
+    : 'Explore Texas state spending totals, top agencies, payees, categories, recent transactions, and county-level distribution.',
+)
+
+const headlineSpendValue = computed(() =>
+  overview.value
+    ? overview.value.total_spend > 0
+      ? overview.value.total_spend
+      : overview.value.county_layer_total
+    : 0,
+)
+
+const headlineSpendHelper = computed(() =>
+  overview.value?.total_spend && overview.value.total_spend > 0
+    ? 'Visible public payment rows'
+    : 'Fallback to county annual layer while transaction facts are unavailable',
+)
+
+const hasPaymentFacts = computed(() =>
+  Boolean(overview.value?.total_spend && overview.value.total_spend > 0),
+)
+
+const pageBadge = computed(() =>
+  paymentsBackfillActive.value ? 'Payment backfill in progress' : 'Live public finance explorer',
+)
+
+const backfillAlertDescription = computed(() =>
+  fiscalYear.value
+    ? `Transaction-level payment rows for FY ${fiscalYear.value} are still loading. Totals and county geography remain available through the annual county expenditure layer.`
+    : 'Transaction-level payment rows are still loading. Totals and county geography remain available through the annual county expenditure layer in the meantime.',
+)
+
+const agencyHeadlineHelper = computed(() =>
+  hasPaymentFacts.value
+    ? 'Distinct paying agencies'
+    : 'Agencies represented in the county-layer fallback',
+)
+
+const payeeHeadlineValue = computed(() =>
+  hasPaymentFacts.value ? formatCount(overview.value?.payee_count) : 'Syncing',
+)
+
+const payeeHeadlineHelper = computed(() =>
+  hasPaymentFacts.value
+    ? 'Distinct public payees'
+    : 'Transaction-level payment facts are not loaded yet',
+)
+
+const trendDescription = computed(() =>
+  hasPaymentFacts.value
+    ? 'Texas state payment totals across available fiscal years.'
+    : 'Annual county-layer totals while the transaction-level payment feed is still loading.',
+)
+
+const topAgenciesDescription = computed(() =>
+  hasPaymentFacts.value
+    ? 'Largest agencies by total state payments.'
+    : 'Largest agencies by county-layer annual expenditure totals while payment facts are pending.',
+)
+
+const topCategoriesDescription = computed(() =>
+  hasPaymentFacts.value
+    ? 'Broad spending categories derived from the public state payment feed.'
+    : 'Broad spending categories from the county distribution layer while payment facts are pending.',
+)
+
+const topPayeesDescription = computed(() =>
+  hasPaymentFacts.value
+    ? 'Largest public recipients of state payments.'
+    : 'Top payees will appear here after the transaction-level payment feed is loaded.',
+)
+
+useSeo({
+  title: pageTitle.value,
+  description: pageDescription.value,
+  ogImage: {
+    title: pageTitle.value,
+    description: pageDescription.value,
+    icon: 'i-lucide-landmark',
+  },
 })
 
-const overview = computed(() => (data.value?.data as any) || null)
+useWebPageSchema({
+  name: pageTitle.value,
+  description: pageDescription.value,
+})
+
+const filters = computed({
+  get: () => ({
+    fiscal_year: fiscalYear.value ? String(fiscalYear.value) : null,
+    include_confidential: includeConfidential.value,
+  }),
+  set: (value: { fiscal_year: string | null; include_confidential: boolean | null }) => {
+    router.replace({
+      query: cleanQueryObject({
+        ...route.query,
+        fy:
+          value.fiscal_year && value.fiscal_year !== 'all' ? String(value.fiscal_year) : undefined,
+        includeConfidential: value.include_confidential ? 'true' : undefined,
+      }),
+    })
+  },
+})
 </script>
 
 <template>
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 h-full flex flex-col gap-8">
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-      <PageHeader
-        title="Texas State Spending Explorer"
-        subtitle="Explore state treasury spending across agencies, payees, and categories."
-        class="mb-0"
-      />
-      <!-- Search bar here -->
-      <SearchAutocomplete class="w-full md:w-72 md:shrink-0" />
-    </div>
+  <UContainer class="space-y-8 py-8">
+    <PageHeader
+      eyebrow="Texas state spending"
+      :title="pageTitle"
+      :subtitle="pageDescription"
+      :badge="pageBadge"
+    >
+      <template #actions>
+        <div class="w-full min-w-[18rem] max-w-md">
+          <SearchAutocomplete />
+        </div>
+      </template>
+    </PageHeader>
 
-    <!-- Global Disclaimer -->
     <DisclaimerStrip variant="global" />
 
-    <div v-if="pending" class="flex justify-center p-12">
-      <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-primary-500" />
+    <UAlert
+      v-if="paymentsBackfillActive"
+      title="Transaction-level payments are actively backfilling."
+      :description="backfillAlertDescription"
+      icon="i-lucide-database-zap"
+      color="warning"
+      variant="soft"
+      class="rounded-[1.25rem]"
+    />
+
+    <FilterBar
+      v-model="filters"
+      :available-filters="[
+        {
+          key: 'fiscal_year',
+          label: 'Fiscal year',
+          type: 'select',
+          options: FISCAL_YEAR_OPTIONS,
+        },
+        {
+          key: 'include_confidential',
+          label: 'Include confidential rows',
+          type: 'boolean',
+        },
+      ]"
+    />
+
+    <div v-if="status === 'pending'" class="flex min-h-64 items-center justify-center">
+      <UIcon name="i-lucide-loader-circle" class="size-10 animate-spin text-primary" />
     </div>
 
-    <div v-else-if="overview" class="flex flex-col gap-8">
-      <!-- KPI Row -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <template v-else-if="overview">
+      <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <KpiCard
-          label="Total Spend (FY25)"
+          label="Total state spend"
+          :value="formatUsdCompact(headlineSpendValue)"
+          :helper="headlineSpendHelper"
+          icon="i-lucide-wallet"
+        />
+        <KpiCard
+          label="Agencies"
+          :value="formatCount(overview.agency_count)"
+          :helper="agencyHeadlineHelper"
+          icon="i-lucide-building-2"
+        />
+        <KpiCard
+          label="Payees"
+          :value="payeeHeadlineValue"
+          :helper="payeeHeadlineHelper"
+          icon="i-lucide-briefcase-business"
+        />
+        <KpiCard
+          label="Top county"
           :value="
-            new Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: 'USD',
-              maximumFractionDigits: 0,
-            }).format(overview.total_spend)
+            overview.top_county?.county_name
+              ? formatCountyLabel(overview.top_county.county_name)
+              : 'No county data'
           "
-        />
-        <KpiCard
-          label="Active Agencies"
-          :value="new Intl.NumberFormat('en-US').format(overview.agency_count)"
-        />
-        <KpiCard
-          label="Total Payees"
-          :value="new Intl.NumberFormat('en-US').format(overview.payee_count)"
-        />
-        <KpiCard
-          label="Top Agency"
-          :value="overview.top_agency.agency_name"
           :helper="
-            new Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: 'USD',
-              maximumFractionDigits: 0,
-            }).format(overview.top_agency.amount)
+            overview.top_county ? formatUsd(overview.top_county.amount) : 'No county layer data'
           "
+          icon="i-lucide-map-pinned"
         />
-      </div>
+      </section>
 
-      <!-- Main Visualizations -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div class="lg:col-span-2">
-          <TrendChartCard
-            title="Spending Over Time"
-            :series="overview.trends"
-            x-key="year"
-            y-key="amount"
-            :value-formatter="
-              (v) =>
-                new Intl.NumberFormat('en-US', {
-                  style: 'currency',
-                  currency: 'USD',
-                  notation: 'compact',
-                }).format(v)
-            "
-          />
-        </div>
-        <div class="lg:col-span-1">
-          <RankedBarCard
-            title="Top Agencies"
-            :items="overview.top_agencies_list"
-            label-key="agency_name"
-            value-key="amount"
-          />
-        </div>
-      </div>
-
-      <!-- Map & Categories -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <CountyMapCard
-          :county-metrics="[overview.top_county]"
-          :fy="overview.filters_applied?.fiscal_year"
+      <section class="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(20rem,1fr)]">
+        <TrendChartCard
+          title="Spending over time"
+          :description="trendDescription"
+          :series="overview.timeline || []"
+          x-key="fiscal_year"
+          y-key="amount"
+          :value-formatter="formatUsdCompact"
         />
 
         <RankedBarCard
-          title="Top Categories"
-          :items="[overview.top_category]"
+          title="Top agencies"
+          :description="topAgenciesDescription"
+          :items="overview.top_agencies || []"
+          label-key="agency_name"
+          value-key="amount"
+          :value-formatter="formatUsdCompact"
+        />
+      </section>
+
+      <section class="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(20rem,1fr)]">
+        <CountyMapCard
+          :county-metrics="overview.top_counties || []"
+          :fy="fiscalYear || 'All years'"
+          @select-county="router.push(`/counties/${$event}`)"
+        />
+
+        <RankedBarCard
+          title="Top categories"
+          :description="topCategoriesDescription"
+          :items="overview.top_categories || []"
           label-key="category_title"
           value-key="amount"
+          :value-formatter="formatUsdCompact"
         />
-      </div>
+      </section>
 
-      <!-- Recent Transactions Preview -->
-      <div class="flex flex-col gap-4">
-        <div class="flex items-center justify-between">
-          <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-white">
-            Recent Transactions
-          </h3>
-          <UButton
-            to="/transactions"
-            variant="soft"
-            color="primary"
-            trailing-icon="i-heroicons-arrow-right"
-            >View All</UButton
-          >
-        </div>
-        <DataTableCard
-          :columns="[
-            { key: 'payment_date', label: 'Date' },
-            { key: 'agency_name', label: 'Agency' },
-            { key: 'payee_name', label: 'Payee' },
-            { key: 'object_title', label: 'Category' },
-            { key: 'amount', label: 'Amount' },
-          ]"
-          :rows="overview.recent_transactions"
-        >
-          <template #amount-data="{ row }">
-            {{
-              new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(
-                row.amount,
-              )
-            }}
+      <section class="grid gap-6 xl:grid-cols-2">
+        <RankedBarCard
+          title="Top payees"
+          :description="topPayeesDescription"
+          :items="overview.top_payees || []"
+          label-key="payee_name"
+          value-key="amount"
+          :value-formatter="formatUsdCompact"
+          :empty-title="hasPaymentFacts ? 'No ranked data' : 'Payment feed pending'"
+          :empty-description="
+            hasPaymentFacts
+              ? 'There are no rows available for this breakdown under the current filters.'
+              : 'Top payees will appear here after the transaction-level payment feed is loaded.'
+          "
+        />
+
+        <UCard class="card-base overflow-hidden">
+          <template #header>
+            <div class="flex items-center justify-between gap-3">
+              <div class="space-y-1">
+                <p class="text-lg font-semibold text-default">What you can do next</p>
+                <p class="text-sm text-muted">
+                  Jump directly into the strongest entry points in the explorer.
+                </p>
+              </div>
+            </div>
           </template>
-        </DataTableCard>
-      </div>
-    </div>
-  </div>
+
+          <div class="grid gap-3">
+            <UButton
+              to="/agencies"
+              color="neutral"
+              variant="soft"
+              class="justify-between rounded-2xl px-4 py-4"
+            >
+              <span>Browse agencies</span>
+              <UIcon name="i-lucide-arrow-right" class="size-4" />
+            </UButton>
+            <UButton
+              to="/counties"
+              color="neutral"
+              variant="soft"
+              class="justify-between rounded-2xl px-4 py-4"
+            >
+              <span>Explore county distribution</span>
+              <UIcon name="i-lucide-arrow-right" class="size-4" />
+            </UButton>
+            <UButton
+              to="/transactions"
+              color="neutral"
+              variant="soft"
+              class="justify-between rounded-2xl px-4 py-4"
+            >
+              <span>Inspect raw payments</span>
+              <UIcon name="i-lucide-arrow-right" class="size-4" />
+            </UButton>
+            <UButton
+              to="/methodology"
+              color="neutral"
+              variant="soft"
+              class="justify-between rounded-2xl px-4 py-4"
+            >
+              <span>Read the methodology</span>
+              <UIcon name="i-lucide-arrow-right" class="size-4" />
+            </UButton>
+          </div>
+        </UCard>
+      </section>
+
+      <DataTableCard
+        title="Recent transactions"
+        description="Latest public payment rows from the state payment feed."
+        :columns="[
+          { key: 'payment_date', label: 'Date', sortable: true },
+          { key: 'agency_name', label: 'Agency' },
+          { key: 'payee_name', label: 'Payee' },
+          { key: 'object_code', label: 'Object' },
+          { key: 'amount', label: 'Amount', sortable: true },
+        ]"
+        :rows="overview.recent_transactions || []"
+        :empty-title="hasPaymentFacts ? 'No recent transactions' : 'Payment feed pending'"
+        :empty-description="
+          hasPaymentFacts
+            ? 'There are no recent transaction rows for the current filters.'
+            : 'Recent payment rows will appear after the transaction-level payment feed is loaded.'
+        "
+      >
+        <template #agency_name-data="{ row }">
+          <UButton
+            :to="row.agency_id ? `/agencies/${row.agency_id}` : undefined"
+            color="neutral"
+            variant="link"
+            class="px-0 font-semibold text-primary"
+          >
+            {{ row.agency_name || 'Unknown agency' }}
+          </UButton>
+        </template>
+
+        <template #payee_name-data="{ row }">
+          <span class="text-sm text-default">{{ row.payee_name || 'Unknown payee' }}</span>
+        </template>
+
+        <template #object_code-data="{ row }">
+          <UBadge color="neutral" variant="soft">
+            {{ row.object_code || 'Unmapped' }}
+          </UBadge>
+        </template>
+
+        <template #amount-data="{ row }">
+          <span class="font-semibold text-default">{{ formatUsd(row.amount, 2) }}</span>
+        </template>
+      </DataTableCard>
+    </template>
+
+    <EmptyState
+      v-else
+      title="No overview data available"
+      description="The explorer could not load public spending data for the current filters."
+      icon="i-lucide-database-zap"
+    >
+      <UButton to="/data-sources" color="primary" variant="soft" class="rounded-full">
+        Review data sources
+      </UButton>
+    </EmptyState>
+  </UContainer>
 </template>

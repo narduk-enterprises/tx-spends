@@ -1,7 +1,8 @@
 import { getRouterParam, getValidatedQuery } from 'h3'
-import { eq, desc, sql, and } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
-import { countyExpenditureFacts } from '#server/database/schema'
+import { paymentCategoryCodeSql } from '#server/utils/explorer'
+import { statePaymentFacts } from '#server/database/schema'
 import { globalQuerySchema } from '#server/utils/query'
 
 export default defineEventHandler(async (event) => {
@@ -11,18 +12,21 @@ export default defineEventHandler(async (event) => {
 
   if (!code) throw createError({ statusCode: 400, message: 'Missing category_code' })
 
-  const conditions = [eq(countyExpenditureFacts.expenditureCategoryCode, code)]
+  const categoryCode = paymentCategoryCodeSql(statePaymentFacts.objectCategoryRaw)
+  const conditions = [sql`${categoryCode} = ${code}`]
+  if (query.fiscal_year) conditions.push(eq(statePaymentFacts.fiscalYear, query.fiscal_year))
+  if (!query.include_confidential) conditions.push(eq(statePaymentFacts.isConfidential, false))
   const whereClause = and(...conditions)
 
   const trends = await db
     .select({
-      fiscal_year: countyExpenditureFacts.fiscalYear,
-      amount: sql<string>`SUM(${countyExpenditureFacts.amount})`,
+      fiscal_year: statePaymentFacts.fiscalYear,
+      amount: sql<string>`SUM(${statePaymentFacts.amount})`,
     })
-    .from(countyExpenditureFacts)
+    .from(statePaymentFacts)
     .where(whereClause)
-    .groupBy(countyExpenditureFacts.fiscalYear)
-    .orderBy(countyExpenditureFacts.fiscalYear)
+    .groupBy(statePaymentFacts.fiscalYear)
+    .orderBy(statePaymentFacts.fiscalYear)
 
   return {
     filters_applied: query,

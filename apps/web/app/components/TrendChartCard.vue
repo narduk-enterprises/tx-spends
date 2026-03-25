@@ -1,102 +1,172 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { formatUsdCompact } from '~/utils/explorer'
 
-const props = defineProps<{
-  series: any[]
-  xKey: string
-  yKey: string
-  title?: string
-  valueFormatter?: (val: number) => string
-}>()
+const props = withDefaults(
+  defineProps<{
+    series: Array<Record<string, string | number | null>>
+    xKey: string
+    yKey: string
+    title?: string
+    description?: string
+    valueFormatter?: (value: number) => string
+  }>(),
+  {
+    title: '',
+    description: '',
+    valueFormatter: undefined,
+  },
+)
 
-const width = 600
-const height = 200
-const padding = 40
+const width = 720
+const height = 240
+const paddingX = 48
+const paddingY = 24
 
-const maxVal = computed(() => {
-  if (!props.series?.length) return 0
-  return Math.max(...props.series.map((s) => Number(s[props.yKey]) || 0))
-})
+const maxVal = computed(() =>
+  Math.max(...props.series.map((point) => Number(point[props.yKey]) || 0), 0),
+)
 
 const points = computed(() => {
-  if (!props.series || props.series.length === 0) return ''
-  const xStep = (width - padding * 2) / Math.max(1, props.series.length - 1)
+  if (!props.series.length) {
+    return ''
+  }
+
+  const xStep = (width - paddingX * 2) / Math.max(1, props.series.length - 1)
 
   return props.series
-    .map((point, i) => {
-      const x = padding + i * xStep
-      const val = Number(point[props.yKey]) || 0
+    .map((point, index) => {
+      const x = paddingX + index * xStep
+      const value = Number(point[props.yKey]) || 0
       const y =
         maxVal.value > 0
-          ? height - padding - (val / maxVal.value) * (height - padding * 2)
-          : height - padding
+          ? height - paddingY - (value / maxVal.value) * (height - paddingY * 2)
+          : height - paddingY
       return `${x},${y}`
     })
     .join(' ')
 })
 
-function formatValue(val: number) {
-  if (props.valueFormatter) return props.valueFormatter(val)
-  return new Intl.NumberFormat('en-US', { notation: 'compact', compactDisplay: 'short' }).format(
-    val,
-  )
+function formatValue(value: number) {
+  if (props.valueFormatter) {
+    return props.valueFormatter(value)
+  }
+
+  return formatUsdCompact(value)
 }
 </script>
 
 <template>
-  <UCard class="w-full">
-    <template v-if="title" #header>
-      <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-white">
-        {{ title }}
-      </h3>
+  <UCard class="card-base overflow-hidden">
+    <template #header>
+      <div class="space-y-1">
+        <p class="text-lg font-semibold text-default">{{ title }}</p>
+        <p v-if="description" class="text-sm text-muted">{{ description }}</p>
+      </div>
     </template>
 
-    <div class="relative w-full overflow-hidden" style="aspect-ratio: 3/1; min-height: 200px">
-      <!-- eslint-disable-next-line narduk/no-inline-svg -- Exception: Data visualization chart, not an icon -->
-      <svg
-        v-if="series?.length"
-        viewBox="0 0 600 200"
-        preserveAspectRatio="none"
-        class="w-full h-full stroke-primary-500 fill-none"
-      >
-        <polyline
-          :points="points"
-          stroke-width="3"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        />
+    <div v-if="series.length > 1" class="space-y-4">
+      <div class="overflow-hidden rounded-[1.5rem] border border-default bg-elevated/80 p-4">
+        <!-- eslint-disable-next-line narduk/no-inline-svg -- Inline SVG is the chart renderer -->
+        <svg viewBox="0 0 720 240" preserveAspectRatio="none" class="h-64 w-full">
+          <defs>
+            <linearGradient id="trend-stroke" x1="0%" x2="100%" y1="0%" y2="0%">
+              <stop offset="0%" stop-color="rgb(245 158 11)" />
+              <stop offset="100%" stop-color="rgb(14 165 233)" />
+            </linearGradient>
+          </defs>
 
-        <!-- Points -->
-        <circle
-          v-for="(point, i) in series"
-          :key="i"
-          :cx="padding + i * ((width - padding * 2) / Math.max(1, series.length - 1))"
-          :cy="
-            maxVal > 0
-              ? height - padding - (Number(point[yKey]) / maxVal) * (height - padding * 2)
-              : height - padding
-          "
-          r="4"
-          class="fill-white dark:fill-gray-900 stroke-[3px]"
-        />
-      </svg>
-      <div v-else class="absolute inset-0 flex items-center justify-center text-sm text-gray-500">
-        No trend data available
+          <polyline
+            :points="points"
+            fill="none"
+            stroke="url(#trend-stroke)"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="4"
+          />
+
+          <circle
+            v-for="(point, index) in series"
+            :key="`${point[xKey]}-${index}`"
+            :cx="paddingX + index * ((width - paddingX * 2) / Math.max(1, series.length - 1))"
+            :cy="
+              maxVal > 0
+                ? height - paddingY - (Number(point[yKey]) / maxVal) * (height - paddingY * 2)
+                : height - paddingY
+            "
+            r="5"
+            fill="rgb(255 255 255)"
+            stroke="rgb(245 158 11)"
+            stroke-width="3"
+          />
+        </svg>
+      </div>
+
+      <div class="grid gap-3 sm:grid-cols-4">
+        <div
+          v-for="point in series.slice(Math.max(0, series.length - 4))"
+          :key="String(point[xKey])"
+          class="rounded-2xl border border-default bg-default px-4 py-3"
+        >
+          <p class="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
+            {{ point[xKey] }}
+          </p>
+          <p class="mt-2 text-sm font-semibold text-default">
+            {{ formatValue(Number(point[yKey])) }}
+          </p>
+        </div>
       </div>
     </div>
 
-    <!-- X Axis labels (crude) -->
-    <div v-if="series?.length" class="flex justify-between px-[40px] mt-2 text-xs text-gray-500">
-      <span
-        v-for="(point, i) in series"
-        :key="i"
-        class="hidden sm:block"
-        :class="{
-          'sm:hidden': i % Math.ceil(series.length / 5) !== 0 && i !== 0 && i !== series.length - 1,
-        }"
+    <div
+      v-else-if="series.length === 1"
+      class="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]"
+    >
+      <div
+        class="overflow-hidden rounded-[1.5rem] border border-default bg-[var(--gradient-hero)] p-6"
       >
-        {{ point[xKey] }}
-      </span>
+        <div class="space-y-4">
+          <div
+            class="inline-flex rounded-full border border-primary/20 bg-default/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-primary"
+          >
+            Limited timeline
+          </div>
+          <div class="space-y-2">
+            <p class="text-sm font-medium text-muted">
+              Only one reporting period is currently loaded for this view.
+            </p>
+            <p class="text-4xl font-semibold tracking-tight text-default">
+              {{ formatValue(Number(series[0]?.[yKey])) }}
+            </p>
+          </div>
+          <div class="flex flex-wrap items-center gap-3 text-sm text-muted">
+            <span
+              class="inline-flex items-center gap-2 rounded-full border border-default bg-default/80 px-3 py-1"
+            >
+              <span class="size-2 rounded-full bg-primary" />
+              {{ series[0]?.[xKey] }}
+            </span>
+            <span>Additional periods will appear here as more historical batches are loaded.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="rounded-[1.5rem] border border-default bg-default p-5">
+        <p class="text-xs font-semibold uppercase tracking-[0.14em] text-muted">Current period</p>
+        <p class="mt-3 text-2xl font-semibold text-default">
+          {{ String(series[0]?.[xKey] ?? 'Current period') }}
+        </p>
+        <p class="mt-2 text-sm text-muted">
+          The explorer is rendering a summary state instead of an empty line chart while only one
+          data point is available.
+        </p>
+      </div>
     </div>
+
+    <EmptyState
+      v-else
+      title="No trend data"
+      description="This view does not currently have enough data points to render a time series."
+      icon="i-lucide-chart-no-axes-combined"
+    />
   </UCard>
 </template>

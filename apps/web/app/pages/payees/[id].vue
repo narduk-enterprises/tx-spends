@@ -1,146 +1,295 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useRoute, useSeoMeta, useAsyncData } from '#imports'
+import {
+  cleanQueryObject,
+  FISCAL_YEAR_OPTIONS,
+  formatCount,
+  formatUsd,
+  formatUsdCompact,
+  getNumberQueryValue,
+} from '~/utils/explorer'
 
 const route = useRoute()
-const payeeId = route.params.id as string
+const router = useRouter()
 
-const { data, pending } = await useAsyncData(`payee-${payeeId}`, () => {
-  return Promise.resolve({
-    data: {
-      payee_id: payeeId,
-      payee_name_normalized: 'MOCK VENDOR A',
-      total_spend: 500000.0,
-      agency_count: 3,
-      transaction_count: 142,
-      enrichment: {
-        vendor_name_normalized: 'MOCK VENDOR A INC',
-        hub_status: true,
-        small_business_flag: true,
-        sdv_flag: false,
-        confidence_score: 0.99,
-      },
-      trends: [
-        { year: 2021, amount: 60000 },
-        { year: 2022, amount: 65000 },
-        { year: 2023, amount: 70000 },
-        { year: 2024, amount: 75000 },
-        { year: 2025, amount: 500000 },
-      ],
-      top_agencies: [
-        { agency_name: 'Health and Human Services Commission', amount: 250000 },
-        { agency_name: 'Department of Transportation', amount: 150000 },
-      ],
-    },
-  })
-})
-
-const payee = computed(() => data.value?.data)
-
-useSeoMeta({
-  title: computed(() =>
-    payee.value
-      ? `${payee.value.payee_name_normalized} State Spending - Texas State Spending Explorer`
-      : 'Payee Spending',
-  ),
-  description: computed(() =>
-    payee.value
-      ? `Explore state expenditure details and agencies paying ${payee.value.payee_name_normalized}.`
-      : '',
-  ),
-})
-
+const payeeId = computed(() => String(route.params.id))
+const fiscalYear = computed(() => getNumberQueryValue(route.query.fy))
 const activeTab = ref('overview')
+
+type PayeeCategoryApiRow = {
+  category_code: string
+  category_title?: string | null
+  amount: number | string | null
+}
+
+const requestQuery = computed(() =>
+  cleanQueryObject({
+    fiscal_year: fiscalYear.value,
+  }),
+)
+
+const { data: detail, status } = await useFetch(() => `/api/v1/payees/${payeeId.value}`, {
+  query: requestQuery,
+})
+const { data: agencies } = await useFetch(() => `/api/v1/payees/${payeeId.value}/agencies`, {
+  query: requestQuery,
+})
+const { data: categories } = await useFetch(() => `/api/v1/payees/${payeeId.value}/categories`, {
+  query: requestQuery,
+})
+const { data: trends } = await useFetch(() => `/api/v1/payees/${payeeId.value}/trends`, {
+  query: requestQuery,
+})
+
+const payee = computed(() => detail.value?.data)
+const payeeCategoryRows = computed(() =>
+  ((categories.value?.data || []) as PayeeCategoryApiRow[]).map((category) => ({
+    category_code: category.category_code,
+    category_title: category.category_title || 'Uncategorized',
+    amount: Number(category.amount || 0),
+  })),
+)
+
+const title = payee.value
+  ? `${payee.value.payee_name} Payments from Texas Agencies`
+  : 'Payee Detail | Texas State Spending Explorer'
+const description = payee.value
+  ? `See how much ${payee.value.payee_name} received from Texas agencies, plus agency relationships, category mix, and trend data.`
+  : 'See how much a payee received from Texas agencies, plus category and trend data.'
+
+useSeo({
+  title,
+  description,
+  ogImage: {
+    title,
+    description,
+    icon: 'i-lucide-briefcase-business',
+  },
+})
+
+useWebPageSchema({
+  name: title,
+  description,
+  type: 'ItemPage',
+})
+
+const filters = computed({
+  get: () => ({
+    fiscal_year: fiscalYear.value ? String(fiscalYear.value) : null,
+  }),
+  set: (value: { fiscal_year: string | null }) => {
+    router.replace({
+      query: cleanQueryObject({
+        ...route.query,
+        fy:
+          value.fiscal_year && value.fiscal_year !== 'all' ? String(value.fiscal_year) : undefined,
+      }),
+    })
+  },
+})
+
 const tabs = [
-  { label: 'Overview', key: 'overview', icon: 'i-heroicons-chart-pie' },
-  { label: 'Agencies', key: 'agencies', icon: 'i-heroicons-building-library' },
-  { label: 'Transactions', key: 'transactions', icon: 'i-heroicons-list-bullet' },
+  { label: 'Overview', key: 'overview', icon: 'i-lucide-layout-dashboard' },
+  { label: 'Agencies', key: 'agencies', icon: 'i-lucide-building-2' },
+  { label: 'Categories', key: 'categories', icon: 'i-lucide-chart-pie' },
+  { label: 'Trends', key: 'trends', icon: 'i-lucide-chart-line' },
 ]
+
+const enrichment = computed(() => {
+  if (!payee.value?.vendor_id) {
+    return null
+  }
+
+  return {
+    vendor_name: payee.value.vendor_name,
+    hub_status: payee.value.hub_status,
+    city: payee.value.city,
+    state: payee.value.state,
+    zip: payee.value.zip,
+  }
+})
 </script>
 
 <template>
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 h-full flex flex-col gap-6">
-    <div v-if="pending" class="flex justify-center p-12">
-      <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-primary-500" />
+  <UContainer class="space-y-8 py-8">
+    <div v-if="status === 'pending'" class="flex min-h-64 items-center justify-center">
+      <UIcon name="i-lucide-loader-circle" class="size-10 animate-spin text-primary" />
     </div>
 
     <template v-else-if="payee">
       <PageHeader
-        :title="payee.payee_name_normalized"
-        :subtitle="`Payee Link ID: ${payee.payee_id}`"
+        eyebrow="Payee detail"
+        :title="payee.payee_name"
+        :subtitle="
+          payee.is_confidential
+            ? 'This payee is marked confidential in the public dataset.'
+            : 'Public recipient profile from the Texas state payment feed.'
+        "
         :breadcrumbs="[
           { label: 'Home', to: '/' },
           { label: 'Payees', to: '/payees' },
-          { label: payee.payee_name_normalized },
+          { label: payee.payee_name },
         ]"
-        class="mb-2"
+        :badge="fiscalYear ? `FY ${fiscalYear}` : 'All fiscal years'"
+      >
+        <template #actions>
+          <UButton
+            :to="`/transactions?payee_id=${payee.payee_id}${fiscalYear ? `&fy=${fiscalYear}` : ''}`"
+            color="primary"
+            variant="soft"
+            icon="i-lucide-arrow-right"
+            class="rounded-full"
+          >
+            View transactions
+          </UButton>
+        </template>
+      </PageHeader>
+
+      <DisclaimerStrip variant="payee" />
+
+      <FilterBar
+        v-model="filters"
+        :available-filters="[
+          {
+            key: 'fiscal_year',
+            label: 'Fiscal year',
+            type: 'select',
+            options: FISCAL_YEAR_OPTIONS,
+          },
+        ]"
       />
 
-      <!-- Enrichment details if found -->
       <VendorMatchBadgeRow
-        v-if="payee.enrichment"
-        :enrichment="payee.enrichment"
-        :match-confidence="payee.enrichment.confidence_score"
+        v-if="enrichment"
+        :enrichment="enrichment"
+        :match-confidence="Number(payee.match_confidence || 0)"
       />
-      <div v-else class="mb-4 text-sm text-gray-500 dark:text-gray-400">
-        No state vendor enrichment matches found for this payee.
-      </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <KpiCard
-          label="Total State Spend (FY25)"
-          :value="
-            new Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: 'USD',
-              maximumFractionDigits: 0,
-            }).format(payee.total_spend)
+          label="Total received"
+          :value="formatUsdCompact(payee.total_received)"
+          :helper="formatUsd(payee.total_received)"
+          icon="i-lucide-wallet-cards"
+        />
+        <KpiCard
+          label="Agencies paying"
+          :value="formatCount(payee.agency_count)"
+          helper="Distinct agency relationships"
+          icon="i-lucide-building-2"
+        />
+        <KpiCard
+          label="Largest payer"
+          :value="payee.largest_agency?.agency_name || 'Unlisted'"
+          :helper="
+            payee.largest_agency
+              ? formatUsd(payee.largest_agency.amount)
+              : 'No agency summary available'
           "
+          icon="i-lucide-hand-coins"
         />
         <KpiCard
-          label="Agencies Paying"
-          :value="new Intl.NumberFormat('en-US').format(payee.agency_count)"
+          label="Vendor match"
+          :value="payee.vendor_id ? 'Available' : 'Not matched'"
+          :helper="payee.match_method || 'No procurement enrichment attached'"
+          icon="i-lucide-scan-search"
         />
-        <KpiCard
-          label="Transactions"
-          :value="new Intl.NumberFormat('en-US').format(payee.transaction_count)"
-        />
-      </div>
+      </section>
 
-      <EntityTabs :tabs="tabs" v-model="activeTab" />
+      <EntityTabs v-model="activeTab" :tabs="tabs" persist-key="payee-detail-tab" />
 
-      <div v-show="activeTab === 'overview'" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <section
+        v-if="activeTab === 'overview'"
+        class="grid items-start gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(20rem,1fr)]"
+      >
         <TrendChartCard
-          title="Income from State (5 Years)"
-          :series="payee.trends"
-          x-key="year"
+          class="h-auto self-start"
+          title="Payee trend"
+          description="Annual total receipts for this payee."
+          :series="trends?.data || []"
+          x-key="fiscal_year"
           y-key="amount"
-          class="lg:col-span-2"
+          :value-formatter="formatUsdCompact"
         />
-
         <RankedBarCard
-          title="Top Paying Agencies"
-          :items="payee.top_agencies"
+          title="Agencies paying this payee"
+          description="Which agencies account for the largest share of payments."
+          :items="(agencies?.data || []).slice(0, 10)"
           label-key="agency_name"
           value-key="amount"
-          class="lg:col-span-2"
+          :value-formatter="formatUsdCompact"
         />
-      </div>
+      </section>
 
-      <div v-show="activeTab !== 'overview'">
-        <EmptyState
-          :title="`${tabs.find((t) => t.key === activeTab)?.label} Details`"
-          description="This tab would dynamically fetch paginated data filtering by the parent payee ID."
-          icon="i-heroicons-clock"
-        />
-      </div>
+      <DataTableCard
+        v-else-if="activeTab === 'agencies'"
+        title="Agency relationships"
+        description="All agencies that paid this recipient."
+        :columns="[
+          { key: 'agency_name', label: 'Agency' },
+          { key: 'amount', label: 'Amount', sortable: true },
+        ]"
+        :rows="agencies?.data || []"
+      >
+        <template #agency_name-data="{ row }">
+          <UButton
+            :to="row.agency_id ? `/agencies/${row.agency_id}` : undefined"
+            color="neutral"
+            variant="link"
+            class="px-0 font-semibold text-primary"
+          >
+            {{ row.agency_name || 'Unknown agency' }}
+          </UButton>
+        </template>
+        <template #amount-data="{ row }">
+          <span class="font-semibold text-default">{{ formatUsd(row.amount) }}</span>
+        </template>
+      </DataTableCard>
+
+      <DataTableCard
+        v-else-if="activeTab === 'categories'"
+        title="Category mix"
+        description="Broad payment categories associated with this payee."
+        :columns="[
+          { key: 'category_title', label: 'Category' },
+          { key: 'amount', label: 'Amount', sortable: true },
+        ]"
+        :rows="payeeCategoryRows"
+      >
+        <template #category_title-data="{ row }">
+          <UButton
+            :to="`/categories/${row.category_code}`"
+            color="neutral"
+            variant="link"
+            class="px-0 font-semibold text-primary"
+          >
+            {{ row.category_title || 'Uncategorized' }}
+          </UButton>
+        </template>
+        <template #amount-data="{ row }">
+          <span class="font-semibold text-default">{{ formatUsd(row.amount) }}</span>
+        </template>
+      </DataTableCard>
+
+      <TrendChartCard
+        v-else
+        title="Trend view"
+        description="Annual payment totals for this payee."
+        :series="trends?.data || []"
+        x-key="fiscal_year"
+        y-key="amount"
+        :value-formatter="formatUsdCompact"
+      />
     </template>
 
     <EmptyState
       v-else
-      title="Payee Not Found"
-      description="The payee you are looking for does not exist."
-      icon="i-heroicons-x-circle"
-    />
-  </div>
+      title="Payee not found"
+      description="The requested payee could not be found in the public dataset."
+      icon="i-lucide-search-x"
+    >
+      <UButton to="/payees" color="primary" variant="soft" class="rounded-full">
+        Back to payees
+      </UButton>
+    </EmptyState>
+  </UContainer>
 </template>

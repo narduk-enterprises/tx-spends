@@ -1,147 +1,288 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import {
+  cleanQueryObject,
+  FISCAL_YEAR_OPTIONS,
+  formatCount,
+  formatUsd,
+  formatUsdCompact,
+  getNumberQueryValue,
+} from '~/utils/explorer'
 
 const route = useRoute()
-const code = route.params.code as string
+const router = useRouter()
 
-const { data: detail, status: detailStatus } = await useFetch(`/api/v1/categories/${code}`, {
-  query: computed(() => route.query),
+const categoryCode = computed(() => String(route.params.code))
+const fiscalYear = computed(() => getNumberQueryValue(route.query.fy))
+const activeTab = ref('overview')
+
+const requestQuery = computed(() =>
+  cleanQueryObject({
+    fiscal_year: fiscalYear.value,
+  }),
+)
+
+const { data: detail, status } = await useFetch(() => `/api/v1/categories/${categoryCode.value}`, {
+  query: requestQuery,
+})
+const { data: trends } = await useFetch(() => `/api/v1/categories/${categoryCode.value}/trends`, {
+  query: requestQuery,
+})
+const { data: agencies } = await useFetch(
+  () => `/api/v1/categories/${categoryCode.value}/agencies`,
+  {
+    query: requestQuery,
+  },
+)
+const { data: payees } = await useFetch(() => `/api/v1/categories/${categoryCode.value}/payees`, {
+  query: requestQuery,
+})
+const { data: objects } = await useFetch(() => `/api/v1/categories/${categoryCode.value}/objects`, {
+  query: requestQuery,
 })
 
-const { data: agencies } = await useFetch(`/api/v1/categories/${code}/agencies`, {
-  lazy: true,
-  query: computed(() => route.query),
-})
-const { data: payees } = await useFetch(`/api/v1/categories/${code}/payees`, {
-  lazy: true,
-  query: computed(() => route.query),
-})
-const { data: objects } = await useFetch(`/api/v1/categories/${code}/objects`, {
-  lazy: true,
-  query: computed(() => route.query),
-})
-const { data: trends } = await useFetch(`/api/v1/categories/${code}/trends`, { lazy: true })
+const category = computed(() => detail.value?.data)
 
-useSeoMeta({
-  title: computed(() =>
-    detail.value?.data?.category_title
-      ? `${detail.value.data.category_title} | Category Explorer`
-      : 'Category Explorer | Texas Spends',
-  ),
-  description: computed(
-    () =>
-      `Spending profile for ${detail.value?.data?.category_title || 'Expenditure Category'} in Texas.`,
-  ),
+const title = category.value
+  ? `${category.value.category_title} Spending in Texas`
+  : 'Category Detail | Texas State Spending Explorer'
+const description = category.value
+  ? `Explore agency participation, payees, objects, and trend lines for ${category.value.category_title}.`
+  : 'Explore a Texas expenditure category.'
+
+useSeo({
+  title,
+  description,
+  ogImage: {
+    title,
+    description,
+    icon: 'i-lucide-chart-pie',
+  },
 })
+
+useWebPageSchema({
+  name: title,
+  description,
+  type: 'ItemPage',
+})
+
+const filters = computed({
+  get: () => ({
+    fiscal_year: fiscalYear.value ? String(fiscalYear.value) : null,
+  }),
+  set: (value: { fiscal_year: string | null }) => {
+    router.replace({
+      query: cleanQueryObject({
+        ...route.query,
+        fy:
+          value.fiscal_year && value.fiscal_year !== 'all' ? String(value.fiscal_year) : undefined,
+      }),
+    })
+  },
+})
+
+const tabs = [
+  { label: 'Overview', key: 'overview', icon: 'i-lucide-layout-dashboard' },
+  { label: 'Agencies', key: 'agencies', icon: 'i-lucide-building-2' },
+  { label: 'Payees', key: 'payees', icon: 'i-lucide-briefcase-business' },
+  { label: 'Objects', key: 'objects', icon: 'i-lucide-badge-dollar-sign' },
+  { label: 'Trends', key: 'trends', icon: 'i-lucide-chart-line' },
+]
 </script>
 
 <template>
-  <div>
-    <UContainer class="py-8">
-      <div v-if="detailStatus === 'pending'" class="py-12 flex justify-center">
-        <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin" />
-      </div>
+  <UContainer class="space-y-8 py-8">
+    <div v-if="status === 'pending'" class="flex min-h-64 items-center justify-center">
+      <UIcon name="i-lucide-loader-circle" class="size-10 animate-spin text-primary" />
+    </div>
 
-      <div
-        v-else-if="detail?.data"
-        class="mb-8 p-6 bg-[var(--ui-bg)] rounded-xl border border-[var(--ui-border)] shadow-sm"
+    <template v-else-if="category">
+      <PageHeader
+        eyebrow="Category detail"
+        :title="category.category_title"
+        :subtitle="`Category slug ${category.category_code}`"
+        :breadcrumbs="[
+          { label: 'Home', to: '/' },
+          { label: 'Categories', to: '/categories' },
+          { label: category.category_title },
+        ]"
+        :badge="fiscalYear ? `FY ${fiscalYear}` : 'All fiscal years'"
       >
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div
-              class="flex items-center gap-2 mb-2 text-sm font-medium text-[var(--ui-text-muted)] uppercase tracking-wider"
-            >
-              <UIcon name="i-heroicons-tag" class="w-5 h-5 shrink-0" /> Expenditure Category
-            </div>
-            <h1 class="text-3xl font-bold text-[var(--ui-text)]">
-              {{ detail.data.category_title }}
-              <span class="text-xl text-[var(--ui-text-muted)] font-mono"
-                >({{ detail.data.category_code }})</span
-              >
-            </h1>
-          </div>
-          <div class="text-left md:text-right">
-            <p class="text-sm text-[var(--ui-text-muted)] uppercase tracking-wider">
-              Category Spend
-            </p>
-            <p class="text-4xl font-bold text-[var(--ui-primary)]">
-              ${{ Number((detail.data as any).total_spend || 0).toLocaleString() }}
-            </p>
-          </div>
-        </div>
-      </div>
+        <template #actions>
+          <UButton
+            :to="`/transactions?category_code=${category.category_code}${fiscalYear ? `&fy=${fiscalYear}` : ''}`"
+            color="primary"
+            variant="soft"
+            icon="i-lucide-arrow-right"
+            class="rounded-full"
+          >
+            View transactions
+          </UButton>
+        </template>
+      </PageHeader>
 
-      <div v-if="detail?.data" class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <UCard>
-          <template #header
-            ><h3 class="font-semibold flex items-center gap-2">
-              <UIcon name="i-heroicons-building-office" /> Supporting Agencies
-            </h3></template
+      <FilterBar
+        v-model="filters"
+        :available-filters="[
+          {
+            key: 'fiscal_year',
+            label: 'Fiscal year',
+            type: 'select',
+            options: FISCAL_YEAR_OPTIONS,
+          },
+        ]"
+      />
+
+      <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <KpiCard
+          label="Total spend"
+          :value="formatUsdCompact(category.total_spend)"
+          :helper="formatUsd(category.total_spend)"
+          icon="i-lucide-wallet"
+        />
+        <KpiCard
+          label="Agency count"
+          :value="formatCount(category.agency_count)"
+          helper="Distinct agencies in the payment feed"
+          icon="i-lucide-building-2"
+        />
+        <KpiCard
+          label="Payee count"
+          :value="formatCount(category.payee_count)"
+          helper="Distinct payees in payment feed"
+          icon="i-lucide-users"
+        />
+        <KpiCard
+          label="Category code"
+          :value="category.category_code"
+          helper="Broad expenditure rollup"
+          icon="i-lucide-badge-dollar-sign"
+        />
+      </section>
+
+      <EntityTabs v-model="activeTab" :tabs="tabs" persist-key="category-detail-tab" />
+
+      <section
+        v-if="activeTab === 'overview'"
+        class="grid items-start gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(20rem,1fr)]"
+      >
+        <TrendChartCard
+          class="h-auto self-start"
+          title="Category trend"
+          description="Annual payment totals for this category."
+          :series="trends?.data || []"
+          x-key="fiscal_year"
+          y-key="amount"
+          :value-formatter="formatUsdCompact"
+        />
+        <RankedBarCard
+          title="Top agencies"
+          description="Agencies driving this category."
+          :items="(agencies?.data || []).slice(0, 10)"
+          label-key="agency_name"
+          value-key="amount"
+          :value-formatter="formatUsdCompact"
+        />
+      </section>
+
+      <DataTableCard
+        v-else-if="activeTab === 'agencies'"
+        title="Agency breakdown"
+        description="Agencies contributing to this category."
+        :columns="[
+          { key: 'agency_name', label: 'Agency' },
+          { key: 'amount', label: 'Amount', sortable: true },
+        ]"
+        :rows="agencies?.data || []"
+      >
+        <template #agency_name-data="{ row }">
+          <UButton
+            :to="row.agency_id ? `/agencies/${row.agency_id}` : undefined"
+            color="neutral"
+            variant="link"
+            class="px-0 font-semibold text-primary"
           >
-          <ul class="space-y-3" v-if="agencies?.data?.length">
-            <li
-              v-for="agency in agencies.data"
-              :key="agency.agency_id"
-              class="flex justify-between items-center text-sm"
-            >
-              <NuxtLink
-                :to="`/agencies/${agency.agency_id}`"
-                class="truncate font-medium text-[var(--ui-primary)] hover:underline pr-4"
-                >{{ agency.agency_name }}</NuxtLink
-              >
-              <span class="font-medium whitespace-nowrap"
-                >${{ agency.amount.toLocaleString() }}</span
-              >
-            </li>
-          </ul>
-        </UCard>
-        <UCard>
-          <template #header
-            ><h3 class="font-semibold flex items-center gap-2">
-              <UIcon name="i-heroicons-user-group" /> Top Payees
-            </h3></template
+            {{ row.agency_name || 'Unknown agency' }}
+          </UButton>
+        </template>
+        <template #amount-data="{ row }">
+          <span class="font-semibold text-default">{{ formatUsd(row.amount) }}</span>
+        </template>
+      </DataTableCard>
+
+      <DataTableCard
+        v-else-if="activeTab === 'payees'"
+        title="Payee breakdown"
+        description="Public payees whose payment rows fall into this category."
+        :columns="[
+          { key: 'payee_name', label: 'Payee' },
+          { key: 'amount', label: 'Amount', sortable: true },
+        ]"
+        :rows="payees?.data || []"
+      >
+        <template #payee_name-data="{ row }">
+          <UButton
+            :to="row.payee_id ? `/payees/${row.payee_id}` : undefined"
+            color="neutral"
+            variant="link"
+            class="px-0 font-semibold text-primary"
           >
-          <ul class="space-y-3" v-if="payees?.data?.length">
-            <li
-              v-for="payee in payees.data"
-              :key="payee.payee_id"
-              class="flex justify-between items-center text-sm"
-            >
-              <NuxtLink
-                :to="`/payees/${payee.payee_id}`"
-                class="truncate font-medium text-[var(--ui-primary)] hover:underline pr-4"
-                >{{ payee.payee_name }}</NuxtLink
-              >
-              <span class="font-medium whitespace-nowrap"
-                >${{ payee.amount.toLocaleString() }}</span
-              >
-            </li>
-          </ul>
-          <div class="mt-4 text-center">
-            <UButton :to="`/transactions?category_code=${code}`" variant="link" color="primary"
-              >View all ledger traces</UButton
-            >
-          </div>
-        </UCard>
-        <UCard class="md:col-span-2">
-          <template #header
-            ><h3 class="font-semibold flex items-center gap-2">
-              <UIcon name="i-heroicons-document-currency-dollar" /> Objects Under Category
-            </h3></template
+            {{ row.payee_name || 'Unknown payee' }}
+          </UButton>
+        </template>
+        <template #amount-data="{ row }">
+          <span class="font-semibold text-default">{{ formatUsd(row.amount) }}</span>
+        </template>
+      </DataTableCard>
+
+      <DataTableCard
+        v-else-if="activeTab === 'objects'"
+        title="Object breakdown"
+        description="Comptroller objects attached to payment rows in this category."
+        :columns="[
+          { key: 'object_code', label: 'Object code' },
+          { key: 'object_title', label: 'Object title' },
+          { key: 'amount', label: 'Amount', sortable: true },
+        ]"
+        :rows="objects?.data || []"
+      >
+        <template #object_code-data="{ row }">
+          <UBadge color="neutral" variant="soft">{{ row.object_code || 'Unmapped' }}</UBadge>
+        </template>
+        <template #object_title-data="{ row }">
+          <UButton
+            :to="row.object_code ? `/objects/${row.object_code}` : undefined"
+            color="neutral"
+            variant="link"
+            class="px-0 font-semibold text-primary"
           >
-          <ul class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3" v-if="objects?.data?.length">
-            <li
-              v-for="obj in objects.data"
-              :key="obj.object_code"
-              class="flex justify-between items-center text-sm"
-            >
-              <span class="truncate pr-4" :title="obj.object_title">{{ obj.object_title }}</span>
-              <span class="font-medium whitespace-nowrap">${{ obj.amount.toLocaleString() }}</span>
-            </li>
-          </ul>
-        </UCard>
-      </div>
-    </UContainer>
-  </div>
+            {{ row.object_title || 'Unknown object' }}
+          </UButton>
+        </template>
+        <template #amount-data="{ row }">
+          <span class="font-semibold text-default">{{ formatUsd(row.amount) }}</span>
+        </template>
+      </DataTableCard>
+
+      <TrendChartCard
+        v-else
+        title="Trend view"
+        description="Annual payment totals for this category."
+        :series="trends?.data || []"
+        x-key="fiscal_year"
+        y-key="amount"
+        :value-formatter="formatUsdCompact"
+      />
+    </template>
+
+    <EmptyState
+      v-else
+      title="Category not found"
+      description="The requested category could not be found in the explorer."
+      icon="i-lucide-search-x"
+    >
+      <UButton to="/categories" color="primary" variant="soft" class="rounded-full">
+        Back to categories
+      </UButton>
+    </EmptyState>
+  </UContainer>
 </template>

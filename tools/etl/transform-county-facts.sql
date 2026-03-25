@@ -17,7 +17,12 @@ SELECT
     now()
 FROM stg_expenditures_by_county_raw s
 JOIN geographies_counties c 
-    ON c.county_name_normalized = trim(regexp_replace(upper(replace(s.county, ' COUNTY', '')), '\s+', ' ', 'g'))
+    ON c.county_name_normalized = CASE
+        WHEN replace(trim(regexp_replace(upper(replace(s.county, ' COUNTY', '')), '\s+', ' ', 'g')), ' ', '') = 'INTEX' THEN 'IN TEXAS'
+        WHEN replace(trim(regexp_replace(upper(replace(s.county, ' COUNTY', '')), '\s+', ' ', 'g')), ' ', '') = 'LASALLE' THEN 'LA SALLE'
+        WHEN replace(trim(regexp_replace(upper(replace(s.county, ' COUNTY', '')), '\s+', ' ', 'g')), ' ', '') = 'RAINES' THEN 'RAINS'
+        ELSE trim(regexp_replace(upper(replace(s.county, ' COUNTY', '')), '\s+', ' ', 'g'))
+    END
 LEFT JOIN agencies a 
     ON a.agency_name_normalized = trim(regexp_replace(upper(replace(s.agency_name, '&', 'AND')), '\s+', ' ', 'g'))
 WHERE s.amount IS NOT NULL

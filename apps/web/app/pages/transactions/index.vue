@@ -1,170 +1,234 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useSeoMeta, useAsyncData, useRoute, useRouter } from '#imports'
-
-useSeoMeta({
-  title: 'Texas State Transactions - Spending Explorer',
-  description:
-    'Explore individual payment transactions made by Texas state agencies. Transactions may be masked or aggregated for confidentiality.',
-  robots: 'noindex', // Specific requirement per SPEC.md
-})
+import {
+  cleanQueryObject,
+  DEFAULT_PAGE_SIZE,
+  FISCAL_YEAR_OPTIONS,
+  formatUsd,
+  getBooleanQueryValue,
+  getNumberQueryValue,
+  getStringQueryValue,
+  pageToOffset,
+} from '~/utils/explorer'
 
 const route = useRoute()
 const router = useRouter()
 
-const page = ref(Number(route.query.page) || 1)
-const sort = ref<{ column: string; direction: 'asc' | 'desc' }>({
-  column: String(route.query.sort || 'payment_date'),
-  direction: (route.query.dir as 'asc' | 'desc') || 'desc',
+const currentPage = computed(() => getNumberQueryValue(route.query.page) || 1)
+const fiscalYear = computed(() => getNumberQueryValue(route.query.fy))
+const searchQuery = computed(() => getStringQueryValue(route.query.q))
+const categoryCode = computed(
+  () =>
+    getStringQueryValue(route.query.category_code) || getStringQueryValue(route.query.category),
+)
+const objectCode = computed(() => getStringQueryValue(route.query.object))
+const minAmount = computed(() => getNumberQueryValue(route.query.minAmount))
+const maxAmount = computed(() => getNumberQueryValue(route.query.maxAmount))
+const includeConfidential = computed(() => getBooleanQueryValue(route.query.includeConfidential))
+const sort = computed(() => getStringQueryValue(route.query.sort) || 'payment_date')
+const order = computed(() => (getStringQueryValue(route.query.order) === 'asc' ? 'asc' : 'desc'))
+
+const requestQuery = computed(() =>
+  cleanQueryObject({
+    fiscal_year: fiscalYear.value,
+    q: searchQuery.value,
+    category_code: categoryCode.value,
+    object_code: objectCode.value,
+    min_amount: minAmount.value,
+    max_amount: maxAmount.value,
+    include_confidential: includeConfidential.value ? 'true' : undefined,
+    limit: DEFAULT_PAGE_SIZE,
+    offset: pageToOffset(currentPage.value, DEFAULT_PAGE_SIZE),
+    sort: sort.value,
+    order: order.value,
+  }),
+)
+
+const { data, status } = await useFetch('/api/v1/transactions', {
+  query: requestQuery,
 })
 
-const filters = ref({
-  fiscal_year: route.query.fy ? Number(route.query.fy) : 2025,
-  search: route.query.q ? String(route.query.q) : null,
-  agency: route.query.agency ? String(route.query.agency) : null,
-  category: route.query.category ? String(route.query.category) : null,
-  amount_min: route.query.min ? Number(route.query.min) : null,
-  amount_max: route.query.max ? Number(route.query.max) : null,
+const transactions = computed(() => data.value?.data || [])
+const meta = computed(() => data.value?.meta)
+const paymentsBackfillActive = computed(() => Boolean(meta.value?.payments_backfill_active))
+const tableDescription = computed(() =>
+  paymentsBackfillActive.value
+    ? 'Recent payment rows will appear here after the transaction-level payment feed finishes loading.'
+    : 'Transaction rows include date, agency, payee, object code, and amount. County is deliberately unsupported at this grain.',
+)
+const emptyTitle = computed(() =>
+  paymentsBackfillActive.value
+    ? 'Payment backfill in progress'
+    : 'No transactions match these filters',
+)
+const emptyDescription = computed(() =>
+  paymentsBackfillActive.value
+    ? 'Transaction rows will populate once the transaction-level payment feed finishes loading.'
+    : 'Try broadening the filters or removing the amount range.',
+)
+
+useSeo({
+  title: 'Texas State Transactions',
+  description:
+    'Browse public Texas state payment rows by date, agency, payee, object code, and amount.',
+  robots: 'noindex,follow',
+  ogImage: {
+    title: 'Texas State Transactions',
+    description:
+      'Browse public Texas state payment rows by date, agency, payee, object code, and amount.',
+    icon: 'i-lucide-receipt-text',
+  },
 })
 
-// eslint-disable-next-line narduk/prefer-shallow-watch -- Exception: Deep watch required to observe nested filter object properties
-watch(
-  [page, sort, filters],
-  () => {
+useWebPageSchema({
+  name: 'Texas State Transactions',
+  description:
+    'Browse public Texas state payment rows by date, agency, payee, object code, and amount.',
+  type: 'CollectionPage',
+})
+
+const filters = computed({
+  get: () => ({
+    fiscal_year: fiscalYear.value ? String(fiscalYear.value) : null,
+    q: searchQuery.value || null,
+    category_code: categoryCode.value || null,
+    object_code: objectCode.value || null,
+    min_amount: minAmount.value ? String(minAmount.value) : null,
+    max_amount: maxAmount.value ? String(maxAmount.value) : null,
+    include_confidential: includeConfidential.value,
+  }),
+  set: (value: {
+    fiscal_year: string | null
+    q: string | null
+    category_code: string | null
+    object_code: string | null
+    min_amount: string | null
+    max_amount: string | null
+    include_confidential: boolean | null
+  }) => {
     router.replace({
-      query: {
+      query: cleanQueryObject({
         ...route.query,
-        page: page.value > 1 ? page.value : undefined,
-        sort: sort.value.column !== 'payment_date' ? sort.value.column : undefined,
-        dir: sort.value.direction !== 'desc' ? sort.value.direction : undefined,
-        fy: filters.value.fiscal_year !== 2025 ? filters.value.fiscal_year : undefined,
-        q: filters.value.search || undefined,
-        agency: filters.value.agency || undefined,
-        category: filters.value.category || undefined,
-        min: filters.value.amount_min || undefined,
-        max: filters.value.amount_max || undefined,
-      },
+        page: undefined,
+        fy:
+          value.fiscal_year && value.fiscal_year !== 'all' ? String(value.fiscal_year) : undefined,
+        q: value.q || undefined,
+        category_code: value.category_code || undefined,
+        object: value.object_code || undefined,
+        minAmount: value.min_amount || undefined,
+        maxAmount: value.max_amount || undefined,
+        includeConfidential: value.include_confidential ? 'true' : undefined,
+      }),
     })
   },
-  { deep: true },
-)
+})
 
-const { data, pending } = await useAsyncData(
-  `transactions-${page.value}-${sort.value.column}-${sort.value.direction}-${JSON.stringify(filters.value)}`,
-  () => {
-    return Promise.resolve({
-      data: [
-        {
-          transaction_id: 'tx-101',
-          payment_date: '2025-01-15',
-          agency_name: 'Health and Human Services Commission',
-          payee_name: 'Mock Vendor A',
-          amount: 500000.0,
-          formatted_object_title: 'Medical Services',
-        },
-        {
-          transaction_id: 'tx-102',
-          payment_date: '2025-01-14',
-          agency_name: 'Texas Education Agency',
-          payee_name: 'Mock School District',
-          amount: 150000.0,
-          formatted_object_title: 'Grants',
-        },
-        {
-          transaction_id: 'tx-103',
-          payment_date: '2025-01-12',
-          agency_name: 'Department of Transportation',
-          payee_name: 'Mock Construction Co',
-          amount: 2500000.0,
-          formatted_object_title: 'Construction',
-        },
-        {
-          transaction_id: 'tx-104',
-          payment_date: '2025-01-10',
-          agency_name: 'Department of Public Safety',
-          payee_name: 'Mock IT Provider',
-          amount: 75000.5,
-          formatted_object_title: 'Software Services',
-        },
-        {
-          transaction_id: 'tx-105',
-          payment_date: '2025-01-09',
-          agency_name: 'Health and Human Services Commission',
-          payee_name: 'Mock Vendor B',
-          amount: 35000.0,
-          formatted_object_title: 'Salaries and Wages',
-        },
-      ],
-      meta: {
-        limit: 50,
-        offset: (page.value - 1) * 50,
-        total: 5120530,
-      },
-    })
-  },
-  { watch: [page, sort, filters] },
-)
+function updatePage(page: number) {
+  router.replace({
+    query: cleanQueryObject({
+      ...route.query,
+      page: page > 1 ? String(page) : undefined,
+    }),
+  })
+}
+
+function updateSort(value: { column: string; direction: 'asc' | 'desc' }) {
+  router.replace({
+    query: cleanQueryObject({
+      ...route.query,
+      sort: value.column === 'payment_date' ? undefined : value.column,
+      order: value.direction === 'desc' ? undefined : value.direction,
+    }),
+  })
+}
 </script>
 
 <template>
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 h-full flex flex-col gap-6">
+  <UContainer class="space-y-8 py-8">
     <PageHeader
+      eyebrow="Transactions"
       title="Transaction Explorer"
-      subtitle="Examine individual state payments."
+      subtitle="Browse raw state payment rows. County geography is intentionally unavailable on this page."
       :breadcrumbs="[{ label: 'Home', to: '/' }, { label: 'Transactions' }]"
+      badge="Noindex collection"
     />
 
     <DisclaimerStrip variant="transactions" />
 
+    <UAlert
+      v-if="paymentsBackfillActive"
+      title="Transaction rows are temporarily syncing."
+      description="The transaction-level payment feed is still loading, so raw payment rows are temporarily unavailable on this page."
+      icon="i-lucide-database-zap"
+      color="warning"
+      variant="soft"
+      class="rounded-[1.25rem]"
+    />
+
     <FilterBar
       v-model="filters"
       :available-filters="[
+        { key: 'fiscal_year', label: 'Fiscal year', type: 'select', options: FISCAL_YEAR_OPTIONS },
+        { key: 'q', label: 'Search', type: 'input', placeholder: 'Agency or payee' },
         {
-          key: 'fiscal_year',
-          label: 'Fiscal Year',
-          type: 'select',
-          options: [
-            { label: 'FY 2025', value: 2025 },
-            { label: 'FY 2024', value: 2024 },
-            { label: 'FY 2023', value: 2023 },
-          ],
+          key: 'category_code',
+          label: 'Category code',
+          type: 'input',
+          placeholder: 'public-assistance-payments',
         },
-        { key: 'search', label: 'Search Payee or Transaction', type: 'input' },
-        { key: 'agency', label: 'Agency Filter', type: 'input' },
-        { key: 'category', label: 'Category Filter', type: 'input' },
+        { key: 'object_code', label: 'Object code', type: 'input', placeholder: '7211' },
+        { key: 'min_amount', label: 'Min amount', type: 'input', placeholder: '10000' },
+        { key: 'max_amount', label: 'Max amount', type: 'input', placeholder: '1000000' },
+        { key: 'include_confidential', label: 'Include confidential rows', type: 'boolean' },
       ]"
     />
 
-    <UCard>
-      <div v-if="pending" class="flex justify-center p-12">
-        <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-primary-500" />
-      </div>
-
-      <DataTableCard
-        v-else
-        :columns="[
-          { key: 'payment_date', label: 'Date', sortable: true },
-          { key: 'agency_name', label: 'Agency', sortable: true },
-          { key: 'payee_name', label: 'Payee', sortable: true },
-          { key: 'formatted_object_title', label: 'Category', sortable: true },
-          { key: 'amount', label: 'Amount', sortable: true },
-        ]"
-        :rows="data?.data || []"
-        :meta="data?.meta"
-        @page="page = $event"
-        @sort="sort = $event"
-      >
-        <template #amount-data="{ row }">
-          {{
-            new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(
-              row.amount,
-            )
-          }}
-        </template>
-        <template #payment_date-data="{ row }">
-          <UBadge color="neutral" variant="subtle">{{ row.payment_date }}</UBadge>
-        </template>
-      </DataTableCard>
-    </UCard>
-  </div>
+    <DataTableCard
+      title="Public payment rows"
+      :description="tableDescription"
+      :columns="[
+        { key: 'payment_date', label: 'Date', sortable: true },
+        { key: 'agency_name', label: 'Agency', sortable: true },
+        { key: 'payee_name', label: 'Payee', sortable: true },
+        { key: 'object_code', label: 'Object' },
+        { key: 'amount', label: 'Amount', sortable: true },
+      ]"
+      :rows="transactions"
+      :meta="meta"
+      :loading="status === 'pending'"
+      :empty-title="emptyTitle"
+      :empty-description="emptyDescription"
+      @page="updatePage"
+      @sort="updateSort"
+    >
+      <template #payment_date-data="{ row }">
+        <UBadge color="neutral" variant="soft">{{ row.payment_date }}</UBadge>
+      </template>
+      <template #agency_name-data="{ row }">
+        <UButton
+          :to="row.agency_id ? `/agencies/${row.agency_id}` : undefined"
+          color="neutral"
+          variant="link"
+          class="px-0 font-semibold text-primary"
+        >
+          {{ row.agency_name || 'Unknown agency' }}
+        </UButton>
+      </template>
+      <template #payee_name-data="{ row }">
+        <span class="text-sm text-default">{{ row.payee_name || 'Unknown payee' }}</span>
+      </template>
+      <template #object_code-data="{ row }">
+        <UButton
+          :to="row.object_code ? `/objects/${row.object_code}` : undefined"
+          color="neutral"
+          variant="link"
+          class="px-0 font-semibold text-primary"
+        >
+          {{ row.object_code || 'Unmapped' }}
+        </UButton>
+      </template>
+      <template #amount-data="{ row }">
+        <span class="font-semibold text-default">{{ formatUsd(row.amount, 2) }}</span>
+      </template>
+    </DataTableCard>
+  </UContainer>
 </template>

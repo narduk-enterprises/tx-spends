@@ -1,7 +1,8 @@
 import { getRouterParam, getValidatedQuery } from 'h3'
 import { eq, desc, sql, and } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
-import { countyExpenditureFacts, agencies } from '#server/database/schema'
+import { paymentCategoryCodeSql } from '#server/utils/explorer'
+import { agencies, statePaymentFacts } from '#server/database/schema'
 import { globalQuerySchema } from '#server/utils/query'
 
 export default defineEventHandler(async (event) => {
@@ -11,21 +12,23 @@ export default defineEventHandler(async (event) => {
 
   if (!code) throw createError({ statusCode: 400, message: 'Missing category_code' })
 
-  const conditions = [eq(countyExpenditureFacts.expenditureCategoryCode, code)]
-  if (query.fiscal_year) conditions.push(eq(countyExpenditureFacts.fiscalYear, query.fiscal_year))
+  const categoryCode = paymentCategoryCodeSql(statePaymentFacts.objectCategoryRaw)
+  const conditions = [sql`${categoryCode} = ${code}`]
+  if (query.fiscal_year) conditions.push(eq(statePaymentFacts.fiscalYear, query.fiscal_year))
+  if (!query.include_confidential) conditions.push(eq(statePaymentFacts.isConfidential, false))
   const whereClause = and(...conditions)
 
   const topAgencies = await db
     .select({
-      agency_id: countyExpenditureFacts.agencyId,
+      agency_id: statePaymentFacts.agencyId,
       agency_name: agencies.agencyName,
-      amount: sql<string>`SUM(${countyExpenditureFacts.amount})`,
+      amount: sql<string>`SUM(${statePaymentFacts.amount})`,
     })
-    .from(countyExpenditureFacts)
-    .leftJoin(agencies, eq(countyExpenditureFacts.agencyId, agencies.id))
+    .from(statePaymentFacts)
+    .leftJoin(agencies, eq(statePaymentFacts.agencyId, agencies.id))
     .where(whereClause)
-    .groupBy(countyExpenditureFacts.agencyId, agencies.agencyName)
-    .orderBy(desc(sql`SUM(${countyExpenditureFacts.amount})`))
+    .groupBy(statePaymentFacts.agencyId, agencies.agencyName)
+    .orderBy(desc(sql`SUM(${statePaymentFacts.amount})`))
     .limit(query.limit)
     .offset(query.offset)
 

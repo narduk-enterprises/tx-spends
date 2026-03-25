@@ -1,148 +1,185 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useSeoMeta, useAsyncData, useRoute, useRouter } from '#imports'
-
-useSeoMeta({
-  title: 'Texas State Spending Categories',
-  description:
-    'Browse Texas state expenditures by comptroller object codes and spending categories.',
-})
+import {
+  cleanQueryObject,
+  DEFAULT_PAGE_SIZE,
+  FISCAL_YEAR_OPTIONS,
+  formatUsd,
+  formatUsdCompact,
+  getNumberQueryValue,
+  getStringQueryValue,
+  pageToOffset,
+} from '~/utils/explorer'
 
 const route = useRoute()
 const router = useRouter()
 
-const page = ref(Number(route.query.page) || 1)
-const sort = ref<{ column: string; direction: 'asc' | 'desc' }>({
-  column: String(route.query.sort || 'amount'),
-  direction: (route.query.dir as 'asc' | 'desc') || 'desc',
+const currentPage = computed(() => getNumberQueryValue(route.query.page) || 1)
+const fiscalYear = computed(() => getNumberQueryValue(route.query.fy))
+const searchQuery = computed(() => getStringQueryValue(route.query.q))
+const sort = computed(() => getStringQueryValue(route.query.sort) || 'amount')
+const order = computed(() => (getStringQueryValue(route.query.order) === 'asc' ? 'asc' : 'desc'))
+
+const requestQuery = computed(() =>
+  cleanQueryObject({
+    fiscal_year: fiscalYear.value,
+    q: searchQuery.value,
+    limit: DEFAULT_PAGE_SIZE,
+    offset: pageToOffset(currentPage.value, DEFAULT_PAGE_SIZE),
+    sort: sort.value,
+    order: order.value,
+  }),
+)
+
+const { data, status } = await useFetch('/api/v1/categories', {
+  query: requestQuery,
 })
 
-const filters = ref({
-  fiscal_year: route.query.fy ? Number(route.query.fy) : 2025,
-  search: route.query.q ? String(route.query.q) : null,
+const categories = computed(() => data.value?.data || [])
+const meta = computed(() => data.value?.meta)
+const paymentsBackfillActive = computed(() => Boolean(meta.value?.payments_backfill_active))
+const tableDescription = computed(() =>
+  paymentsBackfillActive.value
+    ? 'Category totals will appear here after the transaction-level payment feed finishes loading.'
+    : 'These broad categories summarize what the public payment feed says Texas agencies are spending money on.',
+)
+const emptyTitle = computed(() =>
+  paymentsBackfillActive.value
+    ? 'Payment backfill in progress'
+    : 'No categories match these filters',
+)
+const emptyDescription = computed(() =>
+  paymentsBackfillActive.value
+    ? 'Category rankings will populate once the transaction-level payment feed finishes loading.'
+    : 'Try a broader search term or clear the fiscal year filter.',
+)
+
+const title = fiscalYear.value
+  ? `Texas Spending Categories for FY ${fiscalYear.value}`
+  : 'Texas Spending Categories'
+const description =
+  'Browse broad Texas state spending categories derived from the public payment feed.'
+
+useSeo({
+  title,
+  description,
+  ogImage: {
+    title,
+    description,
+    icon: 'i-lucide-chart-pie',
+  },
 })
 
-// eslint-disable-next-line narduk/prefer-shallow-watch -- Exception: Deep watch required to observe nested filter object properties
-watch(
-  [page, sort, filters],
-  () => {
+useWebPageSchema({
+  name: title,
+  description,
+  type: 'CollectionPage',
+})
+
+const filters = computed({
+  get: () => ({
+    fiscal_year: fiscalYear.value ? String(fiscalYear.value) : null,
+    q: searchQuery.value || null,
+  }),
+  set: (value: { fiscal_year: string | null; q: string | null }) => {
     router.replace({
-      query: {
+      query: cleanQueryObject({
         ...route.query,
-        page: page.value > 1 ? page.value : undefined,
-        sort: sort.value.column !== 'amount' ? sort.value.column : undefined,
-        dir: sort.value.direction !== 'desc' ? sort.value.direction : undefined,
-        fy: filters.value.fiscal_year !== 2025 ? filters.value.fiscal_year : undefined,
-        q: filters.value.search || undefined,
-      },
+        page: undefined,
+        fy:
+          value.fiscal_year && value.fiscal_year !== 'all' ? String(value.fiscal_year) : undefined,
+        q: value.q || undefined,
+      }),
     })
   },
-  { deep: true },
-)
-
-const { data, pending } = await useAsyncData(
-  `categories-${page.value}-${sort.value.column}-${sort.value.direction}-${filters.value.fiscal_year}-${filters.value.search}`,
-  () => {
-    return Promise.resolve({
-      data: [
-        { category_code: '7901', category_title: 'Medical Services', amount: 800000000.0 },
-        { category_code: '7001', category_title: 'Salaries and Wages', amount: 400000000.0 },
-        { category_code: '7256', category_title: 'Construction', amount: 350000000.0 },
-      ],
-      meta: {
-        limit: 50,
-        offset: (page.value - 1) * 50,
-        total: 120,
-      },
-    })
-  },
-  { watch: [page, sort, filters] },
-)
-
-const displayRows = computed(() => {
-  if (!data.value) return []
-  return data.value.data
-    .filter((row) => {
-      if (filters.value.search) {
-        return (
-          row.category_title.toLowerCase().includes(filters.value.search.toLowerCase()) ||
-          row.category_code.includes(filters.value.search)
-        )
-      }
-      return true
-    })
-    .sort((a, b) => {
-      const valA = (a as any)[sort.value.column]
-      const valB = (b as any)[sort.value.column]
-      if (sort.value.direction === 'asc') return valA > valB ? 1 : -1
-      return valA < valB ? 1 : -1
-    })
 })
+
+function updatePage(page: number) {
+  router.replace({
+    query: cleanQueryObject({
+      ...route.query,
+      page: page > 1 ? String(page) : undefined,
+    }),
+  })
+}
+
+function updateSort(value: { column: string; direction: 'asc' | 'desc' }) {
+  router.replace({
+    query: cleanQueryObject({
+      ...route.query,
+      sort: value.column === 'amount' ? undefined : value.column,
+      order: value.direction === 'desc' ? undefined : value.direction,
+    }),
+  })
+}
 </script>
 
 <template>
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 h-full flex flex-col gap-6">
+  <UContainer class="space-y-8 py-8">
     <PageHeader
-      title="Spending Categories"
-      subtitle="Browse expenditures grouped by Comptroller object codes."
+      eyebrow="Categories"
+      title="Category Explorer"
+      subtitle="Browse broad payment categories and drill into agencies, payees, and underlying objects."
       :breadcrumbs="[{ label: 'Home', to: '/' }, { label: 'Categories' }]"
+    />
+
+    <UAlert
+      v-if="paymentsBackfillActive"
+      title="Category rankings are temporarily syncing."
+      description="The transaction-level payment feed is still loading, so broad spending categories are temporarily unavailable."
+      icon="i-lucide-database-zap"
+      color="warning"
+      variant="soft"
+      class="rounded-[1.25rem]"
     />
 
     <FilterBar
       v-model="filters"
       :available-filters="[
+        { key: 'fiscal_year', label: 'Fiscal year', type: 'select', options: FISCAL_YEAR_OPTIONS },
         {
-          key: 'fiscal_year',
-          label: 'Fiscal Year',
-          type: 'select',
-          options: [
-            { label: 'FY 2025', value: 2025 },
-            { label: 'FY 2024', value: 2024 },
-            { label: 'FY 2023', value: 2023 },
-          ],
+          key: 'q',
+          label: 'Search categories',
+          type: 'input',
+          placeholder: 'Salaries, grants, supplies…',
         },
-        { key: 'search', label: 'Search by Code or Name', type: 'input' },
       ]"
     />
 
-    <UCard>
-      <div v-if="pending" class="flex justify-center p-12">
-        <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-primary-500" />
-      </div>
-
-      <DataTableCard
-        v-else
-        :columns="[
-          { key: 'category_code', label: 'Object Code', sortable: true },
-          { key: 'category_title', label: 'Category Name', sortable: true },
-          { key: 'amount', label: 'Total Spend', sortable: true },
-        ]"
-        :rows="displayRows"
-        :meta="data?.meta"
-        @page="page = $event"
-        @sort="sort = $event"
-      >
-        <template #category_title-data="{ row }">
-          <ULink
-            :to="`/categories/${row.category_code}`"
-            class="text-primary-600 dark:text-primary-400 font-medium hover:underline"
-          >
-            {{ row.category_title }}
-          </ULink>
-        </template>
-        <template #category_code-data="{ row }">
-          <UBadge color="neutral" variant="subtle">{{ row.category_code }}</UBadge>
-        </template>
-        <template #amount-data="{ row }">
-          {{
-            new Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: 'USD',
-              maximumFractionDigits: 0,
-            }).format(row.amount)
-          }}
-        </template>
-      </DataTableCard>
-    </UCard>
-  </div>
+    <DataTableCard
+      title="Payment categories"
+      :description="tableDescription"
+      :columns="[
+        { key: 'category_code', label: 'Code', sortable: true },
+        { key: 'category_title', label: 'Category', sortable: true },
+        { key: 'amount', label: 'Amount', sortable: true },
+      ]"
+      :rows="categories"
+      :meta="meta"
+      :loading="status === 'pending'"
+      :empty-title="emptyTitle"
+      :empty-description="emptyDescription"
+      @page="updatePage"
+      @sort="updateSort"
+    >
+      <template #category_code-data="{ row }">
+        <UBadge color="neutral" variant="soft">{{ row.category_code }}</UBadge>
+      </template>
+      <template #category_title-data="{ row }">
+        <UButton
+          :to="`/categories/${row.category_code}`"
+          color="neutral"
+          variant="link"
+          class="px-0 font-semibold text-primary"
+        >
+          {{ row.category_title }}
+        </UButton>
+      </template>
+      <template #amount-data="{ row }">
+        <div class="space-y-1 text-right">
+          <p class="font-semibold text-default">{{ formatUsd(row.amount) }}</p>
+          <p class="text-xs text-muted">{{ formatUsdCompact(row.amount) }}</p>
+        </div>
+      </template>
+    </DataTableCard>
+  </UContainer>
 </template>

@@ -2,6 +2,7 @@ import { getRouterParam, getValidatedQuery } from 'h3'
 import { eq, desc, sql, and } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
 import { countyExpenditureFacts, geographiesCounties } from '#server/database/schema'
+import { formatCountyDisplayName } from '#server/utils/explorer'
 import { globalQuerySchema } from '#server/utils/query'
 
 export default defineEventHandler(async (event) => {
@@ -33,6 +34,7 @@ export default defineEventHandler(async (event) => {
     filters_applied: query,
     data: countyBreakdown.map((t: any) => ({
       ...t,
+      county_name: formatCountyDisplayName(t.county_name, 'Unknown'),
       amount: Number(t.amount || 0),
     })),
     meta: { currency: 'USD' },

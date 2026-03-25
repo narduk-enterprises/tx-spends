@@ -1,17 +1,55 @@
 <template>
-  <footer
-    class="border-t border-[var(--ui-border)] mt-12 py-8 text-sm text-[var(--ui-text-muted)] text-center"
-  >
-    <UContainer>
-      <p>
-        Data presented is for informational purposes only. Non-authoritative entity enrichments are
-        provided via fuzzy matching.
-      </p>
-      <div class="flex justify-center gap-4 mt-4">
-        <NuxtLink to="/about" class="hover:text-[var(--ui-text)]">About</NuxtLink>
-        <NuxtLink to="/methodology" class="hover:text-[var(--ui-text)]">Methodology</NuxtLink>
-        <NuxtLink to="/data-sources" class="hover:text-[var(--ui-text)]">Data Sources</NuxtLink>
-        <NuxtLink to="/disclaimers" class="hover:text-[var(--ui-text)]">Disclaimers</NuxtLink>
+  <footer class="border-t border-default bg-default/80">
+    <UContainer class="space-y-6 py-10">
+      <div class="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.9fr)]">
+        <div class="space-y-3">
+          <p class="text-lg font-semibold text-default">Texas State Spending Explorer</p>
+          <p class="max-w-2xl text-sm leading-6 text-muted">
+            Public-interest analysis of Texas state treasury spending, agency payments, expenditure
+            categories, and annual county-level distribution.
+          </p>
+        </div>
+
+        <div class="grid gap-2 sm:grid-cols-2">
+          <UButton to="/about" color="neutral" variant="ghost" class="justify-start rounded-2xl">
+            About
+          </UButton>
+          <UButton
+            to="/methodology"
+            color="neutral"
+            variant="ghost"
+            class="justify-start rounded-2xl"
+          >
+            Methodology
+          </UButton>
+          <UButton
+            to="/data-sources"
+            color="neutral"
+            variant="ghost"
+            class="justify-start rounded-2xl"
+          >
+            Data Sources
+          </UButton>
+          <UButton
+            to="/disclaimers"
+            color="neutral"
+            variant="ghost"
+            class="justify-start rounded-2xl"
+          >
+            Disclaimers
+          </UButton>
+        </div>
+      </div>
+
+      <USeparator />
+
+      <div
+        class="flex flex-col gap-2 text-sm text-muted sm:flex-row sm:items-center sm:justify-between"
+      >
+        <p>
+          Vendor enrichment is based on public procurement files and name matching where available.
+        </p>
+        <p>tx-spends.org</p>
       </div>
     </UContainer>
   </footer>

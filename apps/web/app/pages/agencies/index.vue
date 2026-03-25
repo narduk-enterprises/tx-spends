@@ -1,149 +1,221 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useSeoMeta, useAsyncData, useRoute, useRouter } from '#imports'
-
-useSeoMeta({
-  title: 'Texas State Agencies - Spending Explorer',
-  description: 'Browse all Texas state agencies and view their total expenditures.',
-})
+import {
+  cleanQueryObject,
+  DEFAULT_PAGE_SIZE,
+  FISCAL_YEAR_OPTIONS,
+  formatCount,
+  formatUsd,
+  formatUsdCompact,
+  getNumberQueryValue,
+  getStringQueryValue,
+  pageToOffset,
+} from '~/utils/explorer'
 
 const route = useRoute()
 const router = useRouter()
 
-const page = ref(Number(route.query.page) || 1)
-const sort = ref<{ column: string; direction: 'asc' | 'desc' }>({
-  column: String(route.query.sort || 'amount'),
-  direction: (route.query.dir as 'asc' | 'desc') || 'desc',
+const currentPage = computed(() => getNumberQueryValue(route.query.page) || 1)
+const fiscalYear = computed(() => getNumberQueryValue(route.query.fy))
+const searchQuery = computed(() => getStringQueryValue(route.query.q))
+const sort = computed(() => getStringQueryValue(route.query.sort) || 'total_spend')
+const order = computed(() => (getStringQueryValue(route.query.order) === 'asc' ? 'asc' : 'desc'))
+
+const requestQuery = computed(() =>
+  cleanQueryObject({
+    fiscal_year: fiscalYear.value,
+    q: searchQuery.value,
+    limit: DEFAULT_PAGE_SIZE,
+    offset: pageToOffset(currentPage.value, DEFAULT_PAGE_SIZE),
+    sort: sort.value === 'total_spend' ? 'amount' : sort.value,
+    order: order.value,
+  }),
+)
+
+const { data, status } = await useFetch('/api/v1/agencies', {
+  query: requestQuery,
 })
 
-const filters = ref({
-  fiscal_year: route.query.fy ? Number(route.query.fy) : 2025,
-  search: route.query.q ? String(route.query.q) : null,
+const agencies = computed(() => data.value?.data || [])
+const meta = computed(() => data.value?.meta)
+const paymentsBackfillActive = computed(() => Boolean(meta.value?.payments_backfill_active))
+const rowsReturnedValue = computed(() =>
+  paymentsBackfillActive.value ? 'Syncing' : formatCount(meta.value?.returned),
+)
+const totalAgenciesValue = computed(() =>
+  paymentsBackfillActive.value ? 'Syncing' : formatCount(meta.value?.total),
+)
+const tableDescription = computed(() =>
+  paymentsBackfillActive.value
+    ? 'Agency rankings will appear here after the transaction-level payment feed finishes loading.'
+    : 'Use the agency detail pages to inspect payees, objects, county distribution, and trends.',
+)
+const emptyTitle = computed(() =>
+  paymentsBackfillActive.value ? 'Payment backfill in progress' : 'No agencies match these filters',
+)
+const emptyDescription = computed(() =>
+  paymentsBackfillActive.value
+    ? 'Agency rankings will populate once the transaction-level payment feed finishes loading.'
+    : 'Try a broader search or remove the fiscal year filter.',
+)
+
+const title = fiscalYear.value
+  ? `Texas Agencies by Spending for FY ${fiscalYear.value}`
+  : 'Texas Agencies by Spending'
+const description = fiscalYear.value
+  ? `Browse Texas state agencies ranked by spending in fiscal year ${fiscalYear.value}.`
+  : 'Browse Texas state agencies ranked by public spending totals.'
+
+useSeo({
+  title,
+  description,
+  ogImage: {
+    title,
+    description,
+    icon: 'i-lucide-building-2',
+  },
 })
 
-// Sync URL
-// eslint-disable-next-line narduk/prefer-shallow-watch -- Exception: Deep watch required to observe nested filter object properties
-watch(
-  [page, sort, filters],
-  () => {
+useWebPageSchema({
+  name: title,
+  description,
+  type: 'CollectionPage',
+})
+
+const filters = computed({
+  get: () => ({
+    fiscal_year: fiscalYear.value ? String(fiscalYear.value) : null,
+    q: searchQuery.value || null,
+  }),
+  set: (value: { fiscal_year: string | null; q: string | null }) => {
     router.replace({
-      query: {
+      query: cleanQueryObject({
         ...route.query,
-        page: page.value > 1 ? page.value : undefined,
-        sort: sort.value.column !== 'amount' ? sort.value.column : undefined,
-        dir: sort.value.direction !== 'desc' ? sort.value.direction : undefined,
-        fy: filters.value.fiscal_year !== 2025 ? filters.value.fiscal_year : undefined,
-        q: filters.value.search || undefined,
-      },
+        page: undefined,
+        fy:
+          value.fiscal_year && value.fiscal_year !== 'all' ? String(value.fiscal_year) : undefined,
+        q: value.q || undefined,
+      }),
     })
   },
-  { deep: true },
-)
-
-const { data, pending } = await useAsyncData(
-  `agencies-${page.value}-${sort.value.column}-${sort.value.direction}-${filters.value.fiscal_year}-${filters.value.search}`,
-  () => {
-    // Mock API for prototype
-    return Promise.resolve({
-      data: [
-        {
-          agency_id: '1',
-          agency_name: 'Health and Human Services Commission',
-          amount: 123456789.12,
-        },
-        { agency_id: '2', agency_name: 'Texas Education Agency', amount: 98000000.0 },
-        { agency_id: '3', agency_name: 'Department of Transportation', amount: 75000000.0 },
-        { agency_id: '4', agency_name: 'Department of Criminal Justice', amount: 45000000.0 },
-        { agency_id: '5', agency_name: 'University of Texas at Austin', amount: 35000000.0 },
-      ],
-      meta: {
-        limit: 50,
-        offset: (page.value - 1) * 50,
-        total: 142,
-      },
-    })
-  },
-  { watch: [page, sort, filters] },
-)
-
-const displayRows = computed(() => {
-  if (!data.value) return []
-  return data.value.data
-    .filter((row) => {
-      if (filters.value.search) {
-        return row.agency_name.toLowerCase().includes(filters.value.search.toLowerCase())
-      }
-      return true
-    })
-    .sort((a, b) => {
-      const valA = (a as any)[sort.value.column]
-      const valB = (b as any)[sort.value.column]
-      if (sort.value.direction === 'asc') return valA > valB ? 1 : -1
-      return valA < valB ? 1 : -1
-    })
 })
+
+function updatePage(page: number) {
+  router.replace({
+    query: cleanQueryObject({
+      ...route.query,
+      page: page > 1 ? String(page) : undefined,
+    }),
+  })
+}
+
+function updateSort(value: { column: string; direction: 'asc' | 'desc' }) {
+  router.replace({
+    query: cleanQueryObject({
+      ...route.query,
+      sort: value.column === 'total_spend' ? undefined : value.column,
+      order: value.direction === 'desc' ? undefined : value.direction,
+    }),
+  })
+}
 </script>
 
 <template>
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 h-full flex flex-col gap-6">
+  <UContainer class="space-y-8 py-8">
     <PageHeader
-      title="State Agencies"
-      subtitle="Browse expenditures by Texas state agencies and universities."
+      eyebrow="Agencies"
+      title="Agency Explorer"
+      subtitle="Browse Texas state agencies and universities ranked by public spending."
       :breadcrumbs="[{ label: 'Home', to: '/' }, { label: 'Agencies' }]"
+      badge="Collection page"
+    >
+      <template #actions>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <KpiCard
+            label="Rows returned"
+            :value="rowsReturnedValue"
+            :helper="
+              paymentsBackfillActive
+                ? 'Transaction-level agency rankings are still loading'
+                : 'Agencies in this slice'
+            "
+            icon="i-lucide-rows-3"
+          />
+          <KpiCard
+            label="Total agencies"
+            :value="totalAgenciesValue"
+            :helper="
+              paymentsBackfillActive
+                ? 'Agency totals will appear once payment rows are committed'
+                : 'Across the active filters'
+            "
+            icon="i-lucide-building"
+          />
+        </div>
+      </template>
+    </PageHeader>
+
+    <UAlert
+      v-if="paymentsBackfillActive"
+      title="Agency rankings are temporarily syncing."
+      description="The transaction-level payment feed is still loading, so agency totals and rankings are temporarily unavailable."
+      icon="i-lucide-database-zap"
+      color="warning"
+      variant="soft"
+      class="rounded-[1.25rem]"
     />
 
     <FilterBar
       v-model="filters"
       :available-filters="[
+        { key: 'fiscal_year', label: 'Fiscal year', type: 'select', options: FISCAL_YEAR_OPTIONS },
         {
-          key: 'fiscal_year',
-          label: 'Fiscal Year',
-          type: 'select',
-          options: [
-            { label: 'FY 2025', value: 2025 },
-            { label: 'FY 2024', value: 2024 },
-            { label: 'FY 2023', value: 2023 },
-          ],
+          key: 'q',
+          label: 'Search agencies',
+          type: 'input',
+          placeholder: 'Health, education, transportation…',
         },
-        { key: 'search', label: 'Search Agencies', type: 'input' },
       ]"
     />
 
-    <UCard>
-      <div v-if="pending" class="flex justify-center p-12">
-        <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-primary-500" />
-      </div>
+    <DataTableCard
+      title="Texas state agencies"
+      :description="tableDescription"
+      :columns="[
+        { key: 'agency_name', label: 'Agency', sortable: true },
+        { key: 'agency_code', label: 'Agency code', sortable: true },
+        { key: 'total_spend', label: 'Total spend', sortable: true },
+      ]"
+      :rows="agencies"
+      :meta="meta"
+      :loading="status === 'pending'"
+      :empty-title="emptyTitle"
+      :empty-description="emptyDescription"
+      @page="updatePage"
+      @sort="updateSort"
+    >
+      <template #agency_name-data="{ row }">
+        <UButton
+          :to="`/agencies/${row.agency_id}`"
+          color="neutral"
+          variant="link"
+          class="px-0 font-semibold text-primary"
+        >
+          {{ row.agency_name }}
+        </UButton>
+      </template>
 
-      <DataTableCard
-        v-else
-        :columns="[
-          { key: 'agency_id', label: 'ID', sortable: true },
-          { key: 'agency_name', label: 'Agency Name', sortable: true },
-          { key: 'amount', label: 'Total Spend', sortable: true },
-        ]"
-        :rows="displayRows"
-        :meta="data?.meta"
-        @page="page = $event"
-        @sort="sort = $event"
-      >
-        <template #agency_name-data="{ row }">
-          <ULink
-            :to="`/agencies/${row.agency_id}`"
-            class="text-primary-600 dark:text-primary-400 font-medium hover:underline"
-          >
-            {{ row.agency_name }}
-          </ULink>
-        </template>
-        <template #amount-data="{ row }">
-          {{
-            new Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: 'USD',
-              maximumFractionDigits: 0,
-            }).format(row.amount)
-          }}
-        </template>
-      </DataTableCard>
-    </UCard>
-  </div>
+      <template #agency_code-data="{ row }">
+        <UBadge color="neutral" variant="soft">
+          {{ row.agency_code || 'Unlisted' }}
+        </UBadge>
+      </template>
+
+      <template #total_spend-data="{ row }">
+        <div class="space-y-1 text-right">
+          <p class="font-semibold text-default">{{ formatUsd(row.total_spend) }}</p>
+          <p class="text-xs text-muted">{{ formatUsdCompact(row.total_spend) }}</p>
+        </div>
+      </template>
+    </DataTableCard>
+  </UContainer>
 </template>
