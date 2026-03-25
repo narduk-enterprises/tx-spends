@@ -178,7 +178,9 @@ function openCounty(metric: CountyMetric | null) {
             <title>
               {{
                 `${formatCountyLabel(feature.countyName, 'Unknown')}: ${
-                  feature.metric ? formatUsdCompact(feature.metric.amount) : 'No public county total'
+                  feature.metric
+                    ? formatUsdCompact(feature.metric.amount)
+                    : 'No public county total'
                 }`
               }}
             </title>
@@ -222,9 +224,7 @@ function openCounty(metric: CountyMetric | null) {
             :style="{ backgroundColor: color }"
           />
         </div>
-        <p class="mt-3 text-xs text-muted">
-          Counties without a matched annual total remain slate.
-        </p>
+        <p class="mt-3 text-xs text-muted">Counties without a matched annual total remain slate.</p>
       </div>
 
       <div class="rounded-[1.25rem] border border-default bg-default/88 p-4 shadow-card">

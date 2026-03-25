@@ -16,7 +16,12 @@ test.describe('detail pages', () => {
   test('agency detail page renders tabs and summary cards', async ({ page }, testInfo) => {
     const consoleTracker = createConsoleTracker(page)
     await gotoAndHydrate(page, '/agencies')
-    if (await page.getByText('Agency rankings are temporarily syncing.').isVisible().catch(() => false)) {
+    if (
+      await page
+        .getByText('Agency rankings are temporarily syncing.')
+        .isVisible()
+        .catch(() => false)
+    ) {
       await expect(page.getByText('Agency leaderboard pending')).toBeVisible()
       await expect(page.getByRole('table')).toHaveCount(0)
     } else {
@@ -63,7 +68,12 @@ test.describe('detail pages', () => {
   }, testInfo) => {
     const consoleTracker = createConsoleTracker(page)
     await gotoAndHydrate(page, '/categories')
-    if (await page.getByText('Category rankings are temporarily syncing.').isVisible().catch(() => false)) {
+    if (
+      await page
+        .getByText('Category rankings are temporarily syncing.')
+        .isVisible()
+        .catch(() => false)
+    ) {
       await expect(page.getByText('Payment backfill in progress')).toBeVisible()
     } else {
       await page.getByRole('table').getByRole('link').first().click()
@@ -83,7 +93,12 @@ test.describe('detail pages', () => {
   }, testInfo) => {
     const consoleTracker = createConsoleTracker(page)
     await gotoAndHydrate(page, '/payees')
-    if (await page.getByText('Payee rankings are temporarily syncing.').isVisible().catch(() => false)) {
+    if (
+      await page
+        .getByText('Payee rankings are temporarily syncing.')
+        .isVisible()
+        .catch(() => false)
+    ) {
       await expect(page.getByText('Payee leaderboard pending')).toBeVisible()
       await expect(page.getByRole('table')).toHaveCount(0)
     } else {

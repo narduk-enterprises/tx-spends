@@ -19,8 +19,9 @@ test.describe('content pages and navigation', () => {
     const consoleTracker = createConsoleTracker(page)
 
     await gotoAndHydrate(page, '/about')
-    await expect(page.getByRole('heading', { name: 'About Texas State Spending Explorer' }))
-      .toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'About Texas State Spending Explorer' }),
+    ).toBeVisible()
     await expect(page.getByText('What this app is', { exact: true })).toBeVisible()
     await capturePage(page, testInfo, 'about-page')
 
@@ -42,7 +43,9 @@ test.describe('content pages and navigation', () => {
     await consoleTracker.expectClean()
   })
 
-  test('desktop shell links navigate between public explorer sections', async ({ page }, testInfo) => {
+  test('desktop shell links navigate between public explorer sections', async ({
+    page,
+  }, testInfo) => {
     const consoleTracker = createConsoleTracker(page)
 
     await gotoAndHydrate(page, '/about')

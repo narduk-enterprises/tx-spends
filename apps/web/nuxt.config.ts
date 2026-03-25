@@ -1,5 +1,5 @@
 import { fileURLToPath } from 'node:url'
-import { resolve, dirname } from 'node:path'
+import { dirname } from 'node:path'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const localNuxtPort = Number(process.env.NUXT_PORT || 3000)
@@ -50,15 +50,6 @@ export default defineNuxtConfig({
   vite: {
     optimizeDeps: {
       include: ['posthog-js'],
-    },
-  },
-
-  nitro: {
-    cloudflareDev: {
-      configPath: resolve(__dirname, 'wrangler.json'),
-      ...(process.env.NUXT_WRANGLER_ENVIRONMENT
-        ? { environment: process.env.NUXT_WRANGLER_ENVIRONMENT }
-        : {}),
     },
   },
 

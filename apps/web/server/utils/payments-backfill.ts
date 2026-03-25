@@ -31,8 +31,8 @@ export async function getPaymentsBackfillStatus(db: AppDatabase): Promise<Paymen
     .limit(1)
 
   const estimatedRowCount = Number(estimate?.estimated_row_count || 0)
-  const likelyIncomplete = estimatedRowCount > 0
-    && estimatedRowCount < PAYMENTS_EXPORT_SUMMARY.source_row_count * 0.995
+  const likelyIncomplete =
+    estimatedRowCount > 0 && estimatedRowCount < PAYMENTS_EXPORT_SUMMARY.source_row_count * 0.995
 
   let activeRuntimeSeconds: number | null = null
   let active = likelyIncomplete

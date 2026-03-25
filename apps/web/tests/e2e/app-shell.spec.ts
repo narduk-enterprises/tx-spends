@@ -30,15 +30,17 @@ test.describe('app shell', () => {
     if (await backfillBadge.isVisible().catch(() => false)) {
       await expect(backfillBadge).toBeVisible()
       await expect(page.getByText('Syncing')).toBeVisible()
-      await expect(page.getByText('Transaction-level payment facts are not loaded yet')).toBeVisible()
+      await expect(
+        page.getByText('Transaction-level payment facts are not loaded yet'),
+      ).toBeVisible()
       await expect(page.getByText('Texas payment exports are ready')).toBeVisible()
       await expect(page.getByText('Transaction feed pending')).toBeVisible()
     } else {
       await expect(page.getByText('Live public finance explorer')).toBeVisible()
       await expect(page.getByText('Transaction feed pending')).toHaveCount(0)
-      await expect(page.getByText('Transaction-level payment facts are not loaded yet')).toHaveCount(
-        0,
-      )
+      await expect(
+        page.getByText('Transaction-level payment facts are not loaded yet'),
+      ).toHaveCount(0)
     }
 
     await capturePage(page, testInfo, 'homepage-overview')

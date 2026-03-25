@@ -71,7 +71,12 @@ test.describe('filters and transactions', () => {
   test('category detail can deep-link into filtered transactions', async ({ page }, testInfo) => {
     const consoleTracker = createConsoleTracker(page)
     await gotoAndHydrate(page, '/categories')
-    if (await page.getByText('Category rankings are temporarily syncing.').isVisible().catch(() => false)) {
+    if (
+      await page
+        .getByText('Category rankings are temporarily syncing.')
+        .isVisible()
+        .catch(() => false)
+    ) {
       await gotoAndHydrate(page, '/transactions?category_code=uncategorized')
       await expectQueryParam(page, 'category_code', 'uncategorized')
     } else {

@@ -35,7 +35,12 @@ export default defineEventHandler(async (event) => {
   const conditions = [eq(paymentCategoryRollups.scopeFiscalYear, scopeFiscalYear)]
 
   if (query.q) {
-    conditions.push(like(sql`upper(${paymentCategoryRollups.categoryTitle})`, `%${normalizeSearchTerm(query.q)}%`))
+    conditions.push(
+      like(
+        sql`upper(${paymentCategoryRollups.categoryTitle})`,
+        `%${normalizeSearchTerm(query.q)}%`,
+      ),
+    )
   }
 
   const whereClause = and(...conditions)

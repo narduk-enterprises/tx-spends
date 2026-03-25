@@ -59,9 +59,9 @@ const countyFiscalYearOptions = computed(() => {
   const availableFiscalYears = [...(meta.value?.available_fiscal_years || [])]
 
   if (
-    fiscalYear.value
-    && Number.isFinite(fiscalYear.value)
-    && !availableFiscalYears.includes(fiscalYear.value)
+    fiscalYear.value &&
+    Number.isFinite(fiscalYear.value) &&
+    !availableFiscalYears.includes(fiscalYear.value)
   ) {
     availableFiscalYears.push(fiscalYear.value)
   }
@@ -176,18 +176,18 @@ function updateSort(value: { column: string; direction: 'asc' | 'desc' }) {
       :loading="status === 'pending'"
       @page="updatePage"
       @sort="updateSort"
-      >
-        <template #county_name-data="{ row }">
-          <UButton
-            :to="`/counties/${row.county_id}`"
-            :prefetch="false"
-            color="neutral"
-            variant="link"
-            class="px-0 font-semibold text-primary"
-          >
-            {{ formatCountyLabel(row.county_name) }}
-          </UButton>
-        </template>
+    >
+      <template #county_name-data="{ row }">
+        <UButton
+          :to="`/counties/${row.county_id}`"
+          :prefetch="false"
+          color="neutral"
+          variant="link"
+          class="px-0 font-semibold text-primary"
+        >
+          {{ formatCountyLabel(row.county_name) }}
+        </UButton>
+      </template>
       <template #amount-data="{ row }">
         <div class="space-y-1 text-right">
           <p class="font-semibold text-default">{{ formatUsd(row.amount) }}</p>

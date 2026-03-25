@@ -47,7 +47,9 @@ export function buildFiscalYearOptions(
   years: Array<number | null | undefined>,
   allLabel = 'All fiscal years',
 ) {
-  const normalizedYears = [...new Set(years.filter((year): year is number => Number.isFinite(year)))]
+  const normalizedYears = [
+    ...new Set(years.filter((year): year is number => Number.isFinite(year))),
+  ]
     .sort((left, right) => right - left)
     .map((fiscalYear) => ({
       label: `FY ${fiscalYear}`,
@@ -57,16 +59,37 @@ export function buildFiscalYearOptions(
   return [{ label: allLabel, value: 'all' }, ...normalizedYears]
 }
 
-export function formatUsd(value: number | null | undefined, maximumFractionDigits = 0) {
+function normalizeNumber(value: unknown) {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : 0
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number(value.replaceAll(',', ''))
+    return Number.isFinite(parsed) ? parsed : 0
+  }
+
+  return 0
+}
+
+function normalizeString(value: unknown) {
+  if (typeof value === 'string') {
+    return value
+  }
+
+  return ''
+}
+
+export function formatUsd(value: unknown, maximumFractionDigits = 0) {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     maximumFractionDigits,
-  }).format(Number(value || 0))
+  }).format(normalizeNumber(value))
 }
 
-export function formatUsdCompact(value: number | null | undefined) {
-  const numericValue = Number(value || 0)
+export function formatUsdCompact(value: unknown) {
+  const numericValue = normalizeNumber(value)
   const absoluteValue = Math.abs(numericValue)
   const sign = numericValue < 0 ? '-' : ''
   const units = [
@@ -92,14 +115,14 @@ export function formatUsdCompact(value: number | null | undefined) {
   return `${sign}${formatUsd(absoluteValue, absoluteValue >= 10 ? 1 : 2)}`
 }
 
-export function formatCount(value: number | null | undefined) {
+export function formatCount(value: unknown) {
   return new Intl.NumberFormat('en-US', {
     maximumFractionDigits: 0,
-  }).format(Number(value || 0))
+  }).format(normalizeNumber(value))
 }
 
-export function formatDurationShort(totalSeconds: number | null | undefined) {
-  const safeSeconds = Math.max(0, Math.floor(Number(totalSeconds || 0)))
+export function formatDurationShort(totalSeconds: unknown) {
+  const safeSeconds = Math.max(0, Math.floor(normalizeNumber(totalSeconds)))
 
   if (safeSeconds <= 0) {
     return 'Starting…'
@@ -125,8 +148,9 @@ export function formatDurationShort(totalSeconds: number | null | undefined) {
 }
 
 export function formatFiscalYearCoverage(years: Array<number | null | undefined>) {
-  const normalizedYears = [...new Set(years.filter((year): year is number => Number.isFinite(year)))]
-    .sort((left, right) => left - right)
+  const normalizedYears = [
+    ...new Set(years.filter((year): year is number => Number.isFinite(year))),
+  ].sort((left, right) => left - right)
 
   if (normalizedYears.length === 0) {
     return 'No fiscal years'
@@ -139,32 +163,36 @@ export function formatFiscalYearCoverage(years: Array<number | null | undefined>
   return `FY ${normalizedYears[0]}–${normalizedYears.at(-1)}`
 }
 
-export function formatCountyDisplayName(value: string | null | undefined, fallback = 'Unknown') {
-  if (!value) {
+export function formatCountyDisplayName(value: unknown, fallback = 'Unknown') {
+  const normalizedValue = normalizeString(value).trim()
+
+  if (!normalizedValue) {
     return fallback
   }
 
-  const compactKey = value.toUpperCase().replaceAll(/\s+/g, '')
+  const compactKey = normalizedValue.toUpperCase().replaceAll(/\s+/g, '')
   if (specialCountyDisplayNames[compactKey]) {
     return specialCountyDisplayNames[compactKey]
   }
 
-  return value.toLowerCase().replaceAll(/\b\w/g, (letter) => letter.toUpperCase())
+  return normalizedValue.toLowerCase().replaceAll(/\b\w/g, (letter) => letter.toUpperCase())
 }
 
-export function normalizeCountyKey(value: string | null | undefined) {
-  if (!value) {
+export function normalizeCountyKey(value: unknown) {
+  const normalizedValue = normalizeString(value).trim()
+
+  if (!normalizedValue) {
     return ''
   }
 
-  return value
+  return normalizedValue
     .toUpperCase()
     .replaceAll(/\bCOUNTY\b/g, '')
     .replaceAll(/[^A-Z0-9]/g, '')
     .trim()
 }
 
-export function formatCountyLabel(value: string | null | undefined, fallback = 'Unknown') {
+export function formatCountyLabel(value: unknown, fallback = 'Unknown') {
   const displayName = formatCountyDisplayName(value, fallback)
   const compactKey = normalizeCountyKey(value)
 

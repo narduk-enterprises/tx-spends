@@ -20,8 +20,7 @@ const currentPage = computed(() => getNumberQueryValue(route.query.page) || 1)
 const fiscalYear = computed(() => getNumberQueryValue(route.query.fy))
 const searchQuery = computed(() => getStringQueryValue(route.query.q))
 const categoryCode = computed(
-  () =>
-    getStringQueryValue(route.query.category_code) || getStringQueryValue(route.query.category),
+  () => getStringQueryValue(route.query.category_code) || getStringQueryValue(route.query.category),
 )
 const objectCode = computed(() => getStringQueryValue(route.query.object))
 const minAmount = computed(() => getNumberQueryValue(route.query.minAmount))

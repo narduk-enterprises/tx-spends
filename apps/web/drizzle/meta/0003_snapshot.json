@@ -63,12 +63,8 @@
           "name": "api_keys_user_id_users_id_fk",
           "tableFrom": "api_keys",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -194,12 +190,8 @@
           "name": "notifications_user_id_users_id_fk",
           "tableFrom": "notifications",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -245,12 +237,8 @@
           "name": "sessions_user_id_users_id_fk",
           "tableFrom": "sessions",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -340,12 +328,8 @@
           "name": "todos_user_id_users_id_fk",
           "tableFrom": "todos",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -417,16 +401,12 @@
         "users_email_unique": {
           "name": "users_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         },
         "users_apple_id_unique": {
           "name": "users_apple_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "apple_id"
-          ]
+          "columns": ["apple_id"]
         }
       },
       "policies": {},
@@ -522,9 +502,7 @@
         "agencies_agency_name_normalized_unique": {
           "name": "agencies_agency_name_normalized_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "agency_name_normalized"
-          ]
+          "columns": ["agency_name_normalized"]
         }
       },
       "policies": {},
@@ -568,12 +546,8 @@
           "name": "agency_name_crosswalk_agency_id_agencies_id_fk",
           "tableFrom": "agency_name_crosswalk",
           "tableTo": "agencies",
-          "columnsFrom": [
-            "agency_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agency_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -673,12 +647,8 @@
           "name": "annual_cash_report_facts_fiscal_year_fiscal_years_fiscal_year_fk",
           "tableFrom": "annual_cash_report_facts",
           "tableTo": "fiscal_years",
-          "columnsFrom": [
-            "fiscal_year"
-          ],
-          "columnsTo": [
-            "fiscal_year"
-          ],
+          "columnsFrom": ["fiscal_year"],
+          "columnsTo": ["fiscal_year"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -688,11 +658,7 @@
         "acrf_unique_key": {
           "name": "acrf_unique_key",
           "nullsNotDistinct": false,
-          "columns": [
-            "fiscal_year",
-            "fund_number",
-            "source_table_name"
-          ]
+          "columns": ["fiscal_year", "fund_number", "source_table_name"]
         }
       },
       "policies": {},
@@ -742,12 +708,8 @@
           "name": "comptroller_object_category_map_comptroller_object_code_comptroller_objects_code_fk",
           "tableFrom": "comptroller_object_category_map",
           "tableTo": "comptroller_objects",
-          "columnsFrom": [
-            "comptroller_object_code"
-          ],
-          "columnsTo": [
-            "code"
-          ],
+          "columnsFrom": ["comptroller_object_code"],
+          "columnsTo": ["code"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -755,12 +717,8 @@
           "name": "comptroller_object_category_map_expenditure_category_code_expenditure_categories_code_fk",
           "tableFrom": "comptroller_object_category_map",
           "tableTo": "expenditure_categories",
-          "columnsFrom": [
-            "expenditure_category_code"
-          ],
-          "columnsTo": [
-            "code"
-          ],
+          "columnsFrom": ["expenditure_category_code"],
+          "columnsTo": ["code"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -768,10 +726,7 @@
       "compositePrimaryKeys": {
         "comptroller_object_category_map_comptroller_object_code_expenditure_category_code_pk": {
           "name": "comptroller_object_category_map_comptroller_object_code_expenditure_category_code_pk",
-          "columns": [
-            "comptroller_object_code",
-            "expenditure_category_code"
-          ]
+          "columns": ["comptroller_object_code", "expenditure_category_code"]
         }
       },
       "uniqueConstraints": {},
@@ -987,12 +942,8 @@
           "name": "county_expenditure_facts_fiscal_year_fiscal_years_fiscal_year_fk",
           "tableFrom": "county_expenditure_facts",
           "tableTo": "fiscal_years",
-          "columnsFrom": [
-            "fiscal_year"
-          ],
-          "columnsTo": [
-            "fiscal_year"
-          ],
+          "columnsFrom": ["fiscal_year"],
+          "columnsTo": ["fiscal_year"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1000,12 +951,8 @@
           "name": "county_expenditure_facts_county_id_geographies_counties_id_fk",
           "tableFrom": "county_expenditure_facts",
           "tableTo": "geographies_counties",
-          "columnsFrom": [
-            "county_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["county_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1013,12 +960,8 @@
           "name": "county_expenditure_facts_agency_id_agencies_id_fk",
           "tableFrom": "county_expenditure_facts",
           "tableTo": "agencies",
-          "columnsFrom": [
-            "agency_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agency_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1026,12 +969,8 @@
           "name": "county_expenditure_facts_expenditure_category_code_expenditure_categories_code_fk",
           "tableFrom": "county_expenditure_facts",
           "tableTo": "expenditure_categories",
-          "columnsFrom": [
-            "expenditure_category_code"
-          ],
-          "columnsTo": [
-            "code"
-          ],
+          "columnsFrom": ["expenditure_category_code"],
+          "columnsTo": ["code"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1041,12 +980,7 @@
         "cef_unique_key": {
           "name": "cef_unique_key",
           "nullsNotDistinct": false,
-          "columns": [
-            "fiscal_year",
-            "county_id",
-            "agency_name_raw",
-            "expenditure_type_raw"
-          ]
+          "columns": ["fiscal_year", "county_id", "agency_name_raw", "expenditure_type_raw"]
         }
       },
       "policies": {},
@@ -1193,10 +1127,7 @@
         "counties_state_name_uq": {
           "name": "counties_state_name_uq",
           "nullsNotDistinct": false,
-          "columns": [
-            "state_code",
-            "county_name_normalized"
-          ]
+          "columns": ["state_code", "county_name_normalized"]
         }
       },
       "policies": {},
@@ -1415,12 +1346,8 @@
           "name": "payee_vendor_matches_payee_id_payees_id_fk",
           "tableFrom": "payee_vendor_matches",
           "tableTo": "payees",
-          "columnsFrom": [
-            "payee_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["payee_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1428,12 +1355,8 @@
           "name": "payee_vendor_matches_vendor_enrichment_id_vendor_enrichment_id_fk",
           "tableFrom": "payee_vendor_matches",
           "tableTo": "vendor_enrichment",
-          "columnsFrom": [
-            "vendor_enrichment_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["vendor_enrichment_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1443,9 +1366,7 @@
         "payee_vendor_matches_payee_id_uq": {
           "name": "payee_vendor_matches_payee_id_uq",
           "nullsNotDistinct": false,
-          "columns": [
-            "payee_id"
-          ]
+          "columns": ["payee_id"]
         }
       },
       "policies": {},
@@ -1526,10 +1447,7 @@
         "payees_normalized_confidential_uq": {
           "name": "payees_normalized_confidential_uq",
           "nullsNotDistinct": false,
-          "columns": [
-            "payee_name_normalized",
-            "is_confidential"
-          ]
+          "columns": ["payee_name_normalized", "is_confidential"]
         }
       },
       "policies": {},
@@ -1652,12 +1570,8 @@
           "name": "payment_agency_rollups_agency_id_agencies_id_fk",
           "tableFrom": "payment_agency_rollups",
           "tableTo": "agencies",
-          "columnsFrom": [
-            "agency_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agency_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1665,10 +1579,7 @@
       "compositePrimaryKeys": {
         "payment_agency_rollups_scope_fiscal_year_agency_id_pk": {
           "name": "payment_agency_rollups_scope_fiscal_year_agency_id_pk",
-          "columns": [
-            "scope_fiscal_year",
-            "agency_id"
-          ]
+          "columns": ["scope_fiscal_year", "agency_id"]
         }
       },
       "uniqueConstraints": {},
@@ -1809,10 +1720,7 @@
       "compositePrimaryKeys": {
         "payment_category_rollups_scope_fiscal_year_category_code_pk": {
           "name": "payment_category_rollups_scope_fiscal_year_category_code_pk",
-          "columns": [
-            "scope_fiscal_year",
-            "category_code"
-          ]
+          "columns": ["scope_fiscal_year", "category_code"]
         }
       },
       "uniqueConstraints": {},
@@ -1936,12 +1844,8 @@
           "name": "payment_object_rollups_object_code_comptroller_objects_code_fk",
           "tableFrom": "payment_object_rollups",
           "tableTo": "comptroller_objects",
-          "columnsFrom": [
-            "object_code"
-          ],
-          "columnsTo": [
-            "code"
-          ],
+          "columnsFrom": ["object_code"],
+          "columnsTo": ["code"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1949,10 +1853,7 @@
       "compositePrimaryKeys": {
         "payment_object_rollups_scope_fiscal_year_object_code_pk": {
           "name": "payment_object_rollups_scope_fiscal_year_object_code_pk",
-          "columns": [
-            "scope_fiscal_year",
-            "object_code"
-          ]
+          "columns": ["scope_fiscal_year", "object_code"]
         }
       },
       "uniqueConstraints": {},
@@ -2157,12 +2058,8 @@
           "name": "payment_payee_rollups_payee_id_payees_id_fk",
           "tableFrom": "payment_payee_rollups",
           "tableTo": "payees",
-          "columnsFrom": [
-            "payee_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["payee_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2170,10 +2067,7 @@
       "compositePrimaryKeys": {
         "payment_payee_rollups_scope_fiscal_year_payee_id_pk": {
           "name": "payment_payee_rollups_scope_fiscal_year_payee_id_pk",
-          "columns": [
-            "scope_fiscal_year",
-            "payee_id"
-          ]
+          "columns": ["scope_fiscal_year", "payee_id"]
         }
       },
       "uniqueConstraints": {},
@@ -2497,12 +2391,8 @@
           "name": "state_payment_facts_fiscal_year_fiscal_years_fiscal_year_fk",
           "tableFrom": "state_payment_facts",
           "tableTo": "fiscal_years",
-          "columnsFrom": [
-            "fiscal_year"
-          ],
-          "columnsTo": [
-            "fiscal_year"
-          ],
+          "columnsFrom": ["fiscal_year"],
+          "columnsTo": ["fiscal_year"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2510,12 +2400,8 @@
           "name": "state_payment_facts_agency_id_agencies_id_fk",
           "tableFrom": "state_payment_facts",
           "tableTo": "agencies",
-          "columnsFrom": [
-            "agency_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agency_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2523,12 +2409,8 @@
           "name": "state_payment_facts_payee_id_payees_id_fk",
           "tableFrom": "state_payment_facts",
           "tableTo": "payees",
-          "columnsFrom": [
-            "payee_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["payee_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2536,12 +2418,8 @@
           "name": "state_payment_facts_comptroller_object_code_comptroller_objects_code_fk",
           "tableFrom": "state_payment_facts",
           "tableTo": "comptroller_objects",
-          "columnsFrom": [
-            "comptroller_object_code"
-          ],
-          "columnsTo": [
-            "code"
-          ],
+          "columnsFrom": ["comptroller_object_code"],
+          "columnsTo": ["code"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2551,9 +2429,7 @@
         "state_payment_facts_source_row_hash_unique": {
           "name": "state_payment_facts_source_row_hash_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "source_row_hash"
-          ]
+          "columns": ["source_row_hash"]
         }
       },
       "policies": {},

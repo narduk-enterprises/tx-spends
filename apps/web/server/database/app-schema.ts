@@ -270,22 +270,19 @@ export const annualCashReportFacts = pgTable(
   ],
 )
 
-export const paymentOverviewRollups = pgTable(
-  'payment_overview_rollups',
-  {
-    scopeFiscalYear: integer('scope_fiscal_year').primaryKey(),
-    totalSpendAll: numeric('total_spend_all', { precision: 18, scale: 2 }).notNull(),
-    totalSpendPublic: numeric('total_spend_public', { precision: 18, scale: 2 }).notNull(),
-    paymentCountAll: integer('payment_count_all').notNull(),
-    paymentCountPublic: integer('payment_count_public').notNull(),
-    agencyCountAll: integer('agency_count_all').notNull(),
-    agencyCountPublic: integer('agency_count_public').notNull(),
-    payeeCountAll: integer('payee_count_all').notNull(),
-    payeeCountPublic: integer('payee_count_public').notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
-  },
-)
+export const paymentOverviewRollups = pgTable('payment_overview_rollups', {
+  scopeFiscalYear: integer('scope_fiscal_year').primaryKey(),
+  totalSpendAll: numeric('total_spend_all', { precision: 18, scale: 2 }).notNull(),
+  totalSpendPublic: numeric('total_spend_public', { precision: 18, scale: 2 }).notNull(),
+  paymentCountAll: integer('payment_count_all').notNull(),
+  paymentCountPublic: integer('payment_count_public').notNull(),
+  agencyCountAll: integer('agency_count_all').notNull(),
+  agencyCountPublic: integer('agency_count_public').notNull(),
+  payeeCountAll: integer('payee_count_all').notNull(),
+  payeeCountPublic: integer('payee_count_public').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+})
 
 export const paymentAgencyRollups = pgTable(
   'payment_agency_rollups',

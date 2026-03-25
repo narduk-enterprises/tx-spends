@@ -33,11 +33,16 @@ test.describe('backfill state UX', () => {
 
   test('homepage surfaces meaningful backfill status and fallback actions', async ({ page }) => {
     const meta = await getBackfillMeta(page, '/api/v1/overview')
-    test.skip(!meta?.payments_backfill_active, 'Payments backfill is not active in this environment.')
+    test.skip(
+      !meta?.payments_backfill_active,
+      'Payments backfill is not active in this environment.',
+    )
 
     await gotoAndHydrate(page, '/')
 
-    await expect(page.getByText('Transaction-level payments are actively backfilling.')).toBeVisible()
+    await expect(
+      page.getByText('Transaction-level payments are actively backfilling.'),
+    ).toBeVisible()
     await expect(page.getByText('Texas payment exports are ready')).toBeVisible()
     await expect(page.getByText('27,602,538')).toHaveCount(3)
     await expect(page.getByText('FY 2017–2026')).toHaveCount(3)
@@ -55,7 +60,10 @@ test.describe('backfill state UX', () => {
 
   test('collection pages expose useful backfill fallback actions', async ({ page }) => {
     const meta = await getBackfillMeta(page, '/api/v1/transactions')
-    test.skip(!meta?.payments_backfill_active, 'Payments backfill is not active in this environment.')
+    test.skip(
+      !meta?.payments_backfill_active,
+      'Payments backfill is not active in this environment.',
+    )
 
     await gotoAndHydrate(page, '/agencies')
     await expect(page.getByText('Agency leaderboard pending')).toBeVisible()

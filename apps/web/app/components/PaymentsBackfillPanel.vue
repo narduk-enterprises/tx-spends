@@ -1,9 +1,5 @@
 <script setup lang="ts">
-import {
-  formatCount,
-  formatDurationShort,
-  formatFiscalYearCoverage,
-} from '~/utils/explorer'
+import { formatCount, formatDurationShort, formatFiscalYearCoverage } from '~/utils/explorer'
 
 const props = withDefaults(
   defineProps<{

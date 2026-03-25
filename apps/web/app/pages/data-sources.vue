@@ -112,15 +112,23 @@ useWebPageSchema({
         <div class="grid gap-3 sm:grid-cols-3">
           <div class="rounded-[1.25rem] border border-default bg-elevated/40 p-4">
             <p class="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Payments</p>
-            <p class="mt-2 text-sm text-muted">State payment exports across available fiscal years.</p>
+            <p class="mt-2 text-sm text-muted">
+              State payment exports across available fiscal years.
+            </p>
           </div>
           <div class="rounded-[1.25rem] border border-default bg-elevated/40 p-4">
-            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-primary">County layer</p>
-            <p class="mt-2 text-sm text-muted">Annual county-level distribution of state spending.</p>
+            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
+              County layer
+            </p>
+            <p class="mt-2 text-sm text-muted">
+              Annual county-level distribution of state spending.
+            </p>
           </div>
           <div class="rounded-[1.25rem] border border-default bg-elevated/40 p-4">
             <p class="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Enrichment</p>
-            <p class="mt-2 text-sm text-muted">Taxonomies, vendor files, and statewide context tables.</p>
+            <p class="mt-2 text-sm text-muted">
+              Taxonomies, vendor files, and statewide context tables.
+            </p>
           </div>
         </div>
       </UCard>
@@ -147,22 +155,14 @@ useWebPageSchema({
       </UCard>
     </section>
 
-    <section
-      v-for="group in sourceGroups"
-      :key="group.title"
-      class="space-y-4"
-    >
+    <section v-for="group in sourceGroups" :key="group.title" class="space-y-4">
       <div class="space-y-1">
         <h2 class="text-2xl font-semibold tracking-tight text-default">{{ group.title }}</h2>
         <p class="max-w-3xl text-sm leading-7 text-muted">{{ group.description }}</p>
       </div>
 
       <div class="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
-        <UCard
-          v-for="source in group.items"
-          :key="source.name"
-          class="card-base overflow-hidden"
-        >
+        <UCard v-for="source in group.items" :key="source.name" class="card-base overflow-hidden">
           <template #header>
             <div class="space-y-3">
               <div class="flex flex-wrap items-center gap-2">

@@ -416,9 +416,9 @@ test.describe('visual audit', () => {
         )
         await captureNamedLocator(
           page,
-          page.getByText('What this app is', { exact: true }).locator(
-            'xpath=ancestor::*[contains(@class,"card-base")][1]',
-          ),
+          page
+            .getByText('What this app is', { exact: true })
+            .locator('xpath=ancestor::*[contains(@class,"card-base")][1]'),
           'what-this-app-is-card',
           directory,
           captures,
@@ -430,18 +430,16 @@ test.describe('visual audit', () => {
       await capturePageAudit(page, '/methodology', 'methodology', async (directory, captures) => {
         await captureNamedLocator(
           page,
-          page
-            .getByRole('heading', { name: 'Methodology' })
-            .locator('xpath=ancestor::section[1]'),
+          page.getByRole('heading', { name: 'Methodology' }).locator('xpath=ancestor::section[1]'),
           'page-header',
           directory,
           captures,
         )
         await captureNamedLocator(
           page,
-          page.getByText('Data model', { exact: true }).locator(
-            'xpath=ancestor::*[contains(@class,"card-base")][1]',
-          ),
+          page
+            .getByText('Data model', { exact: true })
+            .locator('xpath=ancestor::*[contains(@class,"card-base")][1]'),
           'data-model-card',
           directory,
           captures,
@@ -453,18 +451,16 @@ test.describe('visual audit', () => {
       await capturePageAudit(page, '/data-sources', 'data-sources', async (directory, captures) => {
         await captureNamedLocator(
           page,
-          page
-            .getByRole('heading', { name: 'Data Sources' })
-            .locator('xpath=ancestor::section[1]'),
+          page.getByRole('heading', { name: 'Data Sources' }).locator('xpath=ancestor::section[1]'),
           'page-header',
           directory,
           captures,
         )
         await captureNamedLocator(
           page,
-          page.getByText('Primary explorer sources', { exact: true }).locator(
-            'xpath=ancestor::section[1]',
-          ),
+          page
+            .getByText('Primary explorer sources', { exact: true })
+            .locator('xpath=ancestor::section[1]'),
           'primary-sources-section',
           directory,
           captures,
@@ -476,18 +472,16 @@ test.describe('visual audit', () => {
       await capturePageAudit(page, '/disclaimers', 'disclaimers', async (directory, captures) => {
         await captureNamedLocator(
           page,
-          page
-            .getByRole('heading', { name: 'Disclaimers' })
-            .locator('xpath=ancestor::section[1]'),
+          page.getByRole('heading', { name: 'Disclaimers' }).locator('xpath=ancestor::section[1]'),
           'page-header',
           directory,
           captures,
         )
         await captureNamedLocator(
           page,
-          page.getByText('Scope disclaimer', { exact: true }).locator(
-            'xpath=ancestor::*[contains(@class,"card-base")][1]',
-          ),
+          page
+            .getByText('Scope disclaimer', { exact: true })
+            .locator('xpath=ancestor::*[contains(@class,"card-base")][1]'),
           'scope-disclaimer-card',
           directory,
           captures,
@@ -526,15 +520,20 @@ test.describe('visual audit', () => {
       )
     } else {
       manifest.push(
-        await capturePageAudit(page, '/agencies', 'agency-detail-pending', async (directory, captures) => {
-          await captureNamedLocator(
-            page,
-            page.getByText('Agency rankings are temporarily syncing.').first(),
-            'detail-backfill-alert',
-            directory,
-            captures,
-          )
-        }),
+        await capturePageAudit(
+          page,
+          '/agencies',
+          'agency-detail-pending',
+          async (directory, captures) => {
+            await captureNamedLocator(
+              page,
+              page.getByText('Agency rankings are temporarily syncing.').first(),
+              'detail-backfill-alert',
+              directory,
+              captures,
+            )
+          },
+        ),
       )
     }
 
@@ -568,15 +567,20 @@ test.describe('visual audit', () => {
       )
     } else {
       manifest.push(
-        await capturePageAudit(page, '/payees', 'payee-detail-pending', async (directory, captures) => {
-          await captureNamedLocator(
-            page,
-            page.getByText('Payee rankings are temporarily syncing.').first(),
-            'detail-backfill-alert',
-            directory,
-            captures,
-          )
-        }),
+        await capturePageAudit(
+          page,
+          '/payees',
+          'payee-detail-pending',
+          async (directory, captures) => {
+            await captureNamedLocator(
+              page,
+              page.getByText('Payee rankings are temporarily syncing.').first(),
+              'detail-backfill-alert',
+              directory,
+              captures,
+            )
+          },
+        ),
       )
     }
 
@@ -631,7 +635,13 @@ test.describe('visual audit', () => {
 
           for (const candidate of countyDetailCardCandidates) {
             if (await candidate.locator.isVisible().catch(() => false)) {
-              await captureNamedLocator(page, candidate.locator, candidate.name, directory, captures)
+              await captureNamedLocator(
+                page,
+                candidate.locator,
+                candidate.name,
+                directory,
+                captures,
+              )
               break
             }
           }

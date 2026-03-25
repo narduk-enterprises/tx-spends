@@ -15,18 +15,7 @@ function makeLogger(event: H3Event, label: string) {
 }
 
 function getHyperdriveConnectionString(event: H3Event): string {
-  // Try to use the binding if available
   const config = useRuntimeConfig(event)
-  const bindingName = (config as Record<string, unknown>).hyperdriveBinding || 'HYPERDRIVE'
-  const env = event.context.cloudflare?.env as
-    | Record<string, { connectionString?: string }>
-    | undefined
-  const hd = env?.[bindingName as string]
-  if (hd?.connectionString) {
-    return hd.connectionString
-  }
-
-  // Fallback to direct environment variable (useful for local tools or un-bound environments)
   const directEnv = event.context.cloudflare?.env as Record<string, string | undefined> | undefined
   if (directEnv?.DATABASE_URL) {
     return directEnv.DATABASE_URL
@@ -34,6 +23,15 @@ function getHyperdriveConnectionString(event: H3Event): string {
   const configDbUrl = (config as Record<string, string | undefined>).databaseUrl
   if (configDbUrl) {
     return configDbUrl
+  }
+
+  const bindingName = (config as Record<string, unknown>).hyperdriveBinding || 'HYPERDRIVE'
+  const env = event.context.cloudflare?.env as
+    | Record<string, { connectionString?: string }>
+    | undefined
+  const hd = env?.[bindingName as string]
+  if (hd?.connectionString) {
+    return hd.connectionString
   }
 
   throw createError({

@@ -51,7 +51,10 @@ test.describe('collection pages', () => {
     const overviewPayload = await overviewResponse.json()
     const payeesPayload = await payeesResponse.json()
 
-    if (overviewPayload.meta?.payments_backfill_active || payeesPayload.meta?.payments_backfill_active) {
+    if (
+      overviewPayload.meta?.payments_backfill_active ||
+      payeesPayload.meta?.payments_backfill_active
+    ) {
       expect(overviewPayload.meta?.payments_backfill_active).toBeTruthy()
       expect(payeesPayload.meta?.payments_backfill_active).toBeTruthy()
       expect(overviewPayload.data.payee_count).toBe(0)
@@ -75,9 +78,9 @@ test.describe('collection pages', () => {
       page.getByText('Annual county-level distribution of Texas state expenditures.'),
     ).toBeVisible()
     await expect(page.getByLabel('Texas county spending choropleth')).toBeVisible()
-    await expect(page.locator('svg[aria-label="Texas county spending choropleth"] path')).toHaveCount(
-      254,
-    )
+    await expect(
+      page.locator('svg[aria-label="Texas county spending choropleth"] path'),
+    ).toHaveCount(254)
 
     await selectOptionByLabel(page, 'Fiscal year', 'FY 2024')
     await expectQueryParam(page, 'fy', '2024')
@@ -137,7 +140,12 @@ test.describe('collection pages', () => {
     const consoleTracker = createConsoleTracker(page)
     await gotoAndHydrate(page, '/categories')
     await expect(page.getByRole('heading', { name: 'Category Explorer' })).toBeVisible()
-    if (await page.getByText('Category rankings are temporarily syncing.').isVisible().catch(() => false)) {
+    if (
+      await page
+        .getByText('Category rankings are temporarily syncing.')
+        .isVisible()
+        .catch(() => false)
+    ) {
       await expect(page.getByText('Payment backfill in progress')).toBeVisible()
       await expect(page.getByRole('table')).toHaveCount(0)
     } else {
@@ -161,7 +169,12 @@ test.describe('collection pages', () => {
     await gotoAndHydrate(page, '/payees')
 
     await expect(page.getByRole('heading', { name: 'Payee Explorer' })).toBeVisible()
-    if (await page.getByText('Payee rankings are temporarily syncing.').isVisible().catch(() => false)) {
+    if (
+      await page
+        .getByText('Payee rankings are temporarily syncing.')
+        .isVisible()
+        .catch(() => false)
+    ) {
       await expect(page.getByText('Payee leaderboard pending')).toBeVisible()
       await expect(page.getByRole('table')).toHaveCount(0)
     } else {

@@ -125,55 +125,55 @@ export default defineEventHandler(async (event) => {
     .offset(query.offset)
 
   const isSimpleOverviewCount =
-    !query.q
-    && !query.agency_id
-    && !query.payee_id
-    && !query.object_code
-    && !query.category_code
-    && !query.date_start
-    && !query.date_end
-    && !query.min_amount
-    && !query.max_amount
+    !query.q &&
+    !query.agency_id &&
+    !query.payee_id &&
+    !query.object_code &&
+    !query.category_code &&
+    !query.date_start &&
+    !query.date_end &&
+    !query.min_amount &&
+    !query.max_amount
   const isSimpleAgencyCount =
-    Boolean(query.agency_id)
-    && !query.q
-    && !query.payee_id
-    && !query.object_code
-    && !query.category_code
-    && !query.date_start
-    && !query.date_end
-    && !query.min_amount
-    && !query.max_amount
+    Boolean(query.agency_id) &&
+    !query.q &&
+    !query.payee_id &&
+    !query.object_code &&
+    !query.category_code &&
+    !query.date_start &&
+    !query.date_end &&
+    !query.min_amount &&
+    !query.max_amount
   const isSimplePayeeCount =
-    Boolean(query.payee_id)
-    && !query.q
-    && !query.agency_id
-    && !query.object_code
-    && !query.category_code
-    && !query.date_start
-    && !query.date_end
-    && !query.min_amount
-    && !query.max_amount
+    Boolean(query.payee_id) &&
+    !query.q &&
+    !query.agency_id &&
+    !query.object_code &&
+    !query.category_code &&
+    !query.date_start &&
+    !query.date_end &&
+    !query.min_amount &&
+    !query.max_amount
   const isSimpleObjectCount =
-    Boolean(query.object_code)
-    && !query.q
-    && !query.agency_id
-    && !query.payee_id
-    && !query.category_code
-    && !query.date_start
-    && !query.date_end
-    && !query.min_amount
-    && !query.max_amount
+    Boolean(query.object_code) &&
+    !query.q &&
+    !query.agency_id &&
+    !query.payee_id &&
+    !query.category_code &&
+    !query.date_start &&
+    !query.date_end &&
+    !query.min_amount &&
+    !query.max_amount
   const isSimpleCategoryCount =
-    Boolean(query.category_code)
-    && !query.q
-    && !query.agency_id
-    && !query.payee_id
-    && !query.object_code
-    && !query.date_start
-    && !query.date_end
-    && !query.min_amount
-    && !query.max_amount
+    Boolean(query.category_code) &&
+    !query.q &&
+    !query.agency_id &&
+    !query.payee_id &&
+    !query.object_code &&
+    !query.date_start &&
+    !query.date_end &&
+    !query.min_amount &&
+    !query.max_amount
   const overviewCountColumn = query.include_confidential
     ? paymentOverviewRollups.paymentCountAll
     : paymentOverviewRollups.paymentCountPublic
