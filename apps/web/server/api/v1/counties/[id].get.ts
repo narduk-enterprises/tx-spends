@@ -5,6 +5,7 @@ import {
   countyCategoryCodeSql,
   countyCategoryTitleSql,
   formatAgencyDisplayName,
+  formatCategoryDisplayName,
   formatCountyDisplayName,
 } from '#server/utils/explorer'
 import { agencies, countyExpenditureFacts, geographiesCounties } from '#server/database/schema'
@@ -105,7 +106,10 @@ export default defineEventHandler(async (event) => {
       top_expenditure_type: topExpenditureType
         ? {
             category_code: topExpenditureType.category_code,
-            category_title: topExpenditureType.category_title,
+            category_title: formatCategoryDisplayName(
+              topExpenditureType.category_title,
+              'Uncategorized',
+            ),
             amount: Number(topExpenditureType.amount || 0),
           }
         : null,

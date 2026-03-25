@@ -1,7 +1,7 @@
 import { getRouterParam, getValidatedQuery } from 'h3'
 import { eq, desc, sql, and } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
-import { slugifyCategory } from '#server/utils/explorer'
+import { formatCategoryDisplayName, slugifyCategory } from '#server/utils/explorer'
 import { statePaymentFacts } from '#server/database/schema'
 import { globalQuerySchema } from '#server/utils/query'
 
@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
     filters_applied: query,
     data: categories.map((category: any) => ({
       category_code: slugifyCategory(category.category_raw, 'uncategorized'),
-      category_title: category.category_raw || 'Uncategorized',
+      category_title: formatCategoryDisplayName(category.category_raw, 'Uncategorized'),
       amount: Number(category.amount || 0),
     })),
     meta: { currency: 'USD' },

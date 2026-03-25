@@ -227,6 +227,7 @@ const tabs = [
         <template #payee_name-data="{ row }">
           <UButton
             :to="row.payee_id ? `/payees/${row.payee_id}` : undefined"
+            :prefetch="false"
             color="neutral"
             variant="link"
             class="px-0 font-semibold text-primary"
@@ -257,6 +258,7 @@ const tabs = [
         <template #object_title-data="{ row }">
           <UButton
             :to="row.object_code ? `/objects/${row.object_code}` : undefined"
+            :prefetch="false"
             color="neutral"
             variant="link"
             class="px-0 font-semibold text-primary"
@@ -282,11 +284,12 @@ const tabs = [
         >
           <template #county_name-data="{ row }">
             <UButton
-            :to="`/counties/${row.county_id}`"
-            color="neutral"
-            variant="link"
-            class="px-0 font-semibold text-primary"
-          >
+              :to="`/counties/${row.county_id}`"
+              :prefetch="false"
+              color="neutral"
+              variant="link"
+              class="px-0 font-semibold text-primary"
+            >
               {{ formatCountyLabel(row.county_name) }}
             </UButton>
           </template>

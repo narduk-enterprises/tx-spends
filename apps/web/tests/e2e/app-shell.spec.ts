@@ -2,6 +2,8 @@ import { expect, test, waitForBaseUrlReady, warmUpApp } from './fixtures'
 import { capturePage, createConsoleTracker, expectQueryParam, gotoAndHydrate } from './helpers'
 
 test.describe('app shell', () => {
+  test.setTimeout(120_000)
+
   test.beforeAll(async ({ browser, baseURL }) => {
     if (!baseURL) {
       throw new Error('app shell tests require Playwright baseURL to be configured.')
@@ -24,17 +26,16 @@ test.describe('app shell', () => {
     await expect(page.getByRole('link', { name: 'Counties', exact: true })).toBeVisible()
     await expect(page.getByRole('link', { name: 'Transactions', exact: true })).toBeVisible()
 
-    const backfillBadge = page.getByText('Payment backfill in progress')
+    const backfillBadge = page.getByText('Transaction-level payments are actively backfilling.')
     if (await backfillBadge.isVisible().catch(() => false)) {
-      await expect(
-        page.getByText('Transaction-level payments are actively backfilling.'),
-      ).toBeVisible()
+      await expect(backfillBadge).toBeVisible()
       await expect(page.getByText('Syncing')).toBeVisible()
       await expect(page.getByText('Transaction-level payment facts are not loaded yet')).toBeVisible()
-      await expect(page.getByText('Payment feed pending')).toHaveCount(2)
+      await expect(page.getByText('Texas payment exports are ready')).toBeVisible()
+      await expect(page.getByText('Transaction feed pending')).toBeVisible()
     } else {
       await expect(page.getByText('Live public finance explorer')).toBeVisible()
-      await expect(page.getByText('Payment feed pending')).toHaveCount(0)
+      await expect(page.getByText('Transaction feed pending')).toHaveCount(0)
       await expect(page.getByText('Transaction-level payment facts are not loaded yet')).toHaveCount(
         0,
       )

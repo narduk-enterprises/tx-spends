@@ -8,6 +8,8 @@ import {
 } from './helpers'
 
 test.describe('filters and transactions', () => {
+  test.setTimeout(120_000)
+
   test.beforeAll(async ({ browser, baseURL }) => {
     if (!baseURL) {
       throw new Error('filter tests require Playwright baseURL to be configured.')

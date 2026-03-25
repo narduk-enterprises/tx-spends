@@ -1,6 +1,6 @@
 import type { H3Event } from 'h3'
-import { drizzle as drizzleNeonHttp, type NeonHttpDatabase } from 'drizzle-orm/neon-http'
-import { neon } from '@neondatabase/serverless'
+import { drizzle as drizzlePostgresJs, type PostgresJsDatabase } from 'drizzle-orm/postgres-js'
+import postgres from 'postgres'
 import * as appSchema from '#server/database/schema'
 import { useLogger } from '#layer/server/utils/logger'
 
@@ -42,14 +42,23 @@ function getHyperdriveConnectionString(event: H3Event): string {
   })
 }
 
-export function useAppDatabase(event: H3Event): NeonHttpDatabase<typeof appSchema> {
+export function useAppDatabase(event: H3Event): PostgresJsDatabase<typeof appSchema> {
   if (event.context._appDb) {
-    return event.context._appDb as NeonHttpDatabase<typeof appSchema>
+    return event.context._appDb as PostgresJsDatabase<typeof appSchema>
   }
 
   const connectionString = getHyperdriveConnectionString(event)
-  const sql = neon(connectionString)
-  const db = drizzleNeonHttp(sql, {
+  const sql = postgres(connectionString, {
+    // Cloudflare recommends keeping Worker request clients small because
+    // Hyperdrive owns the underlying global pool.
+    max: 5,
+    // We do not use Postgres array columns in this schema, so skip the extra
+    // fetch_types round-trip for lower latency.
+    fetch_types: false,
+    // Keep prepared statements enabled so Hyperdrive can cache them.
+    prepare: true,
+  })
+  const db = drizzlePostgresJs(sql, {
     schema: appSchema,
     logger: makeLogger(event, 'AppPG'),
   })

@@ -1,7 +1,11 @@
 import { getRouterParam, getValidatedQuery } from 'h3'
 import { eq, desc, sql, and } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
-import { countyCategoryCodeSql, countyCategoryTitleSql } from '#server/utils/explorer'
+import {
+  countyCategoryCodeSql,
+  countyCategoryTitleSql,
+  formatCategoryDisplayName,
+} from '#server/utils/explorer'
 import { countyExpenditureFacts } from '#server/database/schema'
 import { globalQuerySchema } from '#server/utils/query'
 
@@ -35,6 +39,7 @@ export default defineEventHandler(async (event) => {
     filters_applied: query,
     data: types.map((t: any) => ({
       ...t,
+      category_title: formatCategoryDisplayName(t.category_title, 'Uncategorized'),
       amount: Number(t.amount || 0),
     })),
     meta: { currency: 'USD' },

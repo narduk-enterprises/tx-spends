@@ -1,6 +1,7 @@
 import { getRouterParam } from 'h3'
 import { eq } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
+import { formatAgencyDisplayName } from '#server/utils/explorer'
 import { statePaymentFacts, agencies, payees, comptrollerObjects } from '#server/database/schema'
 
 export default defineEventHandler(async (event) => {
@@ -42,6 +43,7 @@ export default defineEventHandler(async (event) => {
   return {
     data: {
       ...t,
+      agency_name: formatAgencyDisplayName(t.agency_name),
       payee_id: t.is_confidential ? null : t.payee_id,
       payee_name: t.is_confidential ? 'CONFIDENTIAL' : t.payee_name,
       amount: Number(t.amount || 0),

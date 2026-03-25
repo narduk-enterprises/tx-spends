@@ -45,6 +45,10 @@ function clearFilters() {
 function getFilterId(key: string) {
   return `explorer-filter-${key}`
 }
+
+function getSelectValue(key: string) {
+  return filters.value[key] ?? 'all'
+}
 </script>
 
 <template>
@@ -81,8 +85,9 @@ function getFilterId(key: string) {
             v-if="filter.type === 'select'"
             :id="getFilterId(filter.key)"
             :name="filter.key"
-            :model-value="String(filters[filter.key] ?? 'all')"
-            :items="filter.options || []"
+            :model-value="getSelectValue(filter.key)"
+            :options="filter.options || []"
+            :placeholder="filter.placeholder || `Select ${filter.label.toLowerCase()}`"
             class="w-full"
             color="neutral"
             variant="outline"

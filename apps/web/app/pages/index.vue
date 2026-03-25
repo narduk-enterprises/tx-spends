@@ -4,6 +4,8 @@ import {
   FISCAL_YEAR_OPTIONS,
   formatCountyLabel,
   formatCount,
+  formatDurationShort,
+  formatFiscalYearCoverage,
   formatUsd,
   formatUsdCompact,
   getBooleanQueryValue,
@@ -30,6 +32,17 @@ const { data, status } = await useFetch('/api/v1/overview', {
 const overview = computed(() => data.value?.data)
 const overviewMeta = computed(() => data.value?.meta)
 const paymentsBackfillActive = computed(() => Boolean(overviewMeta.value?.payments_backfill_active))
+const paymentsBackfill = computed(
+  () =>
+    overviewMeta.value?.payments_backfill as
+      | {
+          source_row_count: number
+          source_file_count: number
+          fiscal_years: number[]
+          active_runtime_seconds: number | null
+        }
+      | undefined,
+)
 
 const pageTitle = computed(() =>
   fiscalYear.value
@@ -65,9 +78,19 @@ const pageBadge = computed(() =>
 )
 
 const backfillAlertDescription = computed(() =>
-  fiscalYear.value
-    ? `Transaction-level payment rows for FY ${fiscalYear.value} are still loading. Totals and county geography remain available through the annual county expenditure layer.`
-    : 'Transaction-level payment rows are still loading. Totals and county geography remain available through the annual county expenditure layer in the meantime.',
+  [
+    fiscalYear.value
+      ? `Transaction-level payment rows for FY ${fiscalYear.value} are still loading. Totals and county geography remain available through the annual county expenditure layer.`
+      : 'Transaction-level payment rows are still loading. Totals and county geography remain available through the annual county expenditure layer in the meantime.',
+    paymentsBackfill.value
+      ? `${formatCount(paymentsBackfill.value.source_row_count)} exported rows across ${formatFiscalYearCoverage(paymentsBackfill.value.fiscal_years)}`
+      : undefined,
+    paymentsBackfill.value?.active_runtime_seconds
+      ? `current ingest ${formatDurationShort(paymentsBackfill.value.active_runtime_seconds)}`
+      : undefined,
+  ]
+    .filter(Boolean)
+    .join(' '),
 )
 
 const agencyHeadlineHelper = computed(() =>
@@ -264,6 +287,7 @@ const filters = computed({
 
       <section class="grid gap-6 xl:grid-cols-2">
         <RankedBarCard
+          v-if="hasPaymentFacts"
           title="Top payees"
           :description="topPayeesDescription"
           :items="overview.top_payees || []"
@@ -277,6 +301,35 @@ const filters = computed({
               : 'Top payees will appear here after the transaction-level payment feed is loaded.'
           "
         />
+
+        <UCard v-else class="card-base overflow-hidden">
+          <template #header>
+            <div class="space-y-1">
+              <p class="text-lg font-semibold text-default">Top payees</p>
+              <p class="text-sm text-muted">
+                The payee leaderboard unlocks after the transaction-level payment import commits.
+              </p>
+            </div>
+          </template>
+
+          <PaymentsBackfillPanel
+            :source-row-count="paymentsBackfill?.source_row_count || 0"
+            :source-file-count="paymentsBackfill?.source_file_count || 0"
+            :fiscal-years="paymentsBackfill?.fiscal_years || []"
+            :active-runtime-seconds="paymentsBackfill?.active_runtime_seconds || null"
+            title="Texas payment exports are ready"
+            description="All monthly exports have been captured from the Comptroller portal. The live payee leaderboard will populate when the current database ingest commits."
+          >
+            <template #actions>
+              <UButton to="/counties" color="primary" variant="soft" class="rounded-full">
+                Explore county distribution
+              </UButton>
+              <UButton to="/data-sources" color="neutral" variant="soft" class="rounded-full">
+                Review data sources
+              </UButton>
+            </template>
+          </PaymentsBackfillPanel>
+        </UCard>
 
         <UCard class="card-base overflow-hidden">
           <template #header>
@@ -349,6 +402,17 @@ const filters = computed({
             : 'Recent payment rows will appear after the transaction-level payment feed is loaded.'
         "
       >
+        <template v-if="paymentsBackfillActive" #empty>
+          <PaymentsBackfillPanel
+            :source-row-count="paymentsBackfill?.source_row_count || 0"
+            :source-file-count="paymentsBackfill?.source_file_count || 0"
+            :fiscal-years="paymentsBackfill?.fiscal_years || []"
+            :active-runtime-seconds="paymentsBackfill?.active_runtime_seconds || null"
+            title="Transaction feed pending"
+            description="The exported Texas payment rows are queued for ingest. Raw transactions will appear here after the current load commits."
+          />
+        </template>
+
         <template #agency_name-data="{ row }">
           <UButton
             :to="row.agency_id ? `/agencies/${row.agency_id}` : undefined"

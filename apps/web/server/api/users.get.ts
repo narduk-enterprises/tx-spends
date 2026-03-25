@@ -1,4 +1,4 @@
-import { desc, sql } from 'drizzle-orm'
+import { sql } from 'drizzle-orm'
 import { z } from 'zod'
 import { requireAdmin } from '#layer/server/utils/auth'
 import { useDatabase } from '#layer/server/utils/database'
@@ -36,7 +36,7 @@ export default defineEventHandler(async (event) => {
         createdAt: users.createdAt,
       })
       .from(users)
-      .orderBy(desc(users.createdAt))
+      .orderBy(sql.raw('"users"."created_at" desc'))
       .limit(limit)
       .offset(offset)
       .all(),

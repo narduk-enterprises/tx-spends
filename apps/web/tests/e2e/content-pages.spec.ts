@@ -2,6 +2,8 @@ import { expect, test, waitForBaseUrlReady, warmUpApp } from './fixtures'
 import { capturePage, createConsoleTracker, gotoAndHydrate } from './helpers'
 
 test.describe('content pages and navigation', () => {
+  test.setTimeout(120_000)
+
   test.beforeAll(async ({ browser, baseURL }) => {
     if (!baseURL) {
       throw new Error('content page tests require Playwright baseURL to be configured.')

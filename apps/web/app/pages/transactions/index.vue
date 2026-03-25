@@ -3,6 +3,9 @@ import {
   cleanQueryObject,
   DEFAULT_PAGE_SIZE,
   FISCAL_YEAR_OPTIONS,
+  formatCount,
+  formatDurationShort,
+  formatFiscalYearCoverage,
   formatUsd,
   getBooleanQueryValue,
   getNumberQueryValue,
@@ -50,6 +53,17 @@ const { data, status } = await useFetch('/api/v1/transactions', {
 const transactions = computed(() => data.value?.data || [])
 const meta = computed(() => data.value?.meta)
 const paymentsBackfillActive = computed(() => Boolean(meta.value?.payments_backfill_active))
+const paymentsBackfill = computed(
+  () =>
+    meta.value?.payments_backfill as
+      | {
+          source_row_count: number
+          source_file_count: number
+          fiscal_years: number[]
+          active_runtime_seconds: number | null
+        }
+      | undefined,
+)
 const tableDescription = computed(() =>
   paymentsBackfillActive.value
     ? 'Recent payment rows will appear here after the transaction-level payment feed finishes loading.'
@@ -157,7 +171,19 @@ function updateSort(value: { column: string; direction: 'asc' | 'desc' }) {
     <UAlert
       v-if="paymentsBackfillActive"
       title="Transaction rows are temporarily syncing."
-      description="The transaction-level payment feed is still loading, so raw payment rows are temporarily unavailable on this page."
+      :description="
+        [
+          'The transaction-level payment feed is still loading, so raw payment rows are temporarily unavailable on this page.',
+          paymentsBackfill
+            ? `${formatCount(paymentsBackfill.source_row_count)} exported rows across ${formatFiscalYearCoverage(paymentsBackfill.fiscal_years)}`
+            : undefined,
+          paymentsBackfill?.active_runtime_seconds
+            ? `current ingest ${formatDurationShort(paymentsBackfill.active_runtime_seconds)}`
+            : undefined,
+        ]
+          .filter(Boolean)
+          .join(' ')
+      "
       icon="i-lucide-database-zap"
       color="warning"
       variant="soft"
@@ -200,12 +226,33 @@ function updateSort(value: { column: string; direction: 'asc' | 'desc' }) {
       @page="updatePage"
       @sort="updateSort"
     >
+      <template v-if="paymentsBackfillActive" #empty>
+        <PaymentsBackfillPanel
+          :source-row-count="paymentsBackfill?.source_row_count || 0"
+          :source-file-count="paymentsBackfill?.source_file_count || 0"
+          :fiscal-years="paymentsBackfill?.fiscal_years || []"
+          :active-runtime-seconds="paymentsBackfill?.active_runtime_seconds || null"
+          title="Raw payments pending"
+          description="The monthly payment exports are already captured from the Comptroller portal. Transaction rows will appear here after the current ingest commits."
+        >
+          <template #actions>
+            <UButton to="/counties" color="primary" variant="soft" class="rounded-full">
+              Browse county totals
+            </UButton>
+            <UButton to="/methodology" color="neutral" variant="soft" class="rounded-full">
+              Why this page is empty
+            </UButton>
+          </template>
+        </PaymentsBackfillPanel>
+      </template>
+
       <template #payment_date-data="{ row }">
         <UBadge color="neutral" variant="soft">{{ row.payment_date }}</UBadge>
       </template>
       <template #agency_name-data="{ row }">
         <UButton
           :to="row.agency_id ? `/agencies/${row.agency_id}` : undefined"
+          :prefetch="false"
           color="neutral"
           variant="link"
           class="px-0 font-semibold text-primary"
@@ -219,6 +266,7 @@ function updateSort(value: { column: string; direction: 'asc' | 'desc' }) {
       <template #object_code-data="{ row }">
         <UButton
           :to="row.object_code ? `/objects/${row.object_code}` : undefined"
+          :prefetch="false"
           color="neutral"
           variant="link"
           class="px-0 font-semibold text-primary"

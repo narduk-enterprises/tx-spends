@@ -35,26 +35,39 @@ const statewideMapQuery = computed(() =>
   cleanQueryObject({
     fiscal_year: fiscalYear.value,
     q: searchQuery.value,
-    limit: 300,
-    offset: 0,
     sort: 'amount',
     order: 'desc',
   }),
 )
 
+const countyListKey = computed(() => `counties:list:${JSON.stringify(requestQuery.value)}`)
+const countyMapKey = computed(() => `counties:map:${JSON.stringify(statewideMapQuery.value)}`)
+
 const { data, status } = await useFetch('/api/v1/counties', {
+  key: countyListKey,
   query: requestQuery,
 })
-const { data: mapData } = await useFetch('/api/v1/counties', {
+const { data: mapData } = await useFetch('/api/v1/county-map', {
+  key: countyMapKey,
   query: statewideMapQuery,
 })
 
 const counties = computed(() => data.value?.data || [])
 const countyMapMetrics = computed(() => mapData.value?.data || [])
 const meta = computed(() => data.value?.meta)
-const countyFiscalYearOptions = computed(() =>
-  buildFiscalYearOptions(meta.value?.available_fiscal_years || []),
-)
+const countyFiscalYearOptions = computed(() => {
+  const availableFiscalYears = [...(meta.value?.available_fiscal_years || [])]
+
+  if (
+    fiscalYear.value
+    && Number.isFinite(fiscalYear.value)
+    && !availableFiscalYears.includes(fiscalYear.value)
+  ) {
+    availableFiscalYears.push(fiscalYear.value)
+  }
+
+  return buildFiscalYearOptions(availableFiscalYears)
+})
 
 const title = fiscalYear.value
   ? `Texas County Spending for FY ${fiscalYear.value}`
@@ -167,9 +180,10 @@ function updateSort(value: { column: string; direction: 'asc' | 'desc' }) {
         <template #county_name-data="{ row }">
           <UButton
             :to="`/counties/${row.county_id}`"
+            :prefetch="false"
             color="neutral"
-          variant="link"
-          class="px-0 font-semibold text-primary"
+            variant="link"
+            class="px-0 font-semibold text-primary"
           >
             {{ formatCountyLabel(row.county_name) }}
           </UButton>

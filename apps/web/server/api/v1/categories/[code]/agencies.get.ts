@@ -1,7 +1,7 @@
 import { getRouterParam, getValidatedQuery } from 'h3'
 import { eq, desc, sql, and } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
-import { paymentCategoryCodeSql } from '#server/utils/explorer'
+import { formatAgencyDisplayName, paymentCategoryCodeSql } from '#server/utils/explorer'
 import { agencies, statePaymentFacts } from '#server/database/schema'
 import { globalQuerySchema } from '#server/utils/query'
 
@@ -36,6 +36,7 @@ export default defineEventHandler(async (event) => {
     filters_applied: query,
     data: topAgencies.map((t: any) => ({
       ...t,
+      agency_name: formatAgencyDisplayName(t.agency_name),
       amount: Number(t.amount || 0),
     })),
     meta: { currency: 'USD' },

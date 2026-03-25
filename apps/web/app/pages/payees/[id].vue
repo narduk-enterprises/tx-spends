@@ -233,6 +233,7 @@ const enrichment = computed(() => {
         <template #agency_name-data="{ row }">
           <UButton
             :to="row.agency_id ? `/agencies/${row.agency_id}` : undefined"
+            :prefetch="false"
             color="neutral"
             variant="link"
             class="px-0 font-semibold text-primary"
@@ -258,6 +259,7 @@ const enrichment = computed(() => {
         <template #category_title-data="{ row }">
           <UButton
             :to="`/categories/${row.category_code}`"
+            :prefetch="false"
             color="neutral"
             variant="link"
             class="px-0 font-semibold text-primary"

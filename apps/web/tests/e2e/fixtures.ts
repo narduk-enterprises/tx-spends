@@ -1,5 +1,3 @@
-import { warmUpApp as layerWarmUpApp } from '../../../../layers/narduk-nuxt-layer/testing/e2e/fixtures.ts'
-
 export {
   createUniqueEmail,
   expect,
@@ -16,10 +14,30 @@ export {
   updateProfileViaApi,
 } from '../../../../layers/narduk-nuxt-layer/testing/e2e/fixtures.ts'
 
-export async function warmUpApp(browser: Parameters<typeof layerWarmUpApp>[0], baseUrl: string) {
-  // Avoid warming against `/` while large payment backfills are in-flight; `/counties`
-  // exercises the app shell without blocking on transaction-level aggregates.
-  await layerWarmUpApp(browser, baseUrl, '/counties')
+export async function warmUpApp(
+  browser: import('@playwright/test').Browser,
+  baseUrl: string,
+  path = '/counties',
+) {
+  // Keep warm-up lightweight and deterministic across Nuxt dev, Wrangler preview,
+  // and deployed environments. Waiting for full network idle is too brittle here.
+  const page = await browser.newPage()
+
+  try {
+    const response = await page.goto(new URL(path, baseUrl).toString(), {
+      waitUntil: 'domcontentloaded',
+      timeout: 60_000,
+    })
+
+    if (!response?.ok()) {
+      throw new Error(`Warm-up navigation to ${path} failed with status ${response?.status()}`)
+    }
+
+    await page.locator('main').waitFor({ state: 'visible', timeout: 20_000 })
+    await page.waitForTimeout(250)
+  } finally {
+    await page.close().catch(() => {})
+  }
 }
 
 export async function waitForBaseUrlReady(baseUrl: string, timeoutMs = 60_000) {

@@ -98,6 +98,47 @@ export function formatCount(value: number | null | undefined) {
   }).format(Number(value || 0))
 }
 
+export function formatDurationShort(totalSeconds: number | null | undefined) {
+  const safeSeconds = Math.max(0, Math.floor(Number(totalSeconds || 0)))
+
+  if (safeSeconds <= 0) {
+    return 'Starting…'
+  }
+
+  const days = Math.floor(safeSeconds / 86_400)
+  const hours = Math.floor((safeSeconds % 86_400) / 3_600)
+  const minutes = Math.floor((safeSeconds % 3_600) / 60)
+
+  if (days > 0) {
+    return `${days}d ${hours}h`
+  }
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`
+  }
+
+  if (minutes > 0) {
+    return `${minutes}m`
+  }
+
+  return `${safeSeconds}s`
+}
+
+export function formatFiscalYearCoverage(years: Array<number | null | undefined>) {
+  const normalizedYears = [...new Set(years.filter((year): year is number => Number.isFinite(year)))]
+    .sort((left, right) => left - right)
+
+  if (normalizedYears.length === 0) {
+    return 'No fiscal years'
+  }
+
+  if (normalizedYears.length === 1) {
+    return `FY ${normalizedYears[0]}`
+  }
+
+  return `FY ${normalizedYears[0]}–${normalizedYears.at(-1)}`
+}
+
 export function formatCountyDisplayName(value: string | null | undefined, fallback = 'Unknown') {
   if (!value) {
     return fallback

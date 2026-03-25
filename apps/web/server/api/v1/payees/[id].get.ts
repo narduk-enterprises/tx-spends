@@ -5,9 +5,12 @@ import {
   agencies,
   payeeVendorMatches,
   payees,
+  paymentPayeeRollups,
   statePaymentFacts,
   vendorEnrichment,
 } from '#server/database/schema'
+import { formatAgencyDisplayName } from '#server/utils/explorer'
+import { getRollupScopeFiscalYear } from '#server/utils/payment-rollups'
 import { globalQuerySchema } from '#server/utils/query'
 
 export default defineEventHandler(async (event) => {
@@ -15,7 +18,9 @@ export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')
   const query = await getValidatedQuery(event, globalQuerySchema.parse)
 
-  if (!id) throw createError({ statusCode: 400, message: 'Missing payee_id' })
+  if (!id) {
+    throw createError({ statusCode: 400, message: 'Missing payee_id' })
+  }
 
   const [payee] = await db
     .select({
@@ -23,7 +28,6 @@ export default defineEventHandler(async (event) => {
       payee_name: payees.payeeNameRaw,
       payee_name_normalized: payees.payeeNameNormalized,
       is_confidential: payees.isConfidential,
-      // Vendor enrichment
       vendor_id: vendorEnrichment.id,
       vendor_name: vendorEnrichment.vendorNameRaw,
       hub_status: vendorEnrichment.hubStatus,
@@ -39,21 +43,40 @@ export default defineEventHandler(async (event) => {
     .where(eq(payees.id, id))
     .limit(1)
 
-  if (!payee) throw createError({ statusCode: 404, message: 'Payee not found' })
+  if (!payee) {
+    throw createError({ statusCode: 404, message: 'Payee not found' })
+  }
+
+  const scopeFiscalYear = getRollupScopeFiscalYear(query.fiscal_year)
+  const totalAmountColumn = query.include_confidential
+    ? paymentPayeeRollups.totalAmountAll
+    : paymentPayeeRollups.totalAmountPublic
+  const agencyCountColumn = query.include_confidential
+    ? paymentPayeeRollups.agencyCountAll
+    : paymentPayeeRollups.agencyCountPublic
+
+  const [summary] = await db
+    .select({
+      total_received: totalAmountColumn,
+      agency_count: agencyCountColumn,
+    })
+    .from(paymentPayeeRollups)
+    .where(
+      and(
+        eq(paymentPayeeRollups.scopeFiscalYear, scopeFiscalYear),
+        eq(paymentPayeeRollups.payeeId, id),
+      ),
+    )
+    .limit(1)
 
   const conditions = [eq(statePaymentFacts.payeeId, id)]
   if (query.fiscal_year) {
     conditions.push(eq(statePaymentFacts.fiscalYear, query.fiscal_year))
   }
+  if (!query.include_confidential) {
+    conditions.push(eq(statePaymentFacts.isConfidential, false))
+  }
   const whereClause = and(...conditions)
-
-  const [summary] = await db
-    .select({
-      total_received: sql<string>`COALESCE(SUM(${statePaymentFacts.amount}), 0)`,
-      agency_count: sql<number>`COUNT(DISTINCT ${statePaymentFacts.agencyId})`,
-    })
-    .from(statePaymentFacts)
-    .where(whereClause)
 
   const [largestAgency] = await db
     .select({
@@ -76,7 +99,7 @@ export default defineEventHandler(async (event) => {
       largest_agency: largestAgency
         ? {
             agency_id: largestAgency.agency_id,
-            agency_name: largestAgency.agency_name,
+            agency_name: formatAgencyDisplayName(largestAgency.agency_name),
             amount: Number(largestAgency.amount || 0),
           }
         : null,

@@ -18,6 +18,7 @@ const navItems = [
       <div class="flex min-w-0 items-center gap-3">
         <NuxtLink
           to="/"
+          :prefetch="false"
           class="group flex min-w-0 items-center gap-3 rounded-full border border-primary/15 bg-primary/5 px-3 py-2 transition-base hover:border-primary/25 hover:bg-primary/10"
         >
           <div
@@ -38,6 +39,7 @@ const navItems = [
             v-for="item in navItems"
             :key="item.to"
             :to="item.to"
+            :prefetch="false"
             variant="ghost"
             color="neutral"
             class="rounded-full px-3 text-sm text-muted hover:text-default"
@@ -92,6 +94,7 @@ const navItems = [
               v-for="item in navItems"
               :key="item.to"
               :to="item.to"
+              :prefetch="false"
               color="neutral"
               variant="ghost"
               class="justify-start rounded-2xl px-4 py-3"
@@ -106,6 +109,7 @@ const navItems = [
           <div class="flex flex-wrap gap-2">
             <UButton
               to="/methodology"
+              :prefetch="false"
               color="neutral"
               variant="soft"
               @click="isMobileNavOpen = false"
@@ -114,6 +118,7 @@ const navItems = [
             </UButton>
             <UButton
               to="/data-sources"
+              :prefetch="false"
               color="neutral"
               variant="soft"
               @click="isMobileNavOpen = false"
@@ -122,6 +127,7 @@ const navItems = [
             </UButton>
             <UButton
               to="/disclaimers"
+              :prefetch="false"
               color="neutral"
               variant="soft"
               @click="isMobileNavOpen = false"

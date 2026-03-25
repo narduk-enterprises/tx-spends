@@ -141,6 +141,7 @@ const filters = computed({
         <template #agency_name-data="{ row }">
           <UButton
             :to="row.agency_id ? `/agencies/${row.agency_id}` : undefined"
+            :prefetch="false"
             color="neutral"
             variant="link"
             class="px-0 font-semibold text-primary"

@@ -198,6 +198,7 @@ const tabs = [
         <template #agency_name-data="{ row }">
           <UButton
             :to="row.agency_id ? `/agencies/${row.agency_id}` : undefined"
+            :prefetch="false"
             color="neutral"
             variant="link"
             class="px-0 font-semibold text-primary"
@@ -223,6 +224,7 @@ const tabs = [
         <template #category_title-data="{ row }">
           <UButton
             :to="row.category_code ? `/categories/${row.category_code}` : undefined"
+            :prefetch="false"
             color="neutral"
             variant="link"
             class="px-0 font-semibold text-primary"

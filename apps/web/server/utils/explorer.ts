@@ -11,17 +11,63 @@ const specialCountyDisplayNames: Record<string, string> = {
   MCMULLEN: 'McMullen',
   RAINES: 'Rains',
 }
+const titleCaseStopWords = new Set([
+  'a',
+  'an',
+  'and',
+  'as',
+  'at',
+  'by',
+  'for',
+  'from',
+  'in',
+  'of',
+  'on',
+  'or',
+  'the',
+  'to',
+  'vs',
+  'via',
+])
 
 export function normalizeSearchTerm(value: string) {
   return value.toUpperCase().replaceAll(/[^A-Z0-9 ]/g, '')
 }
 
-export function toDisplayName(value: string | null | undefined, fallback = 'Unknown') {
+function capitalizeCompoundWord(value: string) {
+  return value.replaceAll(/(^|[-/])([a-z])/g, (_, separator: string, character: string) => {
+    return `${separator}${character.toUpperCase()}`
+  })
+}
+
+export function toHumanTitleCase(value: string | null | undefined, fallback = 'Unknown') {
   if (!value) {
     return fallback
   }
 
-  return value.toLowerCase().replaceAll(/\b\w/g, (letter) => letter.toUpperCase())
+  const normalizedValue = value.toLowerCase().replaceAll(/\s+/g, ' ').trim()
+  const words = normalizedValue.split(' ')
+
+  return words
+    .map((word, index) => {
+      if (!word) {
+        return word
+      }
+
+      const isBoundaryWord = index === 0 || index === words.length - 1
+      const plainWord = word.replaceAll(/[^a-z]/g, '')
+
+      if (!isBoundaryWord && titleCaseStopWords.has(plainWord)) {
+        return word
+      }
+
+      return capitalizeCompoundWord(word)
+    })
+    .join(' ')
+}
+
+export function toDisplayName(value: string | null | undefined, fallback = 'Unknown') {
+  return toHumanTitleCase(value, fallback)
 }
 
 export function formatCountyDisplayName(value: string | null | undefined, fallback = 'Unknown') {
@@ -40,6 +86,13 @@ export function formatAgencyDisplayName(
   return toDisplayName(value, fallback)
 }
 
+export function formatCategoryDisplayName(
+  value: string | null | undefined,
+  fallback = 'Uncategorized',
+) {
+  return toHumanTitleCase(value, fallback)
+}
+
 export function slugifyCategory(value: string | null | undefined, fallback = 'uncategorized') {
   const source = value?.trim() || fallback
   return source
@@ -55,7 +108,7 @@ function categoryCodeSql(column: SqlValue, fallback: string) {
 
 function categoryTitleSql(column: SqlValue, fallback: string) {
   const fallbackLiteral = sql.raw(`'${fallback.replaceAll("'", "''")}'`)
-  return sql<string>`coalesce(${column}, ${fallbackLiteral})`
+  return sql<string>`initcap(lower(coalesce(${column}, ${fallbackLiteral})))`
 }
 
 export function paymentCategoryCodeSql(column: SqlValue) {

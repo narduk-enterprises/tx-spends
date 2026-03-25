@@ -1,7 +1,8 @@
 import { getRouterParam, getValidatedQuery } from 'h3'
 import { and, eq, sql } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
-import { statePaymentFacts } from '#server/database/schema'
+import { paymentAgencyRollups } from '#server/database/schema'
+import { ROLLUP_ALL_YEARS } from '#server/utils/payment-rollups'
 import { globalQuerySchema } from '#server/utils/query'
 
 export default defineEventHandler(async (event) => {
@@ -9,28 +10,35 @@ export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')
   const query = await getValidatedQuery(event, globalQuerySchema.parse)
 
-  if (!id) throw createError({ statusCode: 400, message: 'Missing agency_id' })
+  if (!id) {
+    throw createError({ statusCode: 400, message: 'Missing agency_id' })
+  }
 
-  const conditions = [eq(statePaymentFacts.agencyId, id)]
-  if (query.fiscal_year) conditions.push(eq(statePaymentFacts.fiscalYear, query.fiscal_year))
-  if (!query.include_confidential) conditions.push(eq(statePaymentFacts.isConfidential, false))
-  const whereClause = and(...conditions)
+  const amountColumn = query.include_confidential
+    ? paymentAgencyRollups.totalSpendAll
+    : paymentAgencyRollups.totalSpendPublic
+  const conditions = [eq(paymentAgencyRollups.agencyId, id)]
+
+  if (query.fiscal_year) {
+    conditions.push(eq(paymentAgencyRollups.scopeFiscalYear, query.fiscal_year))
+  } else {
+    conditions.push(sql`${paymentAgencyRollups.scopeFiscalYear} <> ${ROLLUP_ALL_YEARS}`)
+  }
 
   const trends = await db
     .select({
-      fiscal_year: statePaymentFacts.fiscalYear,
-      amount: sql<string>`SUM(${statePaymentFacts.amount})`,
+      fiscal_year: paymentAgencyRollups.scopeFiscalYear,
+      amount: amountColumn,
     })
-    .from(statePaymentFacts)
-    .where(whereClause)
-    .groupBy(statePaymentFacts.fiscalYear)
-    .orderBy(statePaymentFacts.fiscalYear)
+    .from(paymentAgencyRollups)
+    .where(and(...conditions))
+    .orderBy(paymentAgencyRollups.scopeFiscalYear)
 
   return {
     filters_applied: query,
-    data: trends.map((t: any) => ({
-      ...t,
-      amount: Number(t.amount || 0),
+    data: trends.map((trend) => ({
+      ...trend,
+      amount: Number(trend.amount || 0),
     })),
     meta: { currency: 'USD' },
   }

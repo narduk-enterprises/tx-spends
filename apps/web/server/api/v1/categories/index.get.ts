@@ -1,20 +1,18 @@
 import { getValidatedQuery } from 'h3'
-import { and, asc, desc, eq, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, like, sql } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
-import {
-  normalizeSearchTerm,
-  paymentCategoryCodeSql,
-  paymentCategoryTitleSql,
-} from '#server/utils/explorer'
-import { isPaymentsBackfillActive } from '#server/utils/payments-backfill'
-import { statePaymentFacts } from '#server/database/schema'
+import { paymentCategoryRollups } from '#server/database/schema'
+import { formatCategoryDisplayName, normalizeSearchTerm } from '#server/utils/explorer'
+import { getPaymentsBackfillStatus } from '#server/utils/payments-backfill'
+import { getRollupScopeFiscalYear } from '#server/utils/payment-rollups'
 import { globalQuerySchema } from '#server/utils/query'
 
 export default defineEventHandler(async (event) => {
   const query = await getValidatedQuery(event, globalQuerySchema.parse)
   const db = useAppDatabase(event)
+  const paymentsBackfill = await getPaymentsBackfillStatus(db)
 
-  if (await isPaymentsBackfillActive(db)) {
+  if (paymentsBackfill.active) {
     return {
       filters_applied: query,
       data: [],
@@ -25,56 +23,55 @@ export default defineEventHandler(async (event) => {
         returned: 0,
         total: 0,
         payments_backfill_active: true,
+        payments_backfill: paymentsBackfill,
       },
     }
   }
 
-  const categoryCode = paymentCategoryCodeSql(statePaymentFacts.objectCategoryRaw)
-  const categoryTitle = paymentCategoryTitleSql(statePaymentFacts.objectCategoryRaw)
-  const conditions = []
-  if (query.fiscal_year) {
-    conditions.push(eq(statePaymentFacts.fiscalYear, query.fiscal_year))
-  }
-  if (!query.include_confidential) {
-    conditions.push(eq(statePaymentFacts.isConfidential, false))
-  }
+  const scopeFiscalYear = getRollupScopeFiscalYear(query.fiscal_year)
+  const amountColumn = query.include_confidential
+    ? paymentCategoryRollups.totalAmountAll
+    : paymentCategoryRollups.totalAmountPublic
+  const conditions = [eq(paymentCategoryRollups.scopeFiscalYear, scopeFiscalYear)]
+
   if (query.q) {
-    conditions.push(sql`upper(${categoryTitle}) like ${`%${normalizeSearchTerm(query.q)}%`}`)
+    conditions.push(like(sql`upper(${paymentCategoryRollups.categoryTitle})`, `%${normalizeSearchTerm(query.q)}%`))
   }
-  const whereClause = conditions.length > 0 ? and(...conditions) : undefined
+
+  const whereClause = and(...conditions)
   const sortColumn =
     query.sort === 'category_code'
-      ? categoryCode
+      ? paymentCategoryRollups.categoryCode
       : query.sort === 'category_title'
-        ? categoryTitle
-        : sql`COALESCE(SUM(${statePaymentFacts.amount}), 0)`
+        ? paymentCategoryRollups.categoryTitle
+        : amountColumn
   const orderDirection = query.order === 'asc' ? asc : desc
 
   const list = await db
     .select({
-      category_code: categoryCode,
-      category_title: categoryTitle,
-      amount: sql<string>`COALESCE(SUM(${statePaymentFacts.amount}), 0)`,
+      category_code: paymentCategoryRollups.categoryCode,
+      category_title: paymentCategoryRollups.categoryTitle,
+      amount: amountColumn,
     })
-    .from(statePaymentFacts)
+    .from(paymentCategoryRollups)
     .where(whereClause)
-    .groupBy(categoryCode, categoryTitle)
-    .orderBy(orderDirection(sortColumn))
+    .orderBy(orderDirection(sortColumn), asc(paymentCategoryRollups.categoryTitle))
     .limit(query.limit)
     .offset(query.offset)
 
   const [summary] = await db
     .select({
-      total: sql<number>`COUNT(DISTINCT ${categoryCode})`,
+      total: sql<number>`COUNT(*)`,
     })
-    .from(statePaymentFacts)
+    .from(paymentCategoryRollups)
     .where(whereClause)
 
   return {
     filters_applied: query,
-    data: list.map((c) => ({
-      ...c,
-      amount: Number(c.amount || 0),
+    data: list.map((category) => ({
+      ...category,
+      category_title: formatCategoryDisplayName(category.category_title, 'Uncategorized'),
+      amount: Number(category.amount || 0),
     })),
     meta: {
       currency: 'USD',
@@ -83,6 +80,7 @@ export default defineEventHandler(async (event) => {
       returned: list.length,
       total: Number(summary?.total || 0),
       payments_backfill_active: false,
+      payments_backfill: paymentsBackfill,
     },
   }
 })

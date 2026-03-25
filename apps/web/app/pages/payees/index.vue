@@ -4,6 +4,8 @@ import {
   DEFAULT_PAGE_SIZE,
   FISCAL_YEAR_OPTIONS,
   formatCount,
+  formatDurationShort,
+  formatFiscalYearCoverage,
   formatUsd,
   formatUsdCompact,
   getBooleanQueryValue,
@@ -41,6 +43,17 @@ const { data, status } = await useFetch('/api/v1/payees', {
 const payees = computed(() => data.value?.data || [])
 const meta = computed(() => data.value?.meta)
 const paymentsBackfillActive = computed(() => Boolean(meta.value?.payments_backfill_active))
+const paymentsBackfill = computed(
+  () =>
+    meta.value?.payments_backfill as
+      | {
+          source_row_count: number
+          source_file_count: number
+          fiscal_years: number[]
+          active_runtime_seconds: number | null
+        }
+      | undefined,
+)
 const emptyTitle = computed(() =>
   paymentsBackfillActive.value ? 'Payment backfill in progress' : 'No payees match these filters',
 )
@@ -136,7 +149,19 @@ function updateSort(value: { column: string; direction: 'asc' | 'desc' }) {
     <UAlert
       v-if="paymentsBackfillActive"
       title="Payee rankings are temporarily syncing."
-      description="The transaction-level payment feed is still loading, so payee totals and vendor-match rankings are temporarily unavailable."
+      :description="
+        [
+          'The transaction-level payment feed is still loading, so payee totals and vendor-match rankings are temporarily unavailable.',
+          paymentsBackfill
+            ? `${formatCount(paymentsBackfill.source_row_count)} exported rows across ${formatFiscalYearCoverage(paymentsBackfill.fiscal_years)}`
+            : undefined,
+          paymentsBackfill?.active_runtime_seconds
+            ? `current ingest ${formatDurationShort(paymentsBackfill.active_runtime_seconds)}`
+            : undefined,
+        ]
+          .filter(Boolean)
+          .join(' ')
+      "
       icon="i-lucide-database-zap"
       color="warning"
       variant="soft"
@@ -173,10 +198,31 @@ function updateSort(value: { column: string; direction: 'asc' | 'desc' }) {
       @page="updatePage"
       @sort="updateSort"
     >
+      <template v-if="paymentsBackfillActive" #empty>
+        <PaymentsBackfillPanel
+          :source-row-count="paymentsBackfill?.source_row_count || 0"
+          :source-file-count="paymentsBackfill?.source_file_count || 0"
+          :fiscal-years="paymentsBackfill?.fiscal_years || []"
+          :active-runtime-seconds="paymentsBackfill?.active_runtime_seconds || null"
+          title="Payee leaderboard pending"
+          description="The payee collection and vendor-match overlays will populate after the live payment import commits."
+        >
+          <template #actions>
+            <UButton to="/counties" color="primary" variant="soft" class="rounded-full">
+              See county spend instead
+            </UButton>
+            <UButton to="/data-sources" color="neutral" variant="soft" class="rounded-full">
+              Inspect source data
+            </UButton>
+          </template>
+        </PaymentsBackfillPanel>
+      </template>
+
       <template #payee_name-data="{ row }">
         <div class="flex items-center gap-2">
           <UButton
             :to="`/payees/${row.payee_id}`"
+            :prefetch="false"
             color="neutral"
             variant="link"
             class="px-0 font-semibold text-primary"

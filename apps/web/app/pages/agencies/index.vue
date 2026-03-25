@@ -4,6 +4,8 @@ import {
   DEFAULT_PAGE_SIZE,
   FISCAL_YEAR_OPTIONS,
   formatCount,
+  formatDurationShort,
+  formatFiscalYearCoverage,
   formatUsd,
   formatUsdCompact,
   getNumberQueryValue,
@@ -38,6 +40,17 @@ const { data, status } = await useFetch('/api/v1/agencies', {
 const agencies = computed(() => data.value?.data || [])
 const meta = computed(() => data.value?.meta)
 const paymentsBackfillActive = computed(() => Boolean(meta.value?.payments_backfill_active))
+const paymentsBackfill = computed(
+  () =>
+    meta.value?.payments_backfill as
+      | {
+          source_row_count: number
+          source_file_count: number
+          fiscal_years: number[]
+          active_runtime_seconds: number | null
+        }
+      | undefined,
+)
 const rowsReturnedValue = computed(() =>
   paymentsBackfillActive.value ? 'Syncing' : formatCount(meta.value?.returned),
 )
@@ -157,7 +170,19 @@ function updateSort(value: { column: string; direction: 'asc' | 'desc' }) {
     <UAlert
       v-if="paymentsBackfillActive"
       title="Agency rankings are temporarily syncing."
-      description="The transaction-level payment feed is still loading, so agency totals and rankings are temporarily unavailable."
+      :description="
+        [
+          'The transaction-level payment feed is still loading, so agency totals and rankings are temporarily unavailable.',
+          paymentsBackfill
+            ? `${formatCount(paymentsBackfill.source_row_count)} exported rows across ${formatFiscalYearCoverage(paymentsBackfill.fiscal_years)}`
+            : undefined,
+          paymentsBackfill?.active_runtime_seconds
+            ? `current ingest ${formatDurationShort(paymentsBackfill.active_runtime_seconds)}`
+            : undefined,
+        ]
+          .filter(Boolean)
+          .join(' ')
+      "
       icon="i-lucide-database-zap"
       color="warning"
       variant="soft"
@@ -193,9 +218,30 @@ function updateSort(value: { column: string; direction: 'asc' | 'desc' }) {
       @page="updatePage"
       @sort="updateSort"
     >
+      <template v-if="paymentsBackfillActive" #empty>
+        <PaymentsBackfillPanel
+          :source-row-count="paymentsBackfill?.source_row_count || 0"
+          :source-file-count="paymentsBackfill?.source_file_count || 0"
+          :fiscal-years="paymentsBackfill?.fiscal_years || []"
+          :active-runtime-seconds="paymentsBackfill?.active_runtime_seconds || null"
+          title="Agency leaderboard pending"
+          description="The agency collection will populate after the live payment import commits. County-based agency breakdowns are already available from the county map."
+        >
+          <template #actions>
+            <UButton to="/counties" color="primary" variant="soft" class="rounded-full">
+              Open county map
+            </UButton>
+            <UButton to="/methodology" color="neutral" variant="soft" class="rounded-full">
+              Read methodology
+            </UButton>
+          </template>
+        </PaymentsBackfillPanel>
+      </template>
+
       <template #agency_name-data="{ row }">
         <UButton
           :to="`/agencies/${row.agency_id}`"
+          :prefetch="false"
           color="neutral"
           variant="link"
           class="px-0 font-semibold text-primary"

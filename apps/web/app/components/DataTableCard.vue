@@ -67,7 +67,9 @@ const tableColumns = computed(() =>
     </div>
 
     <div v-else-if="rows.length === 0" class="px-2 py-6">
-      <EmptyState :title="emptyTitle" :description="emptyDescription" icon="i-lucide-search-x" />
+      <slot name="empty">
+        <EmptyState :title="emptyTitle" :description="emptyDescription" icon="i-lucide-search-x" />
+      </slot>
     </div>
 
     <div v-else>

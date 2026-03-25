@@ -11,11 +11,18 @@
         </div>
 
         <div class="grid gap-2 sm:grid-cols-2">
-          <UButton to="/about" color="neutral" variant="ghost" class="justify-start rounded-2xl">
+          <UButton
+            to="/about"
+            :prefetch="false"
+            color="neutral"
+            variant="ghost"
+            class="justify-start rounded-2xl"
+          >
             About
           </UButton>
           <UButton
             to="/methodology"
+            :prefetch="false"
             color="neutral"
             variant="ghost"
             class="justify-start rounded-2xl"
@@ -24,6 +31,7 @@
           </UButton>
           <UButton
             to="/data-sources"
+            :prefetch="false"
             color="neutral"
             variant="ghost"
             class="justify-start rounded-2xl"
@@ -32,6 +40,7 @@
           </UButton>
           <UButton
             to="/disclaimers"
+            :prefetch="false"
             color="neutral"
             variant="ghost"
             class="justify-start rounded-2xl"

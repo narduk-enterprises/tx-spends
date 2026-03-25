@@ -1,15 +1,17 @@
 import { getValidatedQuery } from 'h3'
-import { and, asc, desc, eq, isNotNull, like, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, like, sql } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
-import { payeeVendorMatches, payees, statePaymentFacts } from '#server/database/schema'
-import { isPaymentsBackfillActive } from '#server/utils/payments-backfill'
+import { payeeVendorMatches, payees, paymentPayeeRollups } from '#server/database/schema'
+import { getPaymentsBackfillStatus } from '#server/utils/payments-backfill'
+import { getRollupScopeFiscalYear } from '#server/utils/payment-rollups'
 import { globalQuerySchema } from '#server/utils/query'
 
 export default defineEventHandler(async (event) => {
   const query = await getValidatedQuery(event, globalQuerySchema.parse)
   const db = useAppDatabase(event)
+  const paymentsBackfill = await getPaymentsBackfillStatus(db)
 
-  if (await isPaymentsBackfillActive(db)) {
+  if (paymentsBackfill.active) {
     return {
       filters_applied: query,
       data: [],
@@ -20,35 +22,44 @@ export default defineEventHandler(async (event) => {
         returned: 0,
         total: 0,
         payments_backfill_active: true,
+        payments_backfill: paymentsBackfill,
       },
     }
   }
 
-  const conditions = []
+  const scopeFiscalYear = getRollupScopeFiscalYear(query.fiscal_year)
+  const amountColumn = query.include_confidential
+    ? paymentPayeeRollups.totalAmountAll
+    : paymentPayeeRollups.totalAmountPublic
+  const agencyCountColumn = query.include_confidential
+    ? paymentPayeeRollups.agencyCountAll
+    : paymentPayeeRollups.agencyCountPublic
+  const matchedVendorExists = sql<boolean>`EXISTS (
+    SELECT 1
+    FROM ${payeeVendorMatches}
+    WHERE ${payeeVendorMatches.payeeId} = ${paymentPayeeRollups.payeeId}
+  )`
+  const conditions = [eq(paymentPayeeRollups.scopeFiscalYear, scopeFiscalYear)]
+
   if (query.q) {
     conditions.push(
       like(payees.payeeNameNormalized, `%${query.q.toUpperCase().replaceAll(/[^A-Z0-9 ]/g, '')}%`),
     )
   }
-  if (query.fiscal_year) {
-    conditions.push(eq(statePaymentFacts.fiscalYear, query.fiscal_year))
-  }
   if (!query.include_confidential) {
     conditions.push(eq(payees.isConfidential, false))
   }
   if (query.matched_vendor_only) {
-    conditions.push(isNotNull(payeeVendorMatches.id))
+    conditions.push(matchedVendorExists)
   }
 
-  const whereClause = conditions.length > 0 ? and(...conditions) : undefined
-  const spendMetric = sql`COALESCE(SUM(${statePaymentFacts.amount}), 0)`
-  const agencyCountMetric = sql`COUNT(DISTINCT ${statePaymentFacts.agencyId})`
+  const whereClause = and(...conditions)
   const sortColumn =
     query.sort === 'payee_name'
       ? payees.payeeNameRaw
       : query.sort === 'agency_count'
-        ? agencyCountMetric
-        : spendMetric
+        ? agencyCountColumn
+        : amountColumn
   const orderDirection = query.order === 'asc' ? asc : desc
 
   const list = await db
@@ -56,35 +67,32 @@ export default defineEventHandler(async (event) => {
       payee_id: payees.id,
       payee_name: payees.payeeNameRaw,
       is_confidential: payees.isConfidential,
-      amount: sql<string>`COALESCE(SUM(${statePaymentFacts.amount}), 0)`,
-      agency_count: sql<number>`COUNT(DISTINCT ${statePaymentFacts.agencyId})`,
-      matched_vendor: sql<boolean>`MAX(CASE WHEN ${payeeVendorMatches.id} IS NOT NULL THEN 1 ELSE 0 END) = 1`,
+      amount: amountColumn,
+      agency_count: agencyCountColumn,
+      matched_vendor: matchedVendorExists,
     })
-    .from(statePaymentFacts)
-    .innerJoin(payees, eq(payees.id, statePaymentFacts.payeeId))
-    .leftJoin(payeeVendorMatches, eq(payees.id, payeeVendorMatches.payeeId))
+    .from(paymentPayeeRollups)
+    .innerJoin(payees, eq(payees.id, paymentPayeeRollups.payeeId))
     .where(whereClause)
-    .groupBy(payees.id, payees.payeeNameRaw, payees.isConfidential)
     .orderBy(orderDirection(sortColumn), asc(payees.payeeNameRaw))
     .limit(query.limit)
     .offset(query.offset)
 
   const [summary] = await db
     .select({
-      total: sql<number>`COUNT(DISTINCT ${statePaymentFacts.payeeId})`,
+      total: sql<number>`COUNT(*)`,
     })
-    .from(statePaymentFacts)
-    .innerJoin(payees, eq(payees.id, statePaymentFacts.payeeId))
-    .leftJoin(payeeVendorMatches, eq(payees.id, payeeVendorMatches.payeeId))
+    .from(paymentPayeeRollups)
+    .innerJoin(payees, eq(payees.id, paymentPayeeRollups.payeeId))
     .where(whereClause)
 
   return {
     filters_applied: query,
-    data: list.map((p) => ({
-      ...p,
-      amount: Number(p.amount || 0),
-      agency_count: Number(p.agency_count || 0),
-      matched_vendor: Boolean(p.matched_vendor),
+    data: list.map((payee) => ({
+      ...payee,
+      amount: Number(payee.amount || 0),
+      agency_count: Number(payee.agency_count || 0),
+      matched_vendor: Boolean(payee.matched_vendor),
     })),
     meta: {
       currency: 'USD',
@@ -93,6 +101,7 @@ export default defineEventHandler(async (event) => {
       returned: list.length,
       total: Number(summary?.total || 0),
       payments_backfill_active: false,
+      payments_backfill: paymentsBackfill,
     },
   }
 })

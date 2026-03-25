@@ -1,17 +1,22 @@
 import { getValidatedQuery } from 'h3'
 import { and, asc, desc, eq, like, or, sql } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
-import { statePaymentFacts, comptrollerObjects } from '#server/database/schema'
-import { isPaymentsBackfillActive } from '#server/utils/payments-backfill'
+import { comptrollerObjects, paymentObjectRollups } from '#server/database/schema'
+import { getPaymentsBackfillStatus } from '#server/utils/payments-backfill'
+import { getRollupScopeFiscalYear } from '#server/utils/payment-rollups'
 import { globalQuerySchema } from '#server/utils/query'
 
 export default defineEventHandler(async (event) => {
   const query = await getValidatedQuery(event, globalQuerySchema.parse)
   const db = useAppDatabase(event)
   const searchTerm = query.q?.trim()
-  const paymentsBackfillActive = await isPaymentsBackfillActive(db)
+  const paymentsBackfill = await getPaymentsBackfillStatus(db)
+  const scopeFiscalYear = getRollupScopeFiscalYear(query.fiscal_year)
+  const amountColumn = query.include_confidential
+    ? paymentObjectRollups.totalAmountAll
+    : paymentObjectRollups.totalAmountPublic
 
-  const conditions = []
+  const conditions = [eq(paymentObjectRollups.scopeFiscalYear, scopeFiscalYear)]
   if (searchTerm) {
     conditions.push(
       or(
@@ -20,11 +25,8 @@ export default defineEventHandler(async (event) => {
       )!,
     )
   }
-  const whereObj = conditions.length > 0 ? and(...conditions) : undefined
-  const paymentConditions = query.fiscal_year
-    ? [eq(statePaymentFacts.fiscalYear, query.fiscal_year)]
-    : []
-  const amountSql = sql`COALESCE(SUM(${statePaymentFacts.amount}), 0)`
+
+  const whereClause = and(...conditions)
   const relevanceSql = searchTerm
     ? sql<number>`CASE
         WHEN ${comptrollerObjects.code} = ${searchTerm} THEN 0
@@ -36,74 +38,37 @@ export default defineEventHandler(async (event) => {
       END`
     : sql<number>`0`
 
-  const list = paymentsBackfillActive
-    ? await db
-        .select({
-          object_code: comptrollerObjects.code,
-          object_title: comptrollerObjects.title,
-          object_group: comptrollerObjects.objectGroup,
-          amount: sql<string>`0`,
-        })
-        .from(comptrollerObjects)
-        .where(whereObj)
-        .orderBy(
-          ...(searchTerm
-            ? [asc(relevanceSql), asc(comptrollerObjects.code)]
-            : [asc(comptrollerObjects.code)]),
-        )
-        .limit(query.limit)
-        .offset(query.offset)
-    : await db
-        .select({
-          object_code: comptrollerObjects.code,
-          object_title: comptrollerObjects.title,
-          object_group: comptrollerObjects.objectGroup,
-          amount: sql<string>`${amountSql}`,
-        })
-        .from(comptrollerObjects)
-        .leftJoin(
-          statePaymentFacts,
-          and(
-            eq(comptrollerObjects.code, statePaymentFacts.comptrollerObjectCode),
-            ...paymentConditions,
-          ),
-        )
-        .where(whereObj)
-        .groupBy(comptrollerObjects.code, comptrollerObjects.title, comptrollerObjects.objectGroup)
-        .orderBy(
-          ...(searchTerm
-            ? [asc(relevanceSql), desc(amountSql), asc(comptrollerObjects.code)]
-            : [desc(amountSql)]),
-        )
-        .limit(query.limit)
-        .offset(query.offset)
+  const list = await db
+    .select({
+      object_code: comptrollerObjects.code,
+      object_title: comptrollerObjects.title,
+      object_group: comptrollerObjects.objectGroup,
+      amount: amountColumn,
+    })
+    .from(paymentObjectRollups)
+    .innerJoin(comptrollerObjects, eq(comptrollerObjects.code, paymentObjectRollups.objectCode))
+    .where(whereClause)
+    .orderBy(
+      ...(searchTerm
+        ? [asc(relevanceSql), desc(amountColumn), asc(comptrollerObjects.code)]
+        : [desc(amountColumn), asc(comptrollerObjects.code)]),
+    )
+    .limit(query.limit)
+    .offset(query.offset)
 
-  const [summary] = paymentsBackfillActive
-    ? await db
-        .select({
-          total: sql<number>`COUNT(DISTINCT ${comptrollerObjects.code})`,
-        })
-        .from(comptrollerObjects)
-        .where(whereObj)
-    : await db
-        .select({
-          total: sql<number>`COUNT(DISTINCT ${comptrollerObjects.code})`,
-        })
-        .from(comptrollerObjects)
-        .leftJoin(
-          statePaymentFacts,
-          and(
-            eq(comptrollerObjects.code, statePaymentFacts.comptrollerObjectCode),
-            ...paymentConditions,
-          ),
-        )
-        .where(whereObj)
+  const [summary] = await db
+    .select({
+      total: sql<number>`COUNT(*)`,
+    })
+    .from(paymentObjectRollups)
+    .innerJoin(comptrollerObjects, eq(comptrollerObjects.code, paymentObjectRollups.objectCode))
+    .where(whereClause)
 
   return {
     filters_applied: query,
-    data: list.map((c) => ({
-      ...c,
-      amount: Number(c.amount || 0),
+    data: list.map((object) => ({
+      ...object,
+      amount: Number(object.amount || 0),
     })),
     meta: {
       currency: 'USD',
@@ -111,7 +76,8 @@ export default defineEventHandler(async (event) => {
       offset: query.offset,
       returned: list.length,
       total: Number(summary?.total || 0),
-      payments_backfill_active: paymentsBackfillActive,
+      payments_backfill_active: paymentsBackfill.active,
+      payments_backfill: paymentsBackfill,
     },
   }
 })

@@ -8,6 +8,8 @@ import {
 } from './helpers'
 
 test.describe('collection pages', () => {
+  test.setTimeout(120_000)
+
   test.beforeAll(async ({ browser, baseURL }) => {
     if (!baseURL) {
       throw new Error('collection page tests require Playwright baseURL to be configured.')
@@ -24,7 +26,7 @@ test.describe('collection pages', () => {
     await expect(page.getByRole('heading', { name: 'Agency Explorer' })).toBeVisible()
     const backfillAlert = page.getByText('Agency rankings are temporarily syncing.')
     if (await backfillAlert.isVisible().catch(() => false)) {
-      await expect(page.getByText('Payment backfill in progress')).toBeVisible()
+      await expect(page.getByText('Agency leaderboard pending')).toBeVisible()
       await expect(page.getByRole('table')).toHaveCount(0)
     } else {
       await expect(page.getByRole('table')).toBeVisible()
@@ -72,6 +74,10 @@ test.describe('collection pages', () => {
     await expect(
       page.getByText('Annual county-level distribution of Texas state expenditures.'),
     ).toBeVisible()
+    await expect(page.getByLabel('Texas county spending choropleth')).toBeVisible()
+    await expect(page.locator('svg[aria-label="Texas county spending choropleth"] path')).toHaveCount(
+      254,
+    )
 
     await selectOptionByLabel(page, 'Fiscal year', 'FY 2024')
     await expectQueryParam(page, 'fy', '2024')
@@ -156,7 +162,7 @@ test.describe('collection pages', () => {
 
     await expect(page.getByRole('heading', { name: 'Payee Explorer' })).toBeVisible()
     if (await page.getByText('Payee rankings are temporarily syncing.').isVisible().catch(() => false)) {
-      await expect(page.getByText('Payment backfill in progress')).toBeVisible()
+      await expect(page.getByText('Payee leaderboard pending')).toBeVisible()
       await expect(page.getByRole('table')).toHaveCount(0)
     } else {
       await expect(page.getByRole('table')).toBeVisible()

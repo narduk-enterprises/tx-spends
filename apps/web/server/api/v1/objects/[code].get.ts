@@ -1,7 +1,8 @@
 import { getRouterParam, getValidatedQuery } from 'h3'
-import { and, eq, sql } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
-import { comptrollerObjects, statePaymentFacts } from '#server/database/schema'
+import { comptrollerObjects, paymentObjectRollups } from '#server/database/schema'
+import { getRollupScopeFiscalYear } from '#server/utils/payment-rollups'
 import { globalQuerySchema } from '#server/utils/query'
 
 export default defineEventHandler(async (event) => {
@@ -9,7 +10,9 @@ export default defineEventHandler(async (event) => {
   const code = getRouterParam(event, 'code')
   const query = await getValidatedQuery(event, globalQuerySchema.parse)
 
-  if (!code) throw createError({ statusCode: 400, message: 'Missing object_code' })
+  if (!code) {
+    throw createError({ statusCode: 400, message: 'Missing object_code' })
+  }
 
   const [obj] = await db
     .select()
@@ -17,22 +20,27 @@ export default defineEventHandler(async (event) => {
     .where(eq(comptrollerObjects.code, code))
     .limit(1)
 
-  if (!obj) throw createError({ statusCode: 404, message: 'Object not found' })
+  if (!obj) {
+    throw createError({ statusCode: 404, message: 'Object not found' })
+  }
 
-  const conditions = [eq(statePaymentFacts.comptrollerObjectCode, code)]
-  if (query.fiscal_year) {
-    conditions.push(eq(statePaymentFacts.fiscalYear, query.fiscal_year))
-  }
-  if (!query.include_confidential) {
-    conditions.push(eq(statePaymentFacts.isConfidential, false))
-  }
+  const scopeFiscalYear = getRollupScopeFiscalYear(query.fiscal_year)
+  const totalAmountColumn = query.include_confidential
+    ? paymentObjectRollups.totalAmountAll
+    : paymentObjectRollups.totalAmountPublic
 
   const [summary] = await db
     .select({
-      total_spend: sql<string>`COALESCE(SUM(${statePaymentFacts.amount}), 0)`,
+      total_spend: totalAmountColumn,
     })
-    .from(statePaymentFacts)
-    .where(and(...conditions))
+    .from(paymentObjectRollups)
+    .where(
+      and(
+        eq(paymentObjectRollups.scopeFiscalYear, scopeFiscalYear),
+        eq(paymentObjectRollups.objectCode, code),
+      ),
+    )
+    .limit(1)
 
   return {
     data: {

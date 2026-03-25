@@ -5,23 +5,30 @@ import {
   countyCategoryCodeSql,
   countyCategoryTitleSql,
   formatAgencyDisplayName,
+  formatCategoryDisplayName,
   formatCountyDisplayName,
-  paymentCategoryCodeSql,
-  paymentCategoryTitleSql,
 } from '#server/utils/explorer'
+import { getPaymentsBackfillStatus } from '#server/utils/payments-backfill'
+import { getRollupScopeFiscalYear, ROLLUP_ALL_YEARS } from '#server/utils/payment-rollups'
 import { globalQuerySchema } from '#server/utils/query'
 import {
-  countyExpenditureFacts,
-  statePaymentFacts,
   agencies,
-  payees,
-  fiscalYears,
+  countyExpenditureFacts,
   geographiesCounties,
+  payees,
+  paymentAgencyRollups,
+  paymentCategoryRollups,
+  paymentOverviewRollups,
+  paymentPayeeRollups,
+  statePaymentFacts,
 } from '#server/database/schema'
 
 export default defineEventHandler(async (event) => {
   const query = await getValidatedQuery(event, globalQuerySchema.parse)
   const db = useAppDatabase(event)
+  const paymentsBackfill = await getPaymentsBackfillStatus(db)
+  const paymentsBackfillActive = paymentsBackfill.active
+  const rollupScopeFiscalYear = getRollupScopeFiscalYear(query.fiscal_year)
 
   const countyConditions = []
   const paymentConditions = []
@@ -37,24 +44,26 @@ export default defineEventHandler(async (event) => {
 
   const countyWhere = countyConditions.length > 0 ? and(...countyConditions) : undefined
   const paymentWhere = paymentConditions.length > 0 ? and(...paymentConditions) : undefined
-  const paymentCategoryCode = paymentCategoryCodeSql(statePaymentFacts.objectCategoryRaw)
-  const paymentCategoryTitle = paymentCategoryTitleSql(statePaymentFacts.objectCategoryRaw)
   const countyCategoryCode = countyCategoryCodeSql(countyExpenditureFacts.expenditureTypeRaw)
   const countyCategoryTitle = countyCategoryTitleSql(countyExpenditureFacts.expenditureTypeRaw)
-
-  const [paymentsBackfillState] = await db
-    .select({
-      active: sql<boolean>`exists(
-        select 1
-        from pg_stat_activity
-        where state = 'active'
-          and query ilike 'INSERT INTO state_payment_facts%'
-      )`.as('active'),
-    })
-    .from(fiscalYears)
-    .limit(1)
-
-  const paymentsBackfillActive = Boolean(paymentsBackfillState?.active)
+  const overviewAmountColumn = query.include_confidential
+    ? paymentOverviewRollups.totalSpendAll
+    : paymentOverviewRollups.totalSpendPublic
+  const overviewAgencyCountColumn = query.include_confidential
+    ? paymentOverviewRollups.agencyCountAll
+    : paymentOverviewRollups.agencyCountPublic
+  const overviewPayeeCountColumn = query.include_confidential
+    ? paymentOverviewRollups.payeeCountAll
+    : paymentOverviewRollups.payeeCountPublic
+  const agencyAmountColumn = query.include_confidential
+    ? paymentAgencyRollups.totalSpendAll
+    : paymentAgencyRollups.totalSpendPublic
+  const payeeAmountColumn = query.include_confidential
+    ? paymentPayeeRollups.totalAmountAll
+    : paymentPayeeRollups.totalAmountPublic
+  const categoryAmountColumn = query.include_confidential
+    ? paymentCategoryRollups.totalAmountAll
+    : paymentCategoryRollups.totalAmountPublic
 
   const [
     totalCountySpendRows,
@@ -129,27 +138,31 @@ export default defineEventHandler(async (event) => {
   const totalCountySpendRes = totalCountySpendRows[0]
   const countyAgencyCountRes = countyAgencyCountRows[0]
 
-  let totalPaymentSpendRes: { total: string } | undefined
-  let paymentAgencyCountRes: { count: number } | undefined
-  let paymentPayeeCountRes: { count: number } | undefined
+  let paymentOverview:
+    | {
+        totalSpend: string | null
+        agencyCount: number | null
+        payeeCount: number | null
+      }
+    | undefined
   let topAgencies: Array<{
     agencyId: string | null
     agencyName: string | null
-    totalSpend: string
+    totalSpend: string | null
   }> = []
   let topPayees: Array<{
     payeeId: string | null
     payeeName: string | null
-    totalSpend: string
+    totalSpend: string | null
   }> = []
   let topCategories: Array<{
     categoryCode: string | null
     categoryTitle: string | null
-    totalSpend: string
+    totalSpend: string | null
   }> = []
   let timeline: Array<{
     fiscalYear: number
-    totalSpend: string
+    totalSpend: string | null
   }> = []
   let recentTransactions: Array<{
     transaction_id: string
@@ -164,9 +177,7 @@ export default defineEventHandler(async (event) => {
 
   if (!paymentsBackfillActive) {
     const [
-      totalPaymentSpendRows,
-      paymentAgencyCountRows,
-      paymentPayeeCountRows,
+      paymentOverviewRows,
       paymentAgencyRows,
       paymentPayeeRows,
       paymentCategoryRows,
@@ -174,61 +185,58 @@ export default defineEventHandler(async (event) => {
       transactionRows,
     ] = await Promise.all([
       db
-        .select({ total: sql<string>`COALESCE(SUM(${statePaymentFacts.amount}), 0)` })
-        .from(statePaymentFacts)
-        .where(paymentWhere),
-      db
-        .select({ count: sql<number>`COUNT(DISTINCT ${statePaymentFacts.agencyId})` })
-        .from(statePaymentFacts)
-        .where(paymentWhere),
-      db
-        .select({ count: sql<number>`COUNT(DISTINCT ${statePaymentFacts.payeeId})` })
-        .from(statePaymentFacts)
-        .where(paymentWhere),
+        .select({
+          totalSpend: overviewAmountColumn,
+          agencyCount: overviewAgencyCountColumn,
+          payeeCount: overviewPayeeCountColumn,
+        })
+        .from(paymentOverviewRollups)
+        .where(eq(paymentOverviewRollups.scopeFiscalYear, rollupScopeFiscalYear))
+        .limit(1),
       db
         .select({
-          agencyId: statePaymentFacts.agencyId,
+          agencyId: paymentAgencyRollups.agencyId,
           agencyName: agencies.agencyName,
-          totalSpend: sql<string>`COALESCE(SUM(${statePaymentFacts.amount}), 0)`,
+          totalSpend: agencyAmountColumn,
         })
-        .from(statePaymentFacts)
-        .leftJoin(agencies, eq(statePaymentFacts.agencyId, agencies.id))
-        .where(paymentWhere)
-        .groupBy(statePaymentFacts.agencyId, agencies.agencyName)
-        .orderBy(desc(sql`COALESCE(SUM(${statePaymentFacts.amount}), 0)`))
+        .from(paymentAgencyRollups)
+        .leftJoin(agencies, eq(paymentAgencyRollups.agencyId, agencies.id))
+        .where(eq(paymentAgencyRollups.scopeFiscalYear, rollupScopeFiscalYear))
+        .orderBy(desc(agencyAmountColumn))
         .limit(5),
       db
         .select({
-          payeeId: statePaymentFacts.payeeId,
+          payeeId: paymentPayeeRollups.payeeId,
           payeeName: payees.payeeNameRaw,
-          totalSpend: sql<string>`COALESCE(SUM(${statePaymentFacts.amount}), 0)`,
+          totalSpend: payeeAmountColumn,
         })
-        .from(statePaymentFacts)
-        .leftJoin(payees, eq(statePaymentFacts.payeeId, payees.id))
-        .where(paymentWhere)
-        .groupBy(statePaymentFacts.payeeId, payees.payeeNameRaw)
-        .orderBy(desc(sql`COALESCE(SUM(${statePaymentFacts.amount}), 0)`))
+        .from(paymentPayeeRollups)
+        .leftJoin(payees, eq(paymentPayeeRollups.payeeId, payees.id))
+        .where(eq(paymentPayeeRollups.scopeFiscalYear, rollupScopeFiscalYear))
+        .orderBy(desc(payeeAmountColumn))
         .limit(5),
       db
         .select({
-          categoryCode: paymentCategoryCode,
-          categoryTitle: paymentCategoryTitle,
-          totalSpend: sql<string>`COALESCE(SUM(${statePaymentFacts.amount}), 0)`,
+          categoryCode: paymentCategoryRollups.categoryCode,
+          categoryTitle: paymentCategoryRollups.categoryTitle,
+          totalSpend: categoryAmountColumn,
         })
-        .from(statePaymentFacts)
-        .where(paymentWhere)
-        .groupBy(paymentCategoryCode, paymentCategoryTitle)
-        .orderBy(desc(sql`COALESCE(SUM(${statePaymentFacts.amount}), 0)`))
+        .from(paymentCategoryRollups)
+        .where(eq(paymentCategoryRollups.scopeFiscalYear, rollupScopeFiscalYear))
+        .orderBy(desc(categoryAmountColumn))
         .limit(5),
       db
         .select({
-          fiscalYear: statePaymentFacts.fiscalYear,
-          totalSpend: sql<string>`COALESCE(SUM(${statePaymentFacts.amount}), 0)`,
+          fiscalYear: paymentOverviewRollups.scopeFiscalYear,
+          totalSpend: overviewAmountColumn,
         })
-        .from(statePaymentFacts)
-        .where(paymentWhere)
-        .groupBy(statePaymentFacts.fiscalYear)
-        .orderBy(statePaymentFacts.fiscalYear)
+        .from(paymentOverviewRollups)
+        .where(
+          query.fiscal_year
+            ? eq(paymentOverviewRollups.scopeFiscalYear, rollupScopeFiscalYear)
+            : sql`${paymentOverviewRollups.scopeFiscalYear} <> ${ROLLUP_ALL_YEARS}`,
+        )
+        .orderBy(paymentOverviewRollups.scopeFiscalYear)
         .limit(10),
       db
         .select({
@@ -249,9 +257,7 @@ export default defineEventHandler(async (event) => {
         .limit(10),
     ])
 
-    totalPaymentSpendRes = totalPaymentSpendRows[0]
-    paymentAgencyCountRes = paymentAgencyCountRows[0]
-    paymentPayeeCountRes = paymentPayeeCountRows[0]
+    paymentOverview = paymentOverviewRows[0]
     topAgencies = paymentAgencyRows
     topPayees = paymentPayeeRows
     topCategories = paymentCategoryRows
@@ -259,52 +265,53 @@ export default defineEventHandler(async (event) => {
     recentTransactions = transactionRows
   }
 
-  const hasPaymentFacts =
-    !paymentsBackfillActive && Number(totalPaymentSpendRes?.total || 0) > 0
+  const hasPaymentFacts = !paymentsBackfillActive && Number(paymentOverview?.totalSpend || 0) > 0
+
   const agencyRankings = hasPaymentFacts
     ? topAgencies.map((agency) => ({
         agency_id: agency.agencyId,
         agency_name: formatAgencyDisplayName(agency.agencyName),
-        amount: Number(agency.totalSpend),
+        amount: Number(agency.totalSpend || 0),
       }))
     : countyAgencyFallback.map((agency) => ({
         agency_id: agency.agencyId,
         agency_name: formatAgencyDisplayName(agency.agencyName || agency.agencyNameRaw),
-        amount: Number(agency.totalSpend),
+        amount: Number(agency.totalSpend || 0),
       }))
 
-  const trendSeries = (hasPaymentFacts ? timeline : countyTimeline).map((entry) => ({
-    fiscal_year: entry.fiscalYear,
-    amount: Number(entry.totalSpend),
-  }))
   const categoryRankings = (hasPaymentFacts ? topCategories : countyCategoryFallback).map(
     (category) => ({
       category_code: category.categoryCode,
-      category_title: category.categoryTitle || 'Uncategorized',
-      amount: Number(category.totalSpend),
+      category_title: formatCategoryDisplayName(category.categoryTitle, 'Uncategorized'),
+      amount: Number(category.totalSpend || 0),
     }),
   )
+
+  const trendSeries = (hasPaymentFacts ? timeline : countyTimeline).map((entry) => ({
+    fiscal_year: entry.fiscalYear,
+    amount: Number(entry.totalSpend || 0),
+  }))
 
   return {
     filters_applied: query,
     data: {
-      total_spend: Number(totalPaymentSpendRes?.total || 0),
+      total_spend: Number(paymentOverview?.totalSpend || 0),
       agency_count: hasPaymentFacts
-        ? Number(paymentAgencyCountRes?.count || 0)
+        ? Number(paymentOverview?.agencyCount || 0)
         : Number(countyAgencyCountRes?.count || 0),
-      payee_count: hasPaymentFacts ? Number(paymentPayeeCountRes?.count || 0) : 0,
+      payee_count: hasPaymentFacts ? Number(paymentOverview?.payeeCount || 0) : 0,
       top_agency: agencyRankings[0]
         ? {
             agency_id: agencyRankings[0].agency_id,
             agency_name: agencyRankings[0].agency_name,
-            amount: Number(agencyRankings[0].amount),
+            amount: agencyRankings[0].amount,
           }
         : null,
       top_payee: topPayees[0]
         ? {
             payee_id: topPayees[0].payeeId,
-            payee_name: topPayees[0].payeeName,
-            amount: Number(topPayees[0].totalSpend),
+            payee_name: topPayees[0].payeeName || 'Confidential or unmatched payee',
+            amount: Number(topPayees[0].totalSpend || 0),
           }
         : null,
       top_category: categoryRankings[0]
@@ -318,7 +325,7 @@ export default defineEventHandler(async (event) => {
         ? {
             county_id: topCounties[0].countyId,
             county_name: formatCountyDisplayName(topCounties[0].countyName, 'Unknown'),
-            amount: Number(topCounties[0].totalSpend),
+            amount: Number(topCounties[0].totalSpend || 0),
           }
         : null,
       county_layer_total: Number(totalCountySpendRes?.total || 0),
@@ -327,13 +334,13 @@ export default defineEventHandler(async (event) => {
       top_payees: topPayees.map((payee) => ({
         payee_id: payee.payeeId,
         payee_name: payee.payeeName || 'Confidential or unmatched payee',
-        amount: Number(payee.totalSpend),
+        amount: Number(payee.totalSpend || 0),
       })),
       top_categories: categoryRankings,
       top_counties: topCounties.map((county) => ({
         county_id: county.countyId,
         county_name: formatCountyDisplayName(county.countyName, 'Unknown'),
-        amount: Number(county.totalSpend),
+        amount: Number(county.totalSpend || 0),
       })),
       recent_transactions: recentTransactions.map((transaction) => ({
         ...transaction,
@@ -347,6 +354,7 @@ export default defineEventHandler(async (event) => {
     meta: {
       currency: 'USD',
       payments_backfill_active: paymentsBackfillActive,
+      payments_backfill: paymentsBackfill,
     },
   }
 })

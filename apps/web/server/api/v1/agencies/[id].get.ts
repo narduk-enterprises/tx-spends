@@ -1,7 +1,15 @@
 import { getRouterParam, getValidatedQuery } from 'h3'
 import { and, desc, eq, sql } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
-import { agencies, comptrollerObjects, payees, statePaymentFacts } from '#server/database/schema'
+import {
+  agencies,
+  comptrollerObjects,
+  payees,
+  paymentAgencyRollups,
+  statePaymentFacts,
+} from '#server/database/schema'
+import { formatAgencyDisplayName } from '#server/utils/explorer'
+import { getRollupScopeFiscalYear, ROLLUP_ALL_YEARS } from '#server/utils/payment-rollups'
 import { globalQuerySchema } from '#server/utils/query'
 
 export default defineEventHandler(async (event) => {
@@ -27,6 +35,32 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  const scopeFiscalYear = getRollupScopeFiscalYear(query.fiscal_year)
+  const totalSpendColumn = query.include_confidential
+    ? paymentAgencyRollups.totalSpendAll
+    : paymentAgencyRollups.totalSpendPublic
+  const paymentCountColumn = query.include_confidential
+    ? paymentAgencyRollups.paymentCountAll
+    : paymentAgencyRollups.paymentCountPublic
+  const distinctPayeeCountColumn = query.include_confidential
+    ? paymentAgencyRollups.distinctPayeeCountAll
+    : paymentAgencyRollups.distinctPayeeCountPublic
+
+  const [summary] = await db
+    .select({
+      total_spend: totalSpendColumn,
+      payment_count: paymentCountColumn,
+      distinct_payee_count: distinctPayeeCountColumn,
+    })
+    .from(paymentAgencyRollups)
+    .where(
+      and(
+        eq(paymentAgencyRollups.scopeFiscalYear, scopeFiscalYear),
+        eq(paymentAgencyRollups.agencyId, id),
+      ),
+    )
+    .limit(1)
+
   const conditions = [eq(statePaymentFacts.agencyId, id)]
   if (query.fiscal_year) {
     conditions.push(eq(statePaymentFacts.fiscalYear, query.fiscal_year))
@@ -35,15 +69,6 @@ export default defineEventHandler(async (event) => {
     conditions.push(eq(statePaymentFacts.isConfidential, false))
   }
   const whereClause = and(...conditions)
-
-  const [summary] = await db
-    .select({
-      total_spend: sql<string>`COALESCE(SUM(${statePaymentFacts.amount}), 0)`,
-      payment_count: sql<number>`COUNT(${statePaymentFacts.sourceRowHash})`,
-      distinct_payee_count: sql<number>`COUNT(DISTINCT ${statePaymentFacts.payeeId})`,
-    })
-    .from(statePaymentFacts)
-    .where(whereClause)
 
   const [topPayee] = await db
     .select({
@@ -74,15 +99,22 @@ export default defineEventHandler(async (event) => {
     .orderBy(desc(sql`COALESCE(SUM(${statePaymentFacts.amount}), 0)`))
     .limit(1)
 
+  const trendAmountColumn = query.include_confidential
+    ? paymentAgencyRollups.totalSpendAll
+    : paymentAgencyRollups.totalSpendPublic
   const trendRows = await db
     .select({
-      fiscal_year: statePaymentFacts.fiscalYear,
-      amount: sql<string>`COALESCE(SUM(${statePaymentFacts.amount}), 0)`,
+      fiscal_year: paymentAgencyRollups.scopeFiscalYear,
+      amount: trendAmountColumn,
     })
-    .from(statePaymentFacts)
-    .where(and(eq(statePaymentFacts.agencyId, id), eq(statePaymentFacts.isConfidential, false)))
-    .groupBy(statePaymentFacts.fiscalYear)
-    .orderBy(desc(statePaymentFacts.fiscalYear))
+    .from(paymentAgencyRollups)
+    .where(
+      and(
+        eq(paymentAgencyRollups.agencyId, id),
+        sql`${paymentAgencyRollups.scopeFiscalYear} <> ${ROLLUP_ALL_YEARS}`,
+      ),
+    )
+    .orderBy(desc(paymentAgencyRollups.scopeFiscalYear))
     .limit(2)
 
   const currentAmount = Number(trendRows[0]?.amount || 0)
@@ -94,7 +126,7 @@ export default defineEventHandler(async (event) => {
     data: {
       agency_id: agency.id,
       agency_code: agency.agencyCode,
-      agency_name: agency.agencyName,
+      agency_name: formatAgencyDisplayName(agency.agencyName),
       agency_name_normalized: agency.agencyNameNormalized,
       total_spend: Number(summary?.total_spend || 0),
       payment_count: Number(summary?.payment_count || 0),

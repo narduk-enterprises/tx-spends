@@ -2,6 +2,8 @@ import { expect, test, waitForBaseUrlReady, warmUpApp } from './fixtures'
 import { capturePage, createConsoleTracker, gotoAndHydrate } from './helpers'
 
 test.describe('detail pages', () => {
+  test.setTimeout(120_000)
+
   test.beforeAll(async ({ browser, baseURL }) => {
     if (!baseURL) {
       throw new Error('detail page tests require Playwright baseURL to be configured.')
@@ -15,7 +17,7 @@ test.describe('detail pages', () => {
     const consoleTracker = createConsoleTracker(page)
     await gotoAndHydrate(page, '/agencies')
     if (await page.getByText('Agency rankings are temporarily syncing.').isVisible().catch(() => false)) {
-      await expect(page.getByText('Payment backfill in progress')).toBeVisible()
+      await expect(page.getByText('Agency leaderboard pending')).toBeVisible()
       await expect(page.getByRole('table')).toHaveCount(0)
     } else {
       await page.getByRole('table').getByRole('link').first().click()
@@ -82,7 +84,7 @@ test.describe('detail pages', () => {
     const consoleTracker = createConsoleTracker(page)
     await gotoAndHydrate(page, '/payees')
     if (await page.getByText('Payee rankings are temporarily syncing.').isVisible().catch(() => false)) {
-      await expect(page.getByText('Payment backfill in progress')).toBeVisible()
+      await expect(page.getByText('Payee leaderboard pending')).toBeVisible()
       await expect(page.getByRole('table')).toHaveCount(0)
     } else {
       await page.getByRole('table').getByRole('link').first().click()

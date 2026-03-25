@@ -270,6 +270,116 @@ export const annualCashReportFacts = pgTable(
   ],
 )
 
+export const paymentOverviewRollups = pgTable(
+  'payment_overview_rollups',
+  {
+    scopeFiscalYear: integer('scope_fiscal_year').primaryKey(),
+    totalSpendAll: numeric('total_spend_all', { precision: 18, scale: 2 }).notNull(),
+    totalSpendPublic: numeric('total_spend_public', { precision: 18, scale: 2 }).notNull(),
+    paymentCountAll: integer('payment_count_all').notNull(),
+    paymentCountPublic: integer('payment_count_public').notNull(),
+    agencyCountAll: integer('agency_count_all').notNull(),
+    agencyCountPublic: integer('agency_count_public').notNull(),
+    payeeCountAll: integer('payee_count_all').notNull(),
+    payeeCountPublic: integer('payee_count_public').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+)
+
+export const paymentAgencyRollups = pgTable(
+  'payment_agency_rollups',
+  {
+    scopeFiscalYear: integer('scope_fiscal_year').notNull(),
+    agencyId: uuid('agency_id')
+      .notNull()
+      .references(() => agencies.id),
+    totalSpendAll: numeric('total_spend_all', { precision: 18, scale: 2 }).notNull(),
+    totalSpendPublic: numeric('total_spend_public', { precision: 18, scale: 2 }).notNull(),
+    paymentCountAll: integer('payment_count_all').notNull(),
+    paymentCountPublic: integer('payment_count_public').notNull(),
+    distinctPayeeCountAll: integer('distinct_payee_count_all').notNull(),
+    distinctPayeeCountPublic: integer('distinct_payee_count_public').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.scopeFiscalYear, table.agencyId] }),
+    index('idx_par_scope_total_public').on(table.scopeFiscalYear, table.totalSpendPublic),
+    index('idx_par_scope_total_all').on(table.scopeFiscalYear, table.totalSpendAll),
+  ],
+)
+
+export const paymentPayeeRollups = pgTable(
+  'payment_payee_rollups',
+  {
+    scopeFiscalYear: integer('scope_fiscal_year').notNull(),
+    payeeId: uuid('payee_id')
+      .notNull()
+      .references(() => payees.id),
+    totalAmountAll: numeric('total_amount_all', { precision: 18, scale: 2 }).notNull(),
+    totalAmountPublic: numeric('total_amount_public', { precision: 18, scale: 2 }).notNull(),
+    paymentCountAll: integer('payment_count_all').notNull(),
+    paymentCountPublic: integer('payment_count_public').notNull(),
+    agencyCountAll: integer('agency_count_all').notNull(),
+    agencyCountPublic: integer('agency_count_public').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.scopeFiscalYear, table.payeeId] }),
+    index('idx_ppr_scope_total_public').on(table.scopeFiscalYear, table.totalAmountPublic),
+    index('idx_ppr_scope_total_all').on(table.scopeFiscalYear, table.totalAmountAll),
+  ],
+)
+
+export const paymentCategoryRollups = pgTable(
+  'payment_category_rollups',
+  {
+    scopeFiscalYear: integer('scope_fiscal_year').notNull(),
+    categoryCode: text('category_code').notNull(),
+    categoryTitle: text('category_title').notNull(),
+    totalAmountAll: numeric('total_amount_all', { precision: 18, scale: 2 }).notNull(),
+    totalAmountPublic: numeric('total_amount_public', { precision: 18, scale: 2 }).notNull(),
+    paymentCountAll: integer('payment_count_all').notNull(),
+    paymentCountPublic: integer('payment_count_public').notNull(),
+    agencyCountAll: integer('agency_count_all').notNull(),
+    agencyCountPublic: integer('agency_count_public').notNull(),
+    payeeCountAll: integer('payee_count_all').notNull(),
+    payeeCountPublic: integer('payee_count_public').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.scopeFiscalYear, table.categoryCode] }),
+    index('idx_pcr_scope_total_public').on(table.scopeFiscalYear, table.totalAmountPublic),
+    index('idx_pcr_scope_total_all').on(table.scopeFiscalYear, table.totalAmountAll),
+  ],
+)
+
+export const paymentObjectRollups = pgTable(
+  'payment_object_rollups',
+  {
+    scopeFiscalYear: integer('scope_fiscal_year').notNull(),
+    objectCode: text('object_code')
+      .notNull()
+      .references(() => comptrollerObjects.code),
+    objectTitle: text('object_title').notNull(),
+    objectGroup: text('object_group'),
+    totalAmountAll: numeric('total_amount_all', { precision: 18, scale: 2 }).notNull(),
+    totalAmountPublic: numeric('total_amount_public', { precision: 18, scale: 2 }).notNull(),
+    paymentCountAll: integer('payment_count_all').notNull(),
+    paymentCountPublic: integer('payment_count_public').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.scopeFiscalYear, table.objectCode] }),
+    index('idx_por_scope_total_public').on(table.scopeFiscalYear, table.totalAmountPublic),
+    index('idx_por_scope_total_all').on(table.scopeFiscalYear, table.totalAmountAll),
+  ],
+)
+
 export const ingestionRuns = pgTable(
   'ingestion_runs',
   {

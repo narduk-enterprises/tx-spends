@@ -2,7 +2,25 @@ import type { Page, TestInfo } from '@playwright/test'
 import { expect, waitForHydration } from './fixtures'
 
 export async function gotoAndHydrate(page: Page, path: string) {
-  const response = await page.goto(path, { waitUntil: 'domcontentloaded' })
+  let response: Awaited<ReturnType<Page['goto']>> | null = null
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      response = await page.goto(path, {
+        waitUntil: 'domcontentloaded',
+        timeout: 45_000,
+      })
+      break
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      if (!message.includes('ERR_ABORTED') || attempt === 1) {
+        throw error
+      }
+
+      await page.waitForTimeout(500)
+    }
+  }
+
   expect(response?.ok(), `Expected ${path} to return an OK response`).toBeTruthy()
   await waitForHydration(page)
   await page.waitForLoadState('networkidle').catch(() => {})

@@ -292,6 +292,11 @@ function runFactTransform() {
   runDopplerPsql(`psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "${sqlPath}"`)
 }
 
+function refreshPaymentRollups() {
+  const sqlPath = resolve(process.cwd(), 'tools/etl/refresh-payment-rollups.sql')
+  runDopplerPsql(`psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "${sqlPath}"`)
+}
+
 function analyzePaymentsTables() {
   runDopplerPsql(
     'psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "ANALYZE agencies; ANALYZE payees; ANALYZE comptroller_objects; ANALYZE state_payment_facts;"',
@@ -647,6 +652,8 @@ async function run() {
     truncatePaymentsStaging()
     console.log('Refreshing planner statistics for payment-backed tables...')
     analyzePaymentsTables()
+    console.log('Refreshing payment rollups...')
+    refreshPaymentRollups()
   }
 
   const totalRows = exports.reduce((sum, batch) => sum + batch.rowCount, 0)

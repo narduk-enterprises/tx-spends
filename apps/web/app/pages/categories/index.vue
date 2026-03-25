@@ -167,6 +167,7 @@ function updateSort(value: { column: string; direction: 'asc' | 'desc' }) {
       <template #category_title-data="{ row }">
         <UButton
           :to="`/categories/${row.category_code}`"
+          :prefetch="false"
           color="neutral"
           variant="link"
           class="px-0 font-semibold text-primary"

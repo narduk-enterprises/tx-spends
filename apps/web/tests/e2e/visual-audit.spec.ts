@@ -28,9 +28,38 @@ function routeDir(route: string) {
 }
 
 async function captureLocatorScreenshot(page: Page, locator: Locator, screenshotPath: string) {
-  await locator.scrollIntoViewIfNeeded()
+  await locator.evaluate((element) => {
+    if (element instanceof HTMLElement) {
+      element.scrollIntoView({ block: 'center', inline: 'center' })
+    }
+  })
   await page.waitForTimeout(150)
   await locator.screenshot({ path: screenshotPath })
+}
+
+async function withStickyChromeSuppressed(page: Page, fn: () => Promise<void>) {
+  await page.evaluate(() => {
+    const style = document.createElement('style')
+    style.id = 'playwright-visual-audit-suppress-sticky'
+    style.textContent = `
+      header.sticky,
+      section.sticky,
+      [class*=" sticky"],
+      [class^="sticky"] {
+        opacity: 0 !important;
+        pointer-events: none !important;
+      }
+    `
+    document.head.append(style)
+  })
+
+  try {
+    await fn()
+  } finally {
+    await page.evaluate(() => {
+      document.getElementById('playwright-visual-audit-suppress-sticky')?.remove()
+    })
+  }
 }
 
 async function captureNamedLocator(
@@ -39,10 +68,17 @@ async function captureNamedLocator(
   name: string,
   directory: string,
   captures: AuditCapture['elementScreenshots'],
+  options: { suppressStickyChrome?: boolean } = {},
 ) {
   await expect(locator).toBeVisible()
   const screenshotPath = path.join(directory, `${slugify(name)}.png`)
-  await captureLocatorScreenshot(page, locator, screenshotPath)
+  if (options.suppressStickyChrome === false) {
+    await captureLocatorScreenshot(page, locator, screenshotPath)
+  } else {
+    await withStickyChromeSuppressed(page, async () => {
+      await captureLocatorScreenshot(page, locator, screenshotPath)
+    })
+  }
   captures.push({ name, path: screenshotPath })
 }
 
@@ -96,6 +132,24 @@ async function capturePageAudit(
   } satisfies AuditCapture
 }
 
+async function clickFirstTableLinkAndWait(page: Page) {
+  const firstLink = page.getByRole('table').getByRole('link').first()
+  const href = await firstLink.getAttribute('href')
+
+  if (!href) {
+    throw new Error('Expected the first table link to have an href.')
+  }
+
+  await Promise.all([
+    page.waitForURL((url) => url.pathname === new URL(href, url.origin).pathname, {
+      timeout: 15_000,
+    }),
+    firstLink.click(),
+  ])
+
+  await page.waitForLoadState('networkidle').catch(() => {})
+}
+
 test.describe('visual audit', () => {
   test.describe.configure({ mode: 'serial' })
   test.setTimeout(180_000)
@@ -131,6 +185,7 @@ test.describe('visual audit', () => {
           'filter-bar',
           directory,
           captures,
+          { suppressStickyChrome: false },
         )
         await captureNamedLocator(
           page,
@@ -297,6 +352,13 @@ test.describe('visual audit', () => {
           directory,
           captures,
         )
+        await captureNamedLocator(
+          page,
+          page.getByLabel('Texas county spending choropleth'),
+          'county-choropleth',
+          directory,
+          captures,
+        )
         await openSelectAndCapture(page, 'Fiscal year', directory, captures)
       }),
     )
@@ -311,6 +373,7 @@ test.describe('visual audit', () => {
           'page-header',
           directory,
           captures,
+          { suppressStickyChrome: false },
         )
         await captureNamedLocator(
           page,
@@ -318,6 +381,7 @@ test.describe('visual audit', () => {
           'filter-bar',
           directory,
           captures,
+          { suppressStickyChrome: false },
         )
         if (await page.getByRole('table').count()) {
           await captureNamedLocator(
@@ -433,7 +497,7 @@ test.describe('visual audit', () => {
 
     await gotoAndHydrate(page, '/agencies')
     if (await page.getByRole('table').count()) {
-      await page.getByRole('table').getByRole('link').first().click()
+      await clickFirstTableLinkAndWait(page)
       manifest.push(
         await capturePageAudit(
           page,
@@ -476,7 +540,7 @@ test.describe('visual audit', () => {
 
     await gotoAndHydrate(page, '/payees')
     if (await page.getByRole('table').count()) {
-      await page.getByRole('table').getByRole('link').first().click()
+      await clickFirstTableLinkAndWait(page)
       manifest.push(
         await capturePageAudit(
           page,
@@ -517,7 +581,7 @@ test.describe('visual audit', () => {
     }
 
     await gotoAndHydrate(page, '/counties')
-    await page.getByRole('table').getByRole('link').first().click()
+    await clickFirstTableLinkAndWait(page)
     manifest.push(
       await capturePageAudit(
         page,
@@ -617,15 +681,27 @@ test.describe('visual audit', () => {
       }
     })
 
-    if (await page.getByText('Transaction rows are temporarily syncing.').isVisible().catch(() => false)) {
-      expect(tableOverflow.canScroll).toBe(false)
-    } else {
-      expect(tableOverflow.canScroll).toBe(true)
-    }
+    const mobileTransactionCards = page.locator('article.rounded-\\[1\\.25rem\\]')
+    const hasBackfillState = await page
+      .getByText('Transaction rows are temporarily syncing.')
+      .isVisible()
+      .catch(() => false)
+    const mobileCardCount = await mobileTransactionCards.count()
+
+    expect(tableOverflow.canScroll).toBe(false)
+    expect(hasBackfillState || mobileCardCount > 0).toBe(true)
 
     writeFileSync(
       path.join(mobileRoot, 'metrics.json'),
-      JSON.stringify(tableOverflow, null, 2),
+      JSON.stringify(
+        {
+          ...tableOverflow,
+          mobileCardCount,
+          hasBackfillState,
+        },
+        null,
+        2,
+      ),
       'utf8',
     )
 
