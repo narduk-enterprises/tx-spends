@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { geoPath, geoMercator } from 'd3-geo'
-import texasCountyCollection from '~/utils/texas-counties.geo.json'
 import { formatCountyLabel, formatUsdCompact, normalizeCountyKey } from '~/utils/explorer'
 
 type CountyMetric = {
@@ -22,6 +21,11 @@ type TexasCountyFeature = {
   geometry: unknown
 }
 
+type TexasCountyCollection = {
+  type: 'FeatureCollection'
+  features: TexasCountyFeature[]
+}
+
 const props = defineProps<{
   countyMetrics: CountyMetric[]
 }>()
@@ -40,10 +44,8 @@ const legendStops = [
   'rgb(217 119 6)',
 ]
 
-const texasCounties = texasCountyCollection as {
-  type: 'FeatureCollection'
-  features: TexasCountyFeature[]
-}
+const { default: texasCountyCollection } = await import('~/utils/texas-counties.geo.json')
+const texasCounties = texasCountyCollection as TexasCountyCollection
 
 const texasProjection = geoMercator().fitExtent(
   [

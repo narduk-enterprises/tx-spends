@@ -7,7 +7,15 @@ const localSiteUrl = `http://localhost:${Number.isFinite(localNuxtPort) ? localN
 const canonicalSiteUrl = process.env.SITE_URL || 'https://tx-spends.org'
 const enableRouteCacheRules =
   process.env.NODE_ENV === 'production' || process.env.NUXT_ENABLE_ROUTE_CACHE === 'true'
+// Static informational pages are prerendered at build time (no API calls, pure HTML).
+const staticRouteRules = {
+  '/about': { prerender: true },
+  '/methodology': { prerender: true },
+  '/data-sources': { prerender: true },
+  '/disclaimers': { prerender: true },
+}
 const cachedRouteRules = {
+  ...staticRouteRules,
   '/': { swr: 60 * 60 },
   '/agencies': { swr: 60 * 60 },
   '/agencies/**': { swr: 60 * 60 },
@@ -49,6 +57,10 @@ export default defineNuxtConfig({
 
   future: {
     compatibilityVersion: 4,
+  },
+
+  experimental: {
+    payloadExtraction: true,
   },
 
   devServer: {
@@ -105,5 +117,5 @@ export default defineNuxtConfig({
     },
   },
 
-  routeRules: enableRouteCacheRules ? cachedRouteRules : undefined,
+  routeRules: enableRouteCacheRules ? cachedRouteRules : staticRouteRules,
 })

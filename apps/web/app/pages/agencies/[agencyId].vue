@@ -55,24 +55,43 @@ const [detailState, trendsState, countiesState] = await Promise.all([
 const { data: detail, error, status } = detailState
 const { data: trends } = trendsState
 const { data: counties } = countiesState
-const { data: payees, status: payeesStatus } = useFetch(
+const {
+  data: payees,
+  status: payeesStatus,
+  execute: fetchPayees,
+} = useLazyFetch(
   () => `/api/v1/agencies/${agencyId.value}/payees`,
   {
     key: payeesKey,
     query: detailQuery,
     server: false,
+    immediate: false,
     default: () => ({ data: [] }),
   },
 )
-const { data: objects, status: objectsStatus } = useFetch(
+const {
+  data: objects,
+  status: objectsStatus,
+  execute: fetchObjects,
+} = useLazyFetch(
   () => `/api/v1/agencies/${agencyId.value}/objects`,
   {
     key: objectsKey,
     query: detailQuery,
     server: false,
+    immediate: false,
     default: () => ({ data: [] }),
   },
 )
+
+watch(activeTab, (tab) => {
+  if ((tab === 'overview' || tab === 'payees') && payeesStatus.value === 'idle') {
+    void fetchPayees()
+  }
+  if ((tab === 'overview' || tab === 'objects') && objectsStatus.value === 'idle') {
+    void fetchObjects()
+  }
+}, { immediate: true })
 
 const agency = computed(() => detail.value?.data)
 const topObject = computed(() => objects.value?.data?.[0] || agency.value?.top_object || null)
