@@ -78,7 +78,7 @@
 
   "routes": [
     {
-      "pattern": "tx-spends.nard.uk",
+      "pattern": "${SITE_URL}",
       "custom_domain": true
     }
   ]

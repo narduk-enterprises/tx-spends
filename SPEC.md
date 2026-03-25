@@ -1,10 +1,10 @@
 # Texas State Spending Explorer — Implementation Specification (v1)
 
 **Audience:** coding agents, implementers, reviewers.  
-**Stack assumption:** PostgreSQL, read-only JSON API (`/api/v1`), Nuxt 4.3+
-inside `apps/web/`, shared Nuxt layer in `layers/narduk-nuxt-layer/`,
-`@nuxt/ui` v4, `@nuxtjs/seo`, Cloudflare Workers for deployed server code, and
-optional ETL in Node/TypeScript.  
+**Stack assumption:** Neon PostgreSQL accessed from deployed Cloudflare Workers
+through Hyperdrive, read-only JSON API (`/api/v1`), Nuxt 4.3+ inside
+`apps/web/`, shared Nuxt layer in `layers/narduk-nuxt-layer/`, `@nuxt/ui` v4,
+`@nuxtjs/seo`, and optional ETL in Node/TypeScript.  
 **Non-negotiable:** Do not claim capabilities the public Comptroller / open data
 does not support.
 
@@ -1079,11 +1079,12 @@ transactions/[transactionId].get.ts
   `apps/web/server/utils/query.ts`.
 - Use `createError(...)` for `400`, `404`, and unsupported filter combinations.
 - Read DB access through `useAppDatabase(event)` from
-  `apps/web/server/utils/database.ts`.
+  `apps/web/server/utils/database.ts`; this is the Hyperdrive-backed Neon entry
+  point for deployed app requests.
 - Use `#server/database/schema` and `#server/utils/*` imports only.
 - Future mutation routes must use the layer mutation wrappers
-  (`withValidatedBody`, `withOptionalValidatedBody`, `define*Mutation`), but
-  v1 of this product is read-only and should not invent writes.
+  (`withValidatedBody`, `withOptionalValidatedBody`, `define*Mutation`), but v1
+  of this product is read-only and should not invent writes.
 
 ### 11.6 URL query parameters (public)
 
@@ -1135,8 +1136,8 @@ Mapping rules:
 
 ### 11.11 Errors and empty states
 
-- 404 for missing entities with explicit copy:
-  `Agency not found`, `Payee not found`, `County not found`, `Category not found`.
+- 404 for missing entities with explicit copy: `Agency not found`,
+  `Payee not found`, `County not found`, `Category not found`.
 - Empty states must include a clear message, a reset action, and one relevant
   navigation CTA.
 
@@ -1153,8 +1154,8 @@ Mapping rules:
   `geographies_counties.fips_code` and returned by county APIs as `fips_code`.
 - **Map components:** join GeoJSON features to API metrics using `fips_code`,
   not internal `county_id`.
-- **Entity URLs:** user-facing routes continue to use internal UUID
-  `county_id`; client resolves `county_id` ↔ `fips_code` from API payload.
+- **Entity URLs:** user-facing routes continue to use internal UUID `county_id`;
+  client resolves `county_id` ↔ `fips_code` from API payload.
 - **API:** list/detail county responses include both `county_id` and
   `fips_code`.
 
@@ -1173,10 +1174,10 @@ Mapping rules:
 ### 12.2 Nuxt UI foundation (locked)
 
 - App root is already wrapped in `<UApp>` via `apps/web/app/app.vue`.
-- Use Nuxt UI primitives for interactive and structural UI:
-  `UButton`, `UCard`, `UTable`, `UTabs`, `UInput`, `USelectMenu`,
-  `UCheckbox` or `USwitch`, `UAlert`, `UBadge`, `UPagination`,
-  `USkeleton`, `UContainer`, `UDrawer` or `USlideover`.
+- Use Nuxt UI primitives for interactive and structural UI: `UButton`, `UCard`,
+  `UTable`, `UTabs`, `UInput`, `USelectMenu`, `UCheckbox` or `USwitch`,
+  `UAlert`, `UBadge`, `UPagination`, `USkeleton`, `UContainer`, `UDrawer` or
+  `USlideover`.
 - Prefer semantic colors (`primary`, `neutral`, `success`, `warning`, `error`)
   and semantic text/background utilities from the layer (`text-default`,
   `text-muted`, `bg-default`, `border-default`, etc.).
@@ -1239,8 +1240,7 @@ Avoid sankey, treemap, radar, packed bubbles, or novelty charts.
 
 ### 12.8 Search UX
 
-- Grouped autocomplete results: agencies, payees, categories, objects,
-  counties.
+- Grouped autocomplete results: agencies, payees, categories, objects, counties.
 - Enter routes to `/search?q=...`.
 - Click routes directly to the entity page.
 
@@ -1258,23 +1258,23 @@ Avoid sankey, treemap, radar, packed bubbles, or novelty charts.
 
 ### 13.1 Component file map (locked)
 
-| File                                               | Responsibility                  | Nuxt UI / layer primitives                           | API source / data owner                | SSR vs client                                        |
-| -------------------------------------------------- | ------------------------------- | ---------------------------------------------------- | -------------------------------------- | ---------------------------------------------------- |
-| `apps/web/app/components/PageHeader.vue`           | Title, subtitle, breadcrumbs    | `UPageHeader`, `UBreadcrumb`, `UButton`              | Page-level props                       | SSR                                                  |
-| `apps/web/app/components/AppHeader.vue`            | Global top nav                  | `UContainer`, `UButton`, `UInputMenu`                | Global navigation/search               | SSR shell + client interactions                      |
-| `apps/web/app/components/DisclaimerStrip.vue`      | Short scope/data warning        | `UAlert`, `UBadge`, `ULink`                          | Static copy from §16                   | SSR                                                  |
-| `apps/web/app/components/FilterBar.vue`            | URL-synced page filters         | `UCard`, `UFormField`, `USelectMenu`, `UInput`, `USwitch`, `UButton`, `UDrawer` or `USlideover` | Route query + page config              | SSR default state, client updates                    |
-| `apps/web/app/components/KpiCard.vue`              | Single KPI                      | `UCard`, `UBadge`, `UIcon`                           | Overview/detail header endpoints       | SSR                                                  |
-| `apps/web/app/components/TrendChartCard.vue`       | Trend chart wrapper             | `UCard`, `USkeleton`; chart lib kept abstract        | `*/trends`, overview                   | SSR if deterministic; hydrate chart only if required |
-| `apps/web/app/components/RankedBarCard.vue`        | Top-N ranked chart              | `UCard`, `USkeleton`                                 | Breakdown endpoints                    | SSR if deterministic; hydrate if chart library needs |
-| `apps/web/app/components/DataTableCard.vue`        | Sortable paginated table        | `UTable`, `UPagination`, `USkeleton`, `UButton`      | List endpoints                         | SSR first page, client pagination/sort               |
-| `apps/web/app/components/CountyMapCard.vue`        | Choropleth + legend             | `UCard`, `USkeleton`, `ClientOnly` if browser map    | `/counties` or county detail rollups   | Lazy/client if browser-only map lib is used          |
-| `apps/web/app/components/EntityTabs.vue`           | Entity tab shell                | `AppTabs` from layer or `UTabs`                      | Local tab definitions                  | SSR default tab, client tab switching                |
-| `apps/web/app/components/SearchAutocomplete.vue`   | Inline typeahead                | `UInputMenu` or `UCommandPalette`                    | `/api/v1/search`                       | Client, lazy after input                             |
-| `apps/web/app/components/GlobalSearch.vue`         | Header/global search            | `UInputMenu` or `UCommandPalette`                    | `/api/v1/search`                       | Client, lazy after input                             |
-| `apps/web/app/components/EmptyState.vue`           | No-data view                    | `UCard`, `UButton`, optional `UEmpty`                | Local props                            | SSR                                                  |
-| `apps/web/app/components/VendorMatchBadgeRow.vue`  | Enrichment badges + tooltip     | `UBadge`, `UTooltip`, `USeparator`                   | `/api/v1/payees/:payeeId`              | SSR                                                  |
-| `apps/web/app/components/DisclaimerFooter.vue`     | Persistent source/footnote area | `USeparator`, `ULink`                                | Static copy + source links             | SSR                                                  |
+| File                                              | Responsibility                  | Nuxt UI / layer primitives                                                                      | API source / data owner              | SSR vs client                                        |
+| ------------------------------------------------- | ------------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------ | ---------------------------------------------------- |
+| `apps/web/app/components/PageHeader.vue`          | Title, subtitle, breadcrumbs    | `UPageHeader`, `UBreadcrumb`, `UButton`                                                         | Page-level props                     | SSR                                                  |
+| `apps/web/app/components/AppHeader.vue`           | Global top nav                  | `UContainer`, `UButton`, `UInputMenu`                                                           | Global navigation/search             | SSR shell + client interactions                      |
+| `apps/web/app/components/DisclaimerStrip.vue`     | Short scope/data warning        | `UAlert`, `UBadge`, `ULink`                                                                     | Static copy from §16                 | SSR                                                  |
+| `apps/web/app/components/FilterBar.vue`           | URL-synced page filters         | `UCard`, `UFormField`, `USelectMenu`, `UInput`, `USwitch`, `UButton`, `UDrawer` or `USlideover` | Route query + page config            | SSR default state, client updates                    |
+| `apps/web/app/components/KpiCard.vue`             | Single KPI                      | `UCard`, `UBadge`, `UIcon`                                                                      | Overview/detail header endpoints     | SSR                                                  |
+| `apps/web/app/components/TrendChartCard.vue`      | Trend chart wrapper             | `UCard`, `USkeleton`; chart lib kept abstract                                                   | `*/trends`, overview                 | SSR if deterministic; hydrate chart only if required |
+| `apps/web/app/components/RankedBarCard.vue`       | Top-N ranked chart              | `UCard`, `USkeleton`                                                                            | Breakdown endpoints                  | SSR if deterministic; hydrate if chart library needs |
+| `apps/web/app/components/DataTableCard.vue`       | Sortable paginated table        | `UTable`, `UPagination`, `USkeleton`, `UButton`                                                 | List endpoints                       | SSR first page, client pagination/sort               |
+| `apps/web/app/components/CountyMapCard.vue`       | Choropleth + legend             | `UCard`, `USkeleton`, `ClientOnly` if browser map                                               | `/counties` or county detail rollups | Lazy/client if browser-only map lib is used          |
+| `apps/web/app/components/EntityTabs.vue`          | Entity tab shell                | `AppTabs` from layer or `UTabs`                                                                 | Local tab definitions                | SSR default tab, client tab switching                |
+| `apps/web/app/components/SearchAutocomplete.vue`  | Inline typeahead                | `UInputMenu` or `UCommandPalette`                                                               | `/api/v1/search`                     | Client, lazy after input                             |
+| `apps/web/app/components/GlobalSearch.vue`        | Header/global search            | `UInputMenu` or `UCommandPalette`                                                               | `/api/v1/search`                     | Client, lazy after input                             |
+| `apps/web/app/components/EmptyState.vue`          | No-data view                    | `UCard`, `UButton`, optional `UEmpty`                                                           | Local props                          | SSR                                                  |
+| `apps/web/app/components/VendorMatchBadgeRow.vue` | Enrichment badges + tooltip     | `UBadge`, `UTooltip`, `USeparator`                                                              | `/api/v1/payees/:payeeId`            | SSR                                                  |
+| `apps/web/app/components/DisclaimerFooter.vue`    | Persistent source/footnote area | `USeparator`, `ULink`                                                                           | Static copy + source links           | SSR                                                  |
 
 ### 13.2 Component prop contracts
 
@@ -1356,8 +1356,7 @@ SSR these surfaces:
 - `/`
 - entity index pages with the first page of results
 - entity detail pages: header + overview tab
-- static trust pages: `/about`, `/methodology`, `/data-sources`,
-  `/disclaimers`
+- static trust pages: `/about`, `/methodology`, `/data-sources`, `/disclaimers`
 
 Use `await useFetch(...)` or `await useAsyncData(...)` so the server payload is
 forwarded into hydration cleanly.
@@ -1825,26 +1824,36 @@ true payee diversity and rankings.
 ### 25.1 Runtime topology (locked)
 
 Use a **single Nuxt 4** app with **SSR** pages and **server routes** under
-`/api/v1`. **PostgreSQL** is the system of record. **ETL** runs as a **separate
-Node/TypeScript worker** on a schedule — **not** inside HTTP request handlers.
-**Playwright** and heavy download jobs run **only** in the ETL worker. The Nuxt
-app connects with a **read-only DB role**; the ETL worker uses a **write /
-migrate** role. Raw download artifacts land in **object storage** or a mounted
-**`/artifacts/etl`** volume before staging load.
+`/api/v1`, deployed to **Cloudflare Workers**. **Neon PostgreSQL** is the system
+of record. The deployed app reaches Neon through a **Cloudflare Hyperdrive
+binding** (default binding name: `HYPERDRIVE`) and `useAppDatabase(event)` in
+`apps/web/server/utils/database.ts`. This app does **not** use D1.
+
+**ETL** runs as a **separate Node/TypeScript worker** on a schedule, not inside
+HTTP request handlers. **Playwright** and heavy download jobs run **only** in
+the ETL worker. ETL and migrations may connect directly to Neon using
+`DATABASE_URL`. App/API reads should be read-only at the Neon role level even
+when tunneled through Hyperdrive. Raw download artifacts land in object storage
+or a mounted `ETL_ARTIFACT_DIR` before staging load.
 
 ### 25.2 Environment variables (names locked)
 
-| Variable                                      | Use                                |
-| --------------------------------------------- | ---------------------------------- |
-| `DATABASE_URL`                                | ETL + migrations (read-write)      |
-| `DATABASE_READONLY_URL`                       | App / API (read-only)              |
-| `PLAYWRIGHT_DOWNLOAD_DIR`                     | Browser export downloads           |
-| `ETL_ARTIFACT_DIR`                            | Local artifact root                |
-| `ETL_RETENTION_DAYS`                          | Housekeeping hint                  |
-| `S3_BUCKET` or `R2_BUCKET`                    | Optional object storage            |
-| `S3_REGION`                                   | If applicable                      |
-| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | Or R2 equivalents                  |
-| `APP_BASE_URL`                                | Canonical site URL for SEO / links |
+| Variable                                      | Use                                                           |
+| --------------------------------------------- | ------------------------------------------------------------- |
+| `NUXT_DATABASE_BACKEND=postgres`              | Force Postgres path in the shared layer                       |
+| `NUXT_HYPERDRIVE_BINDING`                     | Hyperdrive binding name if not `HYPERDRIVE`                   |
+| `DATABASE_URL`                                | Direct Neon connection for ETL, local tools, and migrations   |
+| `PLAYWRIGHT_DOWNLOAD_DIR`                     | Browser export downloads                                      |
+| `ETL_ARTIFACT_DIR`                            | Local artifact root                                           |
+| `ETL_RETENTION_DAYS`                          | Housekeeping hint                                             |
+| `R2_BUCKET` or `S3_BUCKET`                    | Optional object storage for raw ETL artifacts                 |
+| `S3_REGION`                                   | If S3 is used                                                 |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | S3 credentials, or equivalent R2 credentials if required      |
+| `SITE_URL`                                    | Canonical public site URL used by `site.url` and image config |
+| `APP_NAME`                                    | Public product name used by `site.name` and runtime UI config |
+
+**Secrets policy:** Doppler is the source of truth. Do not add `.env` files to
+this repo.
 
 ### 25.3 Retention
 
