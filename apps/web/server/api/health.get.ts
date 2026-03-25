@@ -12,15 +12,15 @@ function hasAppDatabaseConfig(event: Parameters<typeof useAppDatabase>[0]) {
     return true
   }
 
-  const runtimeDatabaseUrl = (config as Record<string, string | undefined>).databaseUrl
-  if (runtimeDatabaseUrl) {
-    return true
-  }
-
   const bindingName =
     (config as Record<string, string | undefined>).hyperdriveBinding || 'HYPERDRIVE'
   const hyperdriveBinding = directEnv?.[bindingName]
-  return typeof hyperdriveBinding === 'object' && Boolean(hyperdriveBinding?.connectionString)
+  if (typeof hyperdriveBinding === 'object' && Boolean(hyperdriveBinding?.connectionString)) {
+    return true
+  }
+
+  const runtimeDatabaseUrl = (config as Record<string, string | undefined>).databaseUrl
+  return Boolean(runtimeDatabaseUrl)
 }
 
 export default defineEventHandler(async (event) => {

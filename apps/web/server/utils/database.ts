@@ -20,10 +20,6 @@ function getHyperdriveConnectionString(event: H3Event): string {
   if (directEnv?.DATABASE_URL) {
     return directEnv.DATABASE_URL
   }
-  const configDbUrl = (config as Record<string, string | undefined>).databaseUrl
-  if (configDbUrl) {
-    return configDbUrl
-  }
 
   const bindingName = (config as Record<string, unknown>).hyperdriveBinding || 'HYPERDRIVE'
   const env = event.context.cloudflare?.env as
@@ -31,7 +27,14 @@ function getHyperdriveConnectionString(event: H3Event): string {
     | undefined
   const hd = env?.[bindingName as string]
   if (hd?.connectionString) {
+    // Prefer the live Hyperdrive binding in Workers so build-time fallback
+    // DATABASE_URL values do not bypass the configured production origin.
     return hd.connectionString
+  }
+
+  const configDbUrl = (config as Record<string, string | undefined>).databaseUrl
+  if (configDbUrl) {
+    return configDbUrl
   }
 
   throw createError({
