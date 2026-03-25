@@ -1,0 +1,96 @@
+{
+  "$schema": "https://unpkg.com/wrangler@latest/config-schema.json",
+  "name": "tx-spends",
+  "main": ".output/server/index.mjs",
+  "assets": {
+    "directory": ".output/public"
+  },
+  "compatibility_date": "2026-03-03",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "observability": {
+    "enabled": true
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "tx-spends-db",
+      "database_id": "bb2fba24-b029-4a44-afcd-eb69def285c6"
+    }
+  ],
+  "ratelimits": [
+    {
+      "name": "RL_10",
+      "namespace_id": "50110",
+      "simple": {
+        "limit": 10,
+        "period": 60
+      }
+    },
+    {
+      "name": "RL_20",
+      "namespace_id": "50120",
+      "simple": {
+        "limit": 20,
+        "period": 60
+      }
+    },
+    {
+      "name": "RL_30",
+      "namespace_id": "50130",
+      "simple": {
+        "limit": 30,
+        "period": 60
+      }
+    },
+    {
+      "name": "RL_60",
+      "namespace_id": "50160",
+      "simple": {
+        "limit": 60,
+        "period": 60
+      }
+    },
+    {
+      "name": "RL_120",
+      "namespace_id": "50121",
+      "simple": {
+        "limit": 120,
+        "period": 60
+      }
+    },
+    {
+      "name": "RL_240",
+      "namespace_id": "50240",
+      "simple": {
+        "limit": 240,
+        "period": 60
+      }
+    },
+    {
+      "name": "RL_300",
+      "namespace_id": "50300",
+      "simple": {
+        "limit": 300,
+        "period": 60
+      }
+    }
+  ],
+  "env": {
+    "postgres": {
+      "hyperdrive": [
+        {
+          "binding": "HYPERDRIVE",
+          "id": ""
+        }
+      ]
+    }
+  },
+  "routes": [
+    {
+      "pattern": "tx-spends.nard.uk",
+      "custom_domain": true
+    }
+  ]
+}

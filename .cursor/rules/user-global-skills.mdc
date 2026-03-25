@@ -1,0 +1,21 @@
+---
+description: User-global skill library path for Cursor agents
+alwaysApply: true
+---
+
+# Repo skill library
+
+Canonical skills live in `.agents/skills`. `pnpm run skills:link` repairs the
+tracked agent-facing symlinks so every tool resolves back to that same repo
+payload. To copy from `~/.agents/skills` into `.agents/skills` (then commit as
+you like), run `pnpm run skills:vendor` (requires `rsync` and a real directory at
+`.agents/skills`, not a symlink).
+
+- `.cursor/skills` → `../.agents/skills`
+- `.codex/skills` → `../.agents/skills`
+- `.agent/skills` → `../.agents/skills`
+- `.claude/skills` → `../.agents/skills`
+- `.github/skills` → `../.agents/skills`
+
+When work matches packaged guidance, read the relevant `SKILL.md` under
+`.agents/skills/<skill-id>/` (or via the symlinks above) instead of guessing.

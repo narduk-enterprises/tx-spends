@@ -1,0 +1,3 @@
+setup:
+  project: tx-spends
+  config: dev
