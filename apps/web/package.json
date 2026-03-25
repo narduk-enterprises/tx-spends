@@ -5,15 +5,11 @@
   "version": "1.17.2",
   "scripts": {
     "build": "nuxt build",
-    "db:ready": "pnpm run db:migrate && pnpm run db:seed",
-    "predev": "pnpm run db:ready",
     "dev": "doppler run --config dev -- nuxt dev",
     "quality": "echo 'Turbo dependsOn handles lint + typecheck + format:check'",
-    "db:migrate": "bash ../../tools/db-migrate.sh tx-spends-db --local --dir node_modules/@narduk-enterprises/narduk-nuxt-template-layer/drizzle --dir drizzle",
-    "db:seed": "wrangler d1 execute tx-spends-db --local --file=node_modules/@narduk-enterprises/narduk-nuxt-template-layer/drizzle/seed.sql",
-    "db:reset": "bash ../../tools/db-migrate.sh tx-spends-db --local --dir node_modules/@narduk-enterprises/narduk-nuxt-template-layer/drizzle --dir drizzle --reset && pnpm run db:seed",
-    "db:verify": "node node_modules/@narduk-enterprises/narduk-nuxt-template-layer/testing/verify-local-db.mjs .",
-    "db:studio": "drizzle-kit studio",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "doppler run --config dev -- drizzle-kit migrate",
+    "db:studio": "doppler run --config dev -- drizzle-kit studio",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "typecheck": "nuxt typecheck",
@@ -27,6 +23,7 @@
   "dependencies": {
     "@narduk-enterprises/narduk-nuxt-template-layer": "workspace:*",
     "@narduk-enterprises/eslint-config": "^1.0.17",
+    "@neondatabase/serverless": "^1.0.0",
     "drizzle-orm": "^0.45.1",
     "nuxt": "^4.3.1",
     "zod": "^4.3.6"

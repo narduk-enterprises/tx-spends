@@ -209,7 +209,7 @@ export default defineNuxtConfig({
       },
     },
     externals: {
-      inline: ['drizzle-orm'],
+      inline: ['drizzle-orm', '@neondatabase/serverless'],
     },
   },
 

@@ -35,6 +35,7 @@
     "@nuxtjs/seo": "^3.4.0",
     "@takumi-rs/core": "^0.70.1",
     "@takumi-rs/wasm": "^0.70.1",
+    "@neondatabase/serverless": "^1.0.0",
     "drizzle-orm": "^0.45.1",
     "nuxt-auth-utils": "^0.5.29",
     "jose": "^6.1.3",
@@ -93,6 +94,9 @@
     "./testing/*": "./testing/*",
     "./server/database/schema": {
       "import": "./server/database/schema.ts"
+    },
+    "./server/database/pg-schema": {
+      "import": "./server/database/pg-schema.ts"
     },
     "./drizzle/*": "./drizzle/*"
   },

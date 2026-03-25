@@ -1,9 +1,10 @@
 /**
  * Combined runtime database schema.
  *
- * Re-export the layer schema plus any app-owned tables so runtime helpers such
- * as createAppDatabase() see the full schema. App-owned Drizzle migrations are
- * generated from app-schema.ts, not from this file.
+ * Re-exports the layer's PostgreSQL schema (pg-schema.ts) instead of the
+ * SQLite schema. This app runs with NUXT_DATABASE_BACKEND=postgres.
+ * App-owned Drizzle migrations are generated from the layer's pg-schema.ts
+ * plus app-schema.ts.
  */
-export * from '#layer/server/database/schema'
+export * from '#layer/server/database/pg-schema'
 export * from '#server/database/app-schema'

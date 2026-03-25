@@ -12,11 +12,11 @@
   "observability": {
     "enabled": true
   },
-  "d1_databases": [
+  "hyperdrive": [
     {
-      "binding": "DB",
-      "database_name": "tx-spends-db",
-      "database_id": "bb2fba24-b029-4a44-afcd-eb69def285c6"
+      "binding": "HYPERDRIVE",
+      "id": "ba94ea0f566f462497dd1159f650300b",
+      "localConnectionString": "postgresql://neondb_owner:npg_RWwUCxh2Pr5A@ep-ancient-term-an88xd1u-pooler.c-6.us-east-1.aws.neon.tech/neondb?sslmode=require"
     }
   ],
   "ratelimits": [
@@ -77,16 +77,7 @@
       }
     }
   ],
-  "env": {
-    "postgres": {
-      "hyperdrive": [
-        {
-          "binding": "HYPERDRIVE",
-          "id": ""
-        }
-      ]
-    }
-  },
+
   "routes": [
     {
       "pattern": "tx-spends.nard.uk",
