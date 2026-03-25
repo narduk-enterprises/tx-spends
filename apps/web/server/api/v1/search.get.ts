@@ -33,7 +33,10 @@ export default defineEventHandler(async (event) => {
   }
 
   const normalizedQuery = query.q.trim()
-  const normalizedTextQuery = normalizedQuery.toUpperCase().replaceAll(/[^A-Z0-9 ]/g, '').trim()
+  const normalizedTextQuery = normalizedQuery
+    .toUpperCase()
+    .replaceAll(/[^A-Z0-9 ]/g, '')
+    .trim()
   const searchStr = `%${normalizedTextQuery}%`
   const rawSearch = `%${normalizedQuery}%`
   const numericCodeQuery = /^\d{2,}$/.test(normalizedQuery)

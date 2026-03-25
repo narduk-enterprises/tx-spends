@@ -171,8 +171,11 @@ function readPaymentsManifest() {
 
   return new Map(
     (manifest.batches || [])
-      .filter((batch): batch is NonNullable<CachedPaymentsManifest['batches']>[number] & { file: string } =>
-        Boolean(batch?.file),
+      .filter(
+        (
+          batch,
+        ): batch is NonNullable<CachedPaymentsManifest['batches']>[number] & { file: string } =>
+          Boolean(batch?.file),
       )
       .map((batch) => [
         batch.file,
@@ -187,7 +190,9 @@ function readPaymentsManifest() {
 function formatCachedMonthLabel(batchSlug: string) {
   const [index, ...nameParts] = batchSlug.split('-')
   const monthName = titleCase(nameParts.join(' '))
-  return /^\d+$/.test(index) ? `${index} ${monthName}`.trim() : titleCase(batchSlug.replaceAll('-', ' '))
+  return /^\d+$/.test(index)
+    ? `${index} ${monthName}`.trim()
+    : titleCase(batchSlug.replaceAll('-', ' '))
 }
 
 function getCachedBatches(options: CliOptions): BatchExport[] {
