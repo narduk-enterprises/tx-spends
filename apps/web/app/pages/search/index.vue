@@ -1,17 +1,20 @@
 <script setup lang="ts">
-import { cleanQueryObject, getStringQueryValue } from '~/utils/explorer'
+import { buildFetchKey, cleanQueryObject, getStringQueryValue } from '~/utils/explorer'
 
 const route = useRoute()
 const router = useRouter()
 
 const searchQuery = computed(() => getStringQueryValue(route.query.q))
+const searchRequestQuery = computed(() =>
+  cleanQueryObject({
+    q: searchQuery.value,
+  }),
+)
+const searchResultsKey = computed(() => buildFetchKey('search-results', searchRequestQuery.value))
 
 const { data, status } = await useFetch('/api/v1/search', {
-  query: computed(() =>
-    cleanQueryObject({
-      q: searchQuery.value,
-    }),
-  ),
+  key: searchResultsKey,
+  query: searchRequestQuery,
 })
 
 const groups = computed(() => [
@@ -22,11 +25,15 @@ const groups = computed(() => [
   { title: 'Counties', items: data.value?.data?.counties || [], prefix: '/counties' },
 ])
 
-const title = searchQuery.value
-  ? `Search results for “${searchQuery.value}”`
-  : 'Search the Texas State Spending Explorer'
-const description =
-  'Search agencies, payees, categories, objects, and counties in the Texas State Spending Explorer.'
+const title = computed(() =>
+  searchQuery.value
+    ? `Search results for “${searchQuery.value}”`
+    : 'Search the Texas State Spending Explorer',
+)
+const description = computed(
+  () =>
+    'Search agencies, payees, categories, objects, and counties in the Texas State Spending Explorer.',
+)
 
 useSeo({
   title,
@@ -40,8 +47,8 @@ useSeo({
 })
 
 useWebPageSchema({
-  name: title,
-  description,
+  name: title.value,
+  description: description.value,
   type: 'SearchResultsPage',
 })
 

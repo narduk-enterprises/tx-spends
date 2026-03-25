@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  buildFetchKey,
   buildFiscalYearOptions,
   cleanQueryObject,
   formatCountyLabel,
@@ -22,21 +23,57 @@ const requestQuery = computed(() =>
   }),
 )
 
-const { data: detail, status } = await useFetch(() => `/api/v1/counties/${countyId.value}`, {
-  query: requestQuery,
-})
-const { data: agencies } = await useFetch(() => `/api/v1/counties/${countyId.value}/agencies`, {
-  query: requestQuery,
-})
-const { data: expenditureTypes } = await useFetch(
-  () => `/api/v1/counties/${countyId.value}/expenditure-types`,
-  {
-    query: requestQuery,
-  },
+const detailKey = computed(() =>
+  buildFetchKey(`county-detail:${countyId.value}`, requestQuery.value),
 )
-const { data: trends } = await useFetch(() => `/api/v1/counties/${countyId.value}/trends`, {
+const agenciesKey = computed(() =>
+  buildFetchKey(`county-agencies:${countyId.value}`, requestQuery.value),
+)
+const expenditureTypesKey = computed(() =>
+  buildFetchKey(`county-types:${countyId.value}`, requestQuery.value),
+)
+const trendsKey = computed(() =>
+  buildFetchKey(`county-trends:${countyId.value}`, requestQuery.value),
+)
+
+const [detailState, agenciesState, trendsState] = await Promise.all([
+  useFetch(() => `/api/v1/counties/${countyId.value}`, {
+    key: detailKey,
+    query: requestQuery,
+  }),
+  useFetch(() => `/api/v1/counties/${countyId.value}/agencies`, {
+    key: agenciesKey,
+    query: requestQuery,
+  }),
+  useFetch(() => `/api/v1/counties/${countyId.value}/trends`, {
+    key: trendsKey,
+    query: requestQuery,
+  }),
+])
+const { data: detail, status } = detailState
+const { data: agencies } = agenciesState
+const { data: trends } = trendsState
+const {
+  data: expenditureTypes,
+  status: expenditureTypesStatus,
+  execute: fetchExpenditureTypes,
+} = useLazyFetch(() => `/api/v1/counties/${countyId.value}/expenditure-types`, {
+  key: expenditureTypesKey,
   query: requestQuery,
+  immediate: false,
+  server: false,
+  default: () => ({ data: [] }),
 })
+
+watch(
+  [activeTab, expenditureTypesKey],
+  ([tab]) => {
+    if (tab === 'types') {
+      void fetchExpenditureTypes()
+    }
+  },
+  { immediate: true },
+)
 
 const county = computed(() => detail.value?.data)
 const countyLabel = computed(() => formatCountyLabel(county.value?.county_name))
@@ -44,12 +81,16 @@ const countyFiscalYearOptions = computed(() =>
   buildFiscalYearOptions(county.value?.available_fiscal_years || []),
 )
 
-const title = county.value
-  ? `Texas State Spending in ${countyLabel.value}`
-  : 'County Detail | Texas State Spending Explorer'
-const description = county.value
-  ? `See annual Texas state expenditure totals, top agencies, and expenditure types for ${countyLabel.value}.`
-  : 'See annual Texas state expenditure totals for a county.'
+const title = computed(() =>
+  county.value
+    ? `Texas State Spending in ${countyLabel.value}`
+    : 'County Detail | Texas State Spending Explorer',
+)
+const description = computed(() =>
+  county.value
+    ? `See annual Texas state expenditure totals, top agencies, and expenditure types for ${countyLabel.value}.`
+    : 'See annual Texas state expenditure totals for a county.',
+)
 
 useSeo({
   title,
@@ -62,8 +103,8 @@ useSeo({
 })
 
 useWebPageSchema({
-  name: title,
-  description,
+  name: title.value,
+  description: description.value,
   type: 'ItemPage',
 })
 
@@ -219,6 +260,7 @@ const tabs = [
           { key: 'category_title', label: 'Type' },
           { key: 'amount', label: 'Amount', sortable: true },
         ]"
+        :loading="expenditureTypesStatus === 'pending'"
         :rows="expenditureTypes?.data || []"
       >
         <template #category_title-data="{ row }">

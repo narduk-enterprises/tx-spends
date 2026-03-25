@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  buildFetchKey,
   cleanQueryObject,
   FISCAL_YEAR_OPTIONS,
   formatCountyLabel,
@@ -25,7 +26,10 @@ const overviewQuery = computed(() =>
   }),
 )
 
+const overviewKey = computed(() => buildFetchKey('overview', overviewQuery.value))
+
 const { data, status } = await useFetch('/api/v1/overview', {
+  key: overviewKey,
   query: overviewQuery,
 })
 
@@ -134,11 +138,11 @@ const topPayeesDescription = computed(() =>
 )
 
 useSeo({
-  title: pageTitle.value,
-  description: pageDescription.value,
+  title: pageTitle,
+  description: pageDescription,
   ogImage: {
-    title: pageTitle.value,
-    description: pageDescription.value,
+    title: pageTitle,
+    description: pageDescription,
     icon: 'i-lucide-landmark',
   },
 })

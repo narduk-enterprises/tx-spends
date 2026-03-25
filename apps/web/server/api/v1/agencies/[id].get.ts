@@ -1,13 +1,7 @@
 import { getRouterParam, getValidatedQuery } from 'h3'
 import { and, desc, eq, sql } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
-import {
-  agencies,
-  comptrollerObjects,
-  payees,
-  paymentAgencyRollups,
-  statePaymentFacts,
-} from '#server/database/schema'
+import { agencies, paymentAgencyRollups } from '#server/database/schema'
 import { formatAgencyDisplayName } from '#server/utils/explorer'
 import { getRollupScopeFiscalYear, ROLLUP_ALL_YEARS } from '#server/utils/payment-rollups'
 import { globalQuerySchema } from '#server/utils/query'
@@ -61,44 +55,6 @@ export default defineEventHandler(async (event) => {
     )
     .limit(1)
 
-  const conditions = [eq(statePaymentFacts.agencyId, id)]
-  if (query.fiscal_year) {
-    conditions.push(eq(statePaymentFacts.fiscalYear, query.fiscal_year))
-  }
-  if (!query.include_confidential) {
-    conditions.push(eq(statePaymentFacts.isConfidential, false))
-  }
-  const whereClause = and(...conditions)
-
-  const [topPayee] = await db
-    .select({
-      payee_id: statePaymentFacts.payeeId,
-      payee_name: payees.payeeNameRaw,
-      amount: sql<string>`COALESCE(SUM(${statePaymentFacts.amount}), 0)`,
-    })
-    .from(statePaymentFacts)
-    .leftJoin(payees, eq(statePaymentFacts.payeeId, payees.id))
-    .where(whereClause)
-    .groupBy(statePaymentFacts.payeeId, payees.payeeNameRaw)
-    .orderBy(desc(sql`COALESCE(SUM(${statePaymentFacts.amount}), 0)`))
-    .limit(1)
-
-  const [topObject] = await db
-    .select({
-      object_code: statePaymentFacts.comptrollerObjectCode,
-      object_title: comptrollerObjects.title,
-      amount: sql<string>`COALESCE(SUM(${statePaymentFacts.amount}), 0)`,
-    })
-    .from(statePaymentFacts)
-    .leftJoin(
-      comptrollerObjects,
-      eq(statePaymentFacts.comptrollerObjectCode, comptrollerObjects.code),
-    )
-    .where(whereClause)
-    .groupBy(statePaymentFacts.comptrollerObjectCode, comptrollerObjects.title)
-    .orderBy(desc(sql`COALESCE(SUM(${statePaymentFacts.amount}), 0)`))
-    .limit(1)
-
   const trendAmountColumn = query.include_confidential
     ? paymentAgencyRollups.totalSpendAll
     : paymentAgencyRollups.totalSpendPublic
@@ -131,20 +87,8 @@ export default defineEventHandler(async (event) => {
       total_spend: Number(summary?.total_spend || 0),
       payment_count: Number(summary?.payment_count || 0),
       distinct_payee_count: Number(summary?.distinct_payee_count || 0),
-      top_payee: topPayee
-        ? {
-            payee_id: topPayee.payee_id,
-            payee_name: topPayee.payee_name,
-            amount: Number(topPayee.amount || 0),
-          }
-        : null,
-      top_object: topObject
-        ? {
-            object_code: topObject.object_code,
-            object_title: topObject.object_title,
-            amount: Number(topObject.amount || 0),
-          }
-        : null,
+      top_payee: null,
+      top_object: null,
       yoy_change_pct: yoyChangePct,
     },
   }

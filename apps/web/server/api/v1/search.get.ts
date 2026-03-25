@@ -33,9 +33,26 @@ export default defineEventHandler(async (event) => {
   }
 
   const normalizedQuery = query.q.trim()
-  const searchStr = `%${normalizedQuery.toUpperCase().replaceAll(/[^A-Z0-9 ]/g, '')}%`
+  const normalizedTextQuery = normalizedQuery.toUpperCase().replaceAll(/[^A-Z0-9 ]/g, '').trim()
+  const searchStr = `%${normalizedTextQuery}%`
   const rawSearch = `%${normalizedQuery}%`
-  const paymentsBackfill = await getPaymentsBackfillStatus(db)
+  const numericCodeQuery = /^\d{2,}$/.test(normalizedQuery)
+
+  if (!normalizedTextQuery && !numericCodeQuery) {
+    return {
+      data: {
+        agencies: [],
+        payees: [],
+        categories: [],
+        objects: [],
+        counties: [],
+      },
+    }
+  }
+
+  const shouldSearchBroadText = normalizedTextQuery.length >= 2 && !numericCodeQuery
+  const shouldSearchCounties = normalizedTextQuery.length >= 2 && !numericCodeQuery
+  const paymentsBackfillPromise = getPaymentsBackfillStatus(db)
   const scopeFiscalYear = getRollupScopeFiscalYear(query.fiscal_year)
   const agencyAmountColumn = query.include_confidential
     ? paymentAgencyRollups.totalSpendAll
@@ -54,28 +71,11 @@ export default defineEventHandler(async (event) => {
   const objectRelevanceSql = sql<number>`CASE
     WHEN ${comptrollerObjects.code} = ${normalizedQuery} THEN 0
     WHEN ${comptrollerObjects.code} LIKE ${`${normalizedQuery}%`} THEN 1
-    WHEN ${comptrollerObjects.title} LIKE ${`${normalizedQuery}%`} THEN 2
+    WHEN upper(${comptrollerObjects.title}) LIKE ${`${normalizedTextQuery}%`} THEN 2
     WHEN ${comptrollerObjects.code} LIKE ${`%${normalizedQuery}%`} THEN 3
-    WHEN ${comptrollerObjects.title} LIKE ${`%${normalizedQuery}%`} THEN 4
+    WHEN upper(${comptrollerObjects.title}) LIKE ${searchStr} THEN 4
     ELSE 5
   END`
-
-  const agencyList = await db
-    .select({
-      id: agencies.id,
-      name: agencies.agencyName,
-      type: sql<string>`'agency'`,
-    })
-    .from(paymentAgencyRollups)
-    .innerJoin(agencies, eq(paymentAgencyRollups.agencyId, agencies.id))
-    .where(
-      and(
-        eq(paymentAgencyRollups.scopeFiscalYear, scopeFiscalYear),
-        like(agencies.agencyNameNormalized, searchStr),
-      ),
-    )
-    .orderBy(desc(agencyAmountColumn), asc(agencies.agencyName))
-    .limit(5)
 
   const payeeConditions = [
     eq(paymentPayeeRollups.scopeFiscalYear, scopeFiscalYear),
@@ -89,58 +89,87 @@ export default defineEventHandler(async (event) => {
     payeeConditions.push(payeeMatchedVendorExists)
   }
 
-  const [payeeList, categoryList, objectList, countyList] = await Promise.all([
-    db
-      .select({
-        id: payees.id,
-        name: payees.payeeNameRaw,
-        type: sql<string>`'payee'`,
-      })
-      .from(paymentPayeeRollups)
-      .innerJoin(payees, eq(paymentPayeeRollups.payeeId, payees.id))
-      .where(and(...payeeConditions))
-      .orderBy(desc(payeeAmountColumn), asc(payees.payeeNameRaw))
-      .limit(5),
-    db
-      .select({
-        id: paymentCategoryRollups.categoryCode,
-        name: paymentCategoryRollups.categoryTitle,
-        type: sql<string>`'category'`,
-      })
-      .from(paymentCategoryRollups)
-      .where(
-        and(
-          eq(paymentCategoryRollups.scopeFiscalYear, scopeFiscalYear),
-          or(
-            like(paymentCategoryRollups.categoryCode, rawSearch),
-            like(sql`upper(${paymentCategoryRollups.categoryTitle})`, searchStr),
+  const [paymentsBackfill, agencyList, payeeList, categoryList, objectList, countyList] =
+    await Promise.all([
+      paymentsBackfillPromise,
+      shouldSearchBroadText
+        ? db
+            .select({
+              id: agencies.id,
+              name: agencies.agencyName,
+              type: sql<string>`'agency'`,
+            })
+            .from(paymentAgencyRollups)
+            .innerJoin(agencies, eq(paymentAgencyRollups.agencyId, agencies.id))
+            .where(
+              and(
+                eq(paymentAgencyRollups.scopeFiscalYear, scopeFiscalYear),
+                like(agencies.agencyNameNormalized, searchStr),
+              ),
+            )
+            .orderBy(desc(agencyAmountColumn), asc(agencies.agencyName))
+            .limit(5)
+        : Promise.resolve([]),
+      shouldSearchBroadText
+        ? db
+            .select({
+              id: payees.id,
+              name: payees.payeeNameRaw,
+              type: sql<string>`'payee'`,
+            })
+            .from(paymentPayeeRollups)
+            .innerJoin(payees, eq(paymentPayeeRollups.payeeId, payees.id))
+            .where(and(...payeeConditions))
+            .orderBy(desc(payeeAmountColumn), asc(payees.payeeNameRaw))
+            .limit(5)
+        : Promise.resolve([]),
+      db
+        .select({
+          id: paymentCategoryRollups.categoryCode,
+          name: paymentCategoryRollups.categoryTitle,
+          type: sql<string>`'category'`,
+        })
+        .from(paymentCategoryRollups)
+        .where(
+          and(
+            eq(paymentCategoryRollups.scopeFiscalYear, scopeFiscalYear),
+            or(
+              like(paymentCategoryRollups.categoryCode, rawSearch),
+              like(sql`upper(${paymentCategoryRollups.categoryTitle})`, searchStr),
+            ),
           ),
-        ),
-      )
-      .orderBy(desc(categoryAmountColumn), asc(paymentCategoryRollups.categoryTitle))
-      .limit(5),
-    db
-      .select({
-        id: comptrollerObjects.code,
-        name: sql<string>`${comptrollerObjects.code} || ' ' || ${comptrollerObjects.title}`,
-        type: sql<string>`'object'`,
-      })
-      .from(comptrollerObjects)
-      .where(
-        or(like(comptrollerObjects.code, rawSearch), like(comptrollerObjects.title, rawSearch)),
-      )
-      .orderBy(asc(objectRelevanceSql), asc(comptrollerObjects.code))
-      .limit(5),
-    db
-      .select({
-        id: geographiesCounties.id,
-        name: geographiesCounties.countyName,
-        type: sql<string>`'county'`,
-      })
-      .from(geographiesCounties)
-      .where(like(geographiesCounties.countyName, rawSearch))
-      .limit(5),
-  ])
+        )
+        .orderBy(desc(categoryAmountColumn), asc(paymentCategoryRollups.categoryTitle))
+        .limit(5),
+      db
+        .select({
+          id: comptrollerObjects.code,
+          name: sql<string>`${comptrollerObjects.code} || ' ' || ${comptrollerObjects.title}`,
+          type: sql<string>`'object'`,
+        })
+        .from(comptrollerObjects)
+        .where(
+          numericCodeQuery
+            ? like(comptrollerObjects.code, `${normalizedQuery}%`)
+            : or(
+                like(comptrollerObjects.code, rawSearch),
+                like(sql`upper(${comptrollerObjects.title})`, searchStr),
+              ),
+        )
+        .orderBy(asc(objectRelevanceSql), asc(comptrollerObjects.code))
+        .limit(5),
+      shouldSearchCounties
+        ? db
+            .select({
+              id: geographiesCounties.id,
+              name: geographiesCounties.countyName,
+              type: sql<string>`'county'`,
+            })
+            .from(geographiesCounties)
+            .where(like(geographiesCounties.countyName, rawSearch))
+            .limit(5)
+        : Promise.resolve([]),
+    ])
 
   return {
     filters_applied: query,

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  buildFetchKey,
   cleanQueryObject,
   DEFAULT_PAGE_SIZE,
   FISCAL_YEAR_OPTIONS,
@@ -30,7 +31,10 @@ const requestQuery = computed(() =>
   }),
 )
 
+const requestKey = computed(() => buildFetchKey('categories-list', requestQuery.value))
+
 const { data, status } = await useFetch('/api/v1/categories', {
+  key: requestKey,
   query: requestQuery,
 })
 
@@ -53,11 +57,14 @@ const emptyDescription = computed(() =>
     : 'Try a broader search term or clear the fiscal year filter.',
 )
 
-const title = fiscalYear.value
-  ? `Texas Spending Categories for FY ${fiscalYear.value}`
-  : 'Texas Spending Categories'
-const description =
-  'Browse broad Texas state spending categories derived from the public payment feed.'
+const title = computed(() =>
+  fiscalYear.value
+    ? `Texas Spending Categories for FY ${fiscalYear.value}`
+    : 'Texas Spending Categories',
+)
+const description = computed(
+  () => 'Browse broad Texas state spending categories derived from the public payment feed.',
+)
 
 useSeo({
   title,
@@ -70,8 +77,8 @@ useSeo({
 })
 
 useWebPageSchema({
-  name: title,
-  description,
+  name: title.value,
+  description: description.value,
   type: 'CollectionPage',
 })
 

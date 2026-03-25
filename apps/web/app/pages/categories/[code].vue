@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  buildFetchKey,
   cleanQueryObject,
   FISCAL_YEAR_OPTIONS,
   formatCount,
@@ -21,33 +22,94 @@ const requestQuery = computed(() =>
   }),
 )
 
-const { data: detail, status } = await useFetch(() => `/api/v1/categories/${categoryCode.value}`, {
-  query: requestQuery,
-})
-const { data: trends } = await useFetch(() => `/api/v1/categories/${categoryCode.value}/trends`, {
-  query: requestQuery,
-})
-const { data: agencies } = await useFetch(
-  () => `/api/v1/categories/${categoryCode.value}/agencies`,
-  {
-    query: requestQuery,
-  },
+const detailKey = computed(() =>
+  buildFetchKey(`category-detail:${categoryCode.value}`, requestQuery.value),
 )
-const { data: payees } = await useFetch(() => `/api/v1/categories/${categoryCode.value}/payees`, {
+const trendsKey = computed(() =>
+  buildFetchKey(`category-trends:${categoryCode.value}`, requestQuery.value),
+)
+const agenciesKey = computed(() =>
+  buildFetchKey(`category-agencies:${categoryCode.value}`, requestQuery.value),
+)
+const payeesKey = computed(() =>
+  buildFetchKey(`category-payees:${categoryCode.value}`, requestQuery.value),
+)
+const objectsKey = computed(() =>
+  buildFetchKey(`category-objects:${categoryCode.value}`, requestQuery.value),
+)
+
+const [detailState, trendsState, agenciesState] = await Promise.all([
+  useFetch(() => `/api/v1/categories/${categoryCode.value}`, {
+    key: detailKey,
+    query: requestQuery,
+  }),
+  useFetch(() => `/api/v1/categories/${categoryCode.value}/trends`, {
+    key: trendsKey,
+    query: requestQuery,
+  }),
+  useFetch(() => `/api/v1/categories/${categoryCode.value}/agencies`, {
+    key: agenciesKey,
+    query: requestQuery,
+  }),
+])
+const { data: detail, status } = detailState
+const { data: trends } = trendsState
+const { data: agencies } = agenciesState
+const {
+  data: payees,
+  status: payeesStatus,
+  execute: fetchPayees,
+} = useLazyFetch(() => `/api/v1/categories/${categoryCode.value}/payees`, {
+  key: payeesKey,
   query: requestQuery,
+  immediate: false,
+  server: false,
+  default: () => ({ data: [] }),
 })
-const { data: objects } = await useFetch(() => `/api/v1/categories/${categoryCode.value}/objects`, {
+const {
+  data: objects,
+  status: objectsStatus,
+  execute: fetchObjects,
+} = useLazyFetch(() => `/api/v1/categories/${categoryCode.value}/objects`, {
+  key: objectsKey,
   query: requestQuery,
+  immediate: false,
+  server: false,
+  default: () => ({ data: [] }),
 })
+
+watch(
+  [activeTab, payeesKey],
+  ([tab]) => {
+    if (tab === 'payees') {
+      void fetchPayees()
+    }
+  },
+  { immediate: true },
+)
+
+watch(
+  [activeTab, objectsKey],
+  ([tab]) => {
+    if (tab === 'objects') {
+      void fetchObjects()
+    }
+  },
+  { immediate: true },
+)
 
 const category = computed(() => detail.value?.data)
 
-const title = category.value
-  ? `${category.value.category_title} Spending in Texas`
-  : 'Category Detail | Texas State Spending Explorer'
-const description = category.value
-  ? `Explore agency participation, payees, objects, and trend lines for ${category.value.category_title}.`
-  : 'Explore a Texas expenditure category.'
+const title = computed(() =>
+  category.value
+    ? `${category.value.category_title} Spending in Texas`
+    : 'Category Detail | Texas State Spending Explorer',
+)
+const description = computed(() =>
+  category.value
+    ? `Explore agency participation, payees, objects, and trend lines for ${category.value.category_title}.`
+    : 'Explore a Texas expenditure category.',
+)
 
 useSeo({
   title,
@@ -60,8 +122,8 @@ useSeo({
 })
 
 useWebPageSchema({
-  name: title,
-  description,
+  name: title.value,
+  description: description.value,
   type: 'ItemPage',
 })
 
@@ -218,6 +280,7 @@ const tabs = [
           { key: 'payee_name', label: 'Payee' },
           { key: 'amount', label: 'Amount', sortable: true },
         ]"
+        :loading="payeesStatus === 'pending'"
         :rows="payees?.data || []"
       >
         <template #payee_name-data="{ row }">
@@ -245,6 +308,7 @@ const tabs = [
           { key: 'object_title', label: 'Object title' },
           { key: 'amount', label: 'Amount', sortable: true },
         ]"
+        :loading="objectsStatus === 'pending'"
         :rows="objects?.data || []"
       >
         <template #object_code-data="{ row }">

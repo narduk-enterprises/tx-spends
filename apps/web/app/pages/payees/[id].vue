@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  buildFetchKey,
   cleanQueryObject,
   FISCAL_YEAR_OPTIONS,
   formatCount,
@@ -27,18 +28,53 @@ const requestQuery = computed(() =>
   }),
 )
 
-const { data: detail, status } = await useFetch(() => `/api/v1/payees/${payeeId.value}`, {
+const detailKey = computed(() => buildFetchKey(`payee-detail:${payeeId.value}`, requestQuery.value))
+const agenciesKey = computed(() =>
+  buildFetchKey(`payee-agencies:${payeeId.value}`, requestQuery.value),
+)
+const categoriesKey = computed(() =>
+  buildFetchKey(`payee-categories:${payeeId.value}`, requestQuery.value),
+)
+const trendsKey = computed(() => buildFetchKey(`payee-trends:${payeeId.value}`, requestQuery.value))
+
+const [detailState, agenciesState, trendsState] = await Promise.all([
+  useFetch(() => `/api/v1/payees/${payeeId.value}`, {
+    key: detailKey,
+    query: requestQuery,
+  }),
+  useFetch(() => `/api/v1/payees/${payeeId.value}/agencies`, {
+    key: agenciesKey,
+    query: requestQuery,
+  }),
+  useFetch(() => `/api/v1/payees/${payeeId.value}/trends`, {
+    key: trendsKey,
+    query: requestQuery,
+  }),
+])
+const { data: detail, status } = detailState
+const { data: agencies } = agenciesState
+const { data: trends } = trendsState
+const {
+  data: categories,
+  status: categoriesStatus,
+  execute: fetchCategories,
+} = useLazyFetch(() => `/api/v1/payees/${payeeId.value}/categories`, {
+  key: categoriesKey,
   query: requestQuery,
+  immediate: false,
+  server: false,
+  default: () => ({ data: [] }),
 })
-const { data: agencies } = await useFetch(() => `/api/v1/payees/${payeeId.value}/agencies`, {
-  query: requestQuery,
-})
-const { data: categories } = await useFetch(() => `/api/v1/payees/${payeeId.value}/categories`, {
-  query: requestQuery,
-})
-const { data: trends } = await useFetch(() => `/api/v1/payees/${payeeId.value}/trends`, {
-  query: requestQuery,
-})
+
+watch(
+  [activeTab, categoriesKey],
+  ([tab]) => {
+    if (tab === 'categories') {
+      void fetchCategories()
+    }
+  },
+  { immediate: true },
+)
 
 const payee = computed(() => detail.value?.data)
 const payeeCategoryRows = computed(() =>
@@ -49,12 +85,16 @@ const payeeCategoryRows = computed(() =>
   })),
 )
 
-const title = payee.value
-  ? `${payee.value.payee_name} Payments from Texas Agencies`
-  : 'Payee Detail | Texas State Spending Explorer'
-const description = payee.value
-  ? `See how much ${payee.value.payee_name} received from Texas agencies, plus agency relationships, category mix, and trend data.`
-  : 'See how much a payee received from Texas agencies, plus category and trend data.'
+const title = computed(() =>
+  payee.value
+    ? `${payee.value.payee_name} Payments from Texas Agencies`
+    : 'Payee Detail | Texas State Spending Explorer',
+)
+const description = computed(() =>
+  payee.value
+    ? `See how much ${payee.value.payee_name} received from Texas agencies, plus agency relationships, category mix, and trend data.`
+    : 'See how much a payee received from Texas agencies, plus category and trend data.',
+)
 
 useSeo({
   title,
@@ -67,8 +107,8 @@ useSeo({
 })
 
 useWebPageSchema({
-  name: title,
-  description,
+  name: title.value,
+  description: description.value,
   type: 'ItemPage',
 })
 
@@ -254,6 +294,7 @@ const enrichment = computed(() => {
           { key: 'category_title', label: 'Category' },
           { key: 'amount', label: 'Amount', sortable: true },
         ]"
+        :loading="categoriesStatus === 'pending'"
         :rows="payeeCategoryRows"
       >
         <template #category_title-data="{ row }">

@@ -7,6 +7,7 @@ const props = withDefaults(
     title?: string
     description?: string
     valueFormatter?: (value: number) => string
+    loading?: boolean
     emptyTitle?: string
     emptyDescription?: string
   }>(),
@@ -14,6 +15,7 @@ const props = withDefaults(
     title: '',
     description: '',
     valueFormatter: undefined,
+    loading: false,
     emptyTitle: 'No ranked data',
     emptyDescription: 'There are no rows available for this breakdown under the current filters.',
   },
@@ -45,7 +47,11 @@ function formatValue(value: number) {
       </div>
     </template>
 
-    <div v-if="items.length" class="space-y-4">
+    <div v-if="loading" class="flex min-h-48 items-center justify-center">
+      <UIcon name="i-lucide-loader-circle" class="size-8 animate-spin text-primary" />
+    </div>
+
+    <div v-else-if="items.length" class="space-y-4">
       <div
         v-for="(item, index) in items"
         :key="`${String(item[labelKey])}-${index}`"

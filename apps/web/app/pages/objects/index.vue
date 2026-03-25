@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  buildFetchKey,
   cleanQueryObject,
   DEFAULT_PAGE_SIZE,
   FISCAL_YEAR_OPTIONS,
@@ -30,7 +31,10 @@ const requestQuery = computed(() =>
   }),
 )
 
+const requestKey = computed(() => buildFetchKey('objects-list', requestQuery.value))
+
 const { data, status } = await useFetch('/api/v1/objects', {
+  key: requestKey,
   query: requestQuery,
 })
 
@@ -43,11 +47,14 @@ const tableDescription = computed(() =>
     : 'Use object detail pages to inspect totals and jump into filtered transaction views.',
 )
 
-const title = fiscalYear.value
-  ? `Texas Comptroller Objects for FY ${fiscalYear.value}`
-  : 'Texas Comptroller Objects'
-const description =
-  'Browse Comptroller object codes and titles tied to public Texas state payment rows.'
+const title = computed(() =>
+  fiscalYear.value
+    ? `Texas Comptroller Objects for FY ${fiscalYear.value}`
+    : 'Texas Comptroller Objects',
+)
+const description = computed(
+  () => 'Browse Comptroller object codes and titles tied to public Texas state payment rows.',
+)
 
 useSeo({
   title,
@@ -60,8 +67,8 @@ useSeo({
 })
 
 useWebPageSchema({
-  name: title,
-  description,
+  name: title.value,
+  description: description.value,
   type: 'CollectionPage',
 })
 

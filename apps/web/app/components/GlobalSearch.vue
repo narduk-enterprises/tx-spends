@@ -1,9 +1,13 @@
 <script setup lang="ts">
+import { buildFetchKey } from '~/utils/explorer'
+
 const props = defineProps<{ open: boolean }>()
 const emit = defineEmits<{ 'update:open': [value: boolean] }>()
 
 const router = useRouter()
 const query = ref('')
+const normalizedQuery = computed(() => query.value.trim())
+const activeQuery = computed(() => (normalizedQuery.value.length >= 2 ? normalizedQuery.value : ''))
 
 type SearchEntity = {
   id: string
@@ -30,15 +34,31 @@ const payloadKeyMap: Record<
   county: 'counties',
 }
 
-const { data, status } = await useFetch('/api/v1/search', {
+const searchKey = computed(() => buildFetchKey('global-search', { q: activeQuery.value }))
+
+const { data, status } = useFetch('/api/v1/search', {
+  key: searchKey,
   server: false,
+  default: () => ({
+    data: {
+      agencies: [],
+      payees: [],
+      categories: [],
+      objects: [],
+      counties: [],
+    },
+  }),
   query: computed(() => ({
-    q: query.value || undefined,
+    q: activeQuery.value || undefined,
   })),
-  watch: [query],
+  watch: [activeQuery],
 })
 
 const groups = computed(() => {
+  if (!activeQuery.value) {
+    return []
+  }
+
   const payload = data.value?.data
   if (!payload) {
     return []

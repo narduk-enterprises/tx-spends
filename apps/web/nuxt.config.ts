@@ -47,12 +47,6 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
-  vite: {
-    optimizeDeps: {
-      include: ['posthog-js'],
-    },
-  },
-
   future: {
     compatibilityVersion: 4,
   },

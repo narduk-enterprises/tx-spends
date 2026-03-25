@@ -3,6 +3,7 @@ import { defineConfig, devices } from '@playwright/test'
 const nuxtPort = Number(process.env.NUXT_PORT || 3000)
 const localBaseURL = `http://localhost:${Number.isFinite(nuxtPort) ? nuxtPort : 3000}`
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || localBaseURL
+const localNuxtPort = Number.isFinite(nuxtPort) ? nuxtPort : 3000
 
 /**
  * Derived-app baseline for Playwright config.
@@ -25,7 +26,7 @@ export default defineConfig({
   webServer: process.env.PLAYWRIGHT_BASE_URL
     ? undefined
     : {
-        command: 'pnpm run dev',
+        command: `NUXT_PORT=${localNuxtPort} pnpm run dev:kill && NUXT_PORT=${localNuxtPort} pnpm run dev -- --port ${localNuxtPort} --host 127.0.0.1`,
         url: baseURL,
         reuseExistingServer: true,
         timeout: 60_000,

@@ -1,6 +1,11 @@
 import type { Page, TestInfo } from '@playwright/test'
 import { expect, waitForHydration } from './fixtures'
 
+const IGNORED_CONSOLE_ISSUES = [
+  /Failed to load resource: net::ERR_SSL_PROTOCOL_ERROR.*googletagmanager\.com/i,
+  /Failed to load resource: net::ERR_SSL_PROTOCOL_ERROR.*cloudflareinsights\.com/i,
+]
+
 export async function gotoAndHydrate(page: Page, path: string) {
   let response: Awaited<ReturnType<Page['goto']>> | null = null
 
@@ -58,8 +63,13 @@ export function createConsoleTracker(page: Page) {
 
   page.on('console', (message) => {
     const type = message.type()
-    if (type === 'error' || type === 'warning') {
-      issues.push(`[console:${type}] ${message.text()}`)
+    const text = message.text()
+
+    if (
+      (type === 'error' || type === 'warning') &&
+      !IGNORED_CONSOLE_ISSUES.some((pattern) => pattern.test(text))
+    ) {
+      issues.push(`[console:${type}] ${text}`)
     }
   })
 

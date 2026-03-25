@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  buildFetchKey,
   cleanQueryObject,
   FISCAL_YEAR_OPTIONS,
   formatUsd,
@@ -19,27 +20,45 @@ const requestQuery = computed(() =>
   }),
 )
 
-const { data: detail, status } = await useFetch(() => `/api/v1/objects/${objectCode.value}`, {
-  query: requestQuery,
-})
-const { data: transactions } = await useFetch('/api/v1/transactions', {
-  query: computed(() =>
-    cleanQueryObject({
-      object_code: objectCode.value,
-      fiscal_year: fiscalYear.value,
-      limit: 10,
-    }),
-  ),
-})
+const transactionsQuery = computed(() =>
+  cleanQueryObject({
+    object_code: objectCode.value,
+    fiscal_year: fiscalYear.value,
+    limit: 10,
+  }),
+)
+const detailKey = computed(() =>
+  buildFetchKey(`object-detail:${objectCode.value}`, requestQuery.value),
+)
+const transactionsKey = computed(() =>
+  buildFetchKey(`object-transactions:${objectCode.value}`, transactionsQuery.value),
+)
+
+const [detailState, transactionsState] = await Promise.all([
+  useFetch(() => `/api/v1/objects/${objectCode.value}`, {
+    key: detailKey,
+    query: requestQuery,
+  }),
+  useFetch('/api/v1/transactions', {
+    key: transactionsKey,
+    query: transactionsQuery,
+  }),
+])
+const { data: detail, status } = detailState
+const { data: transactions } = transactionsState
 
 const objectDetail = computed(() => detail.value?.data)
 
-const title = objectDetail.value
-  ? `${objectDetail.value.object_title} (${objectDetail.value.object_code})`
-  : 'Comptroller Object Detail'
-const description = objectDetail.value
-  ? `Explore total spend and recent public transactions for comptroller object ${objectDetail.value.object_code}.`
-  : 'Explore a comptroller object.'
+const title = computed(() =>
+  objectDetail.value
+    ? `${objectDetail.value.object_title} (${objectDetail.value.object_code})`
+    : 'Comptroller Object Detail',
+)
+const description = computed(() =>
+  objectDetail.value
+    ? `Explore total spend and recent public transactions for comptroller object ${objectDetail.value.object_code}.`
+    : 'Explore a comptroller object.',
+)
 
 useSeo({
   title,
@@ -52,8 +71,8 @@ useSeo({
 })
 
 useWebPageSchema({
-  name: title,
-  description,
+  name: title.value,
+  description: description.value,
   type: 'ItemPage',
 })
 

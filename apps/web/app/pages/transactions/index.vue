@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  buildFetchKey,
   cleanQueryObject,
   DEFAULT_PAGE_SIZE,
   FISCAL_YEAR_OPTIONS,
@@ -45,7 +46,10 @@ const requestQuery = computed(() =>
   }),
 )
 
+const requestKey = computed(() => buildFetchKey('transactions-list', requestQuery.value))
+
 const { data, status } = await useFetch('/api/v1/transactions', {
+  key: requestKey,
   query: requestQuery,
 })
 

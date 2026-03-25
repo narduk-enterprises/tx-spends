@@ -250,6 +250,41 @@ export function cleanQueryObject(query: Record<string, CleanQueryInputValue>): L
   ) as LocationQueryRaw
 }
 
+function serializeFetchKeyValue(value: unknown): string | undefined {
+  if (value === undefined || value === null) {
+    return
+  }
+
+  if (Array.isArray(value)) {
+    const normalizedValues = value
+      .map((item) => serializeFetchKeyValue(item))
+      .filter((item): item is string => Boolean(item))
+
+    return normalizedValues.length > 0 ? normalizedValues.join(',') : undefined
+  }
+
+  if (typeof value === 'string') {
+    return value.length > 0 ? encodeURIComponent(value) : undefined
+  }
+
+  return encodeURIComponent(String(value))
+}
+
+export function buildFetchKey(prefix: string, params?: Record<string, unknown>) {
+  if (!params) {
+    return prefix
+  }
+
+  const serializedParams = Object.entries(params)
+    .flatMap(([key, value]) => {
+      const serializedValue = serializeFetchKeyValue(value)
+      return serializedValue ? [`${key}=${serializedValue}`] : []
+    })
+    .sort((left, right) => left.localeCompare(right))
+
+  return serializedParams.length > 0 ? `${prefix}:${serializedParams.join('&')}` : prefix
+}
+
 export function offsetToPage(offset: number | undefined, limit = DEFAULT_PAGE_SIZE) {
   if (!offset || offset <= 0) {
     return 1

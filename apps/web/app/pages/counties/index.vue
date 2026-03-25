@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  buildFetchKey,
   buildFiscalYearOptions,
   cleanQueryObject,
   DEFAULT_PAGE_SIZE,
@@ -40,17 +41,21 @@ const statewideMapQuery = computed(() =>
   }),
 )
 
-const countyListKey = computed(() => `counties:list:${JSON.stringify(requestQuery.value)}`)
-const countyMapKey = computed(() => `counties:map:${JSON.stringify(statewideMapQuery.value)}`)
+const countyListKey = computed(() => buildFetchKey('counties-list', requestQuery.value))
+const countyMapKey = computed(() => buildFetchKey('counties-map', statewideMapQuery.value))
 
-const { data, status } = await useFetch('/api/v1/counties', {
-  key: countyListKey,
-  query: requestQuery,
-})
-const { data: mapData } = await useFetch('/api/v1/county-map', {
-  key: countyMapKey,
-  query: statewideMapQuery,
-})
+const [countiesState, mapState] = await Promise.all([
+  useFetch('/api/v1/counties', {
+    key: countyListKey,
+    query: requestQuery,
+  }),
+  useFetch('/api/v1/county-map', {
+    key: countyMapKey,
+    query: statewideMapQuery,
+  }),
+])
+const { data, status } = countiesState
+const { data: mapData } = mapState
 
 const counties = computed(() => data.value?.data || [])
 const countyMapMetrics = computed(() => mapData.value?.data || [])
@@ -69,11 +74,13 @@ const countyFiscalYearOptions = computed(() => {
   return buildFiscalYearOptions(availableFiscalYears)
 })
 
-const title = fiscalYear.value
-  ? `Texas County Spending for FY ${fiscalYear.value}`
-  : 'Texas County Spending'
-const description =
-  'Explore annual county-level state expenditure totals from the Texas Comptroller county reports.'
+const title = computed(() =>
+  fiscalYear.value ? `Texas County Spending for FY ${fiscalYear.value}` : 'Texas County Spending',
+)
+const description = computed(
+  () =>
+    'Explore annual county-level state expenditure totals from the Texas Comptroller county reports.',
+)
 
 useSeo({
   title,
@@ -86,8 +93,8 @@ useSeo({
 })
 
 useWebPageSchema({
-  name: title,
-  description,
+  name: title.value,
+  description: description.value,
   type: 'CollectionPage',
 })
 

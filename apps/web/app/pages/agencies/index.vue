@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  buildFetchKey,
   cleanQueryObject,
   DEFAULT_PAGE_SIZE,
   FISCAL_YEAR_OPTIONS,
@@ -33,7 +34,10 @@ const requestQuery = computed(() =>
   }),
 )
 
+const requestKey = computed(() => buildFetchKey('agencies-list', requestQuery.value))
+
 const { data, status } = await useFetch('/api/v1/agencies', {
+  key: requestKey,
   query: requestQuery,
 })
 
@@ -71,12 +75,16 @@ const emptyDescription = computed(() =>
     : 'Try a broader search or remove the fiscal year filter.',
 )
 
-const title = fiscalYear.value
-  ? `Texas Agencies by Spending for FY ${fiscalYear.value}`
-  : 'Texas Agencies by Spending'
-const description = fiscalYear.value
-  ? `Browse Texas state agencies ranked by spending in fiscal year ${fiscalYear.value}.`
-  : 'Browse Texas state agencies ranked by public spending totals.'
+const title = computed(() =>
+  fiscalYear.value
+    ? `Texas Agencies by Spending for FY ${fiscalYear.value}`
+    : 'Texas Agencies by Spending',
+)
+const description = computed(() =>
+  fiscalYear.value
+    ? `Browse Texas state agencies ranked by spending in fiscal year ${fiscalYear.value}.`
+    : 'Browse Texas state agencies ranked by public spending totals.',
+)
 
 useSeo({
   title,
@@ -89,8 +97,8 @@ useSeo({
 })
 
 useWebPageSchema({
-  name: title,
-  description,
+  name: title.value,
+  description: description.value,
   type: 'CollectionPage',
 })
 

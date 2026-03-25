@@ -47,6 +47,19 @@ test.describe('app shell', () => {
     await consoleTracker.expectClean()
   })
 
+  test('health endpoint reports the live database as available', async ({ request }) => {
+    const response = await request.get('/api/health', {
+      timeout: 30_000,
+    })
+
+    expect(response.ok()).toBeTruthy()
+
+    const payload = await response.json()
+    expect(payload?.success).toBeTruthy()
+    expect(payload?.data?.status).toBe('ok')
+    expect(payload?.data?.database).toBe('ok')
+  })
+
   test('hero search submits to the search page', async ({ page }, testInfo) => {
     const consoleTracker = createConsoleTracker(page)
     await gotoAndHydrate(page, '/')

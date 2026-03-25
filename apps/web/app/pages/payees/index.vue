@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  buildFetchKey,
   cleanQueryObject,
   DEFAULT_PAGE_SIZE,
   FISCAL_YEAR_OPTIONS,
@@ -36,7 +37,10 @@ const requestQuery = computed(() =>
   }),
 )
 
+const requestKey = computed(() => buildFetchKey('payees-list', requestQuery.value))
+
 const { data, status } = await useFetch('/api/v1/payees', {
+  key: requestKey,
   query: requestQuery,
 })
 
@@ -68,11 +72,15 @@ const tableDescription = computed(() =>
     : 'Payee pages show agency relationships, categories, trend lines, and optional procurement enrichment.',
 )
 
-const title = fiscalYear.value
-  ? `Texas Payees and Vendors for FY ${fiscalYear.value}`
-  : 'Texas Payees and Vendors'
-const description =
-  'Browse public Texas state payees and vendors, including optional procurement enrichment when matching succeeds.'
+const title = computed(() =>
+  fiscalYear.value
+    ? `Texas Payees and Vendors for FY ${fiscalYear.value}`
+    : 'Texas Payees and Vendors',
+)
+const description = computed(
+  () =>
+    'Browse public Texas state payees and vendors, including optional procurement enrichment when matching succeeds.',
+)
 
 useSeo({
   title,
@@ -85,8 +93,8 @@ useSeo({
 })
 
 useWebPageSchema({
-  name: title,
-  description,
+  name: title.value,
+  description: description.value,
   type: 'CollectionPage',
 })
 

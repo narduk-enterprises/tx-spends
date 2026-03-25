@@ -86,7 +86,7 @@ function getSelectValue(key: string) {
             :id="getFilterId(filter.key)"
             :name="filter.key"
             :model-value="getSelectValue(filter.key)"
-            :options="filter.options || []"
+            :items="filter.options || []"
             :placeholder="filter.placeholder || `Select ${filter.label.toLowerCase()}`"
             class="w-full"
             color="neutral"
