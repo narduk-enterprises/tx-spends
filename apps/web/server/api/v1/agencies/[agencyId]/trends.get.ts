@@ -7,17 +7,17 @@ import { globalQuerySchema } from '#server/utils/query'
 
 export default defineEventHandler(async (event) => {
   const db = useAppDatabase(event)
-  const id = getRouterParam(event, 'id')
+  const agencyId = getRouterParam(event, 'agencyId')
   const query = await getValidatedQuery(event, globalQuerySchema.parse)
 
-  if (!id) {
+  if (!agencyId) {
     throw createError({ statusCode: 400, message: 'Missing agency_id' })
   }
 
   const amountColumn = query.include_confidential
     ? paymentAgencyRollups.totalSpendAll
     : paymentAgencyRollups.totalSpendPublic
-  const conditions = [eq(paymentAgencyRollups.agencyId, id)]
+  const conditions = [eq(paymentAgencyRollups.agencyId, agencyId)]
 
   if (query.fiscal_year) {
     conditions.push(eq(paymentAgencyRollups.scopeFiscalYear, query.fiscal_year))

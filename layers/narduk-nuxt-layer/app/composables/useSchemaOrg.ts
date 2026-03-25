@@ -26,10 +26,14 @@
  * ```
  */
 
+import type { MaybeRefOrGetter } from 'vue'
+
+type SchemaValue<T> = MaybeRefOrGetter<T>
+
 // --- WebPage schema ---
 interface WebPageOptions {
-  name?: string
-  description?: string
+  name?: SchemaValue<string | undefined>
+  description?: SchemaValue<string | undefined>
   type?:
     | 'WebPage'
     | 'AboutPage'

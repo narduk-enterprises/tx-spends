@@ -1,40 +1,40 @@
 import { getRouterParam, getValidatedQuery } from 'h3'
 import { eq, desc, sql, and } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
-import { formatAgencyDisplayName } from '#server/utils/explorer'
-import { countyExpenditureFacts, agencies } from '#server/database/schema'
+import { countyExpenditureFacts, geographiesCounties } from '#server/database/schema'
+import { formatCountyDisplayName } from '#server/utils/explorer'
 import { globalQuerySchema } from '#server/utils/query'
 
 export default defineEventHandler(async (event) => {
   const db = useAppDatabase(event)
-  const id = getRouterParam(event, 'id')
+  const agencyId = getRouterParam(event, 'agencyId')
   const query = await getValidatedQuery(event, globalQuerySchema.parse)
 
-  if (!id) throw createError({ statusCode: 400, message: 'Missing county_id' })
+  if (!agencyId) throw createError({ statusCode: 400, message: 'Missing agency_id' })
 
-  const conditions = [eq(countyExpenditureFacts.countyId, id)]
+  const conditions = [eq(countyExpenditureFacts.agencyId, agencyId)]
   if (query.fiscal_year) conditions.push(eq(countyExpenditureFacts.fiscalYear, query.fiscal_year))
   const whereClause = and(...conditions)
 
-  const topAgencies = await db
+  const countyBreakdown = await db
     .select({
-      agency_id: countyExpenditureFacts.agencyId,
-      agency_name: agencies.agencyName,
+      county_id: countyExpenditureFacts.countyId,
+      county_name: geographiesCounties.countyName,
       amount: sql<string>`SUM(${countyExpenditureFacts.amount})`,
     })
     .from(countyExpenditureFacts)
-    .leftJoin(agencies, eq(countyExpenditureFacts.agencyId, agencies.id))
+    .leftJoin(geographiesCounties, eq(countyExpenditureFacts.countyId, geographiesCounties.id))
     .where(whereClause)
-    .groupBy(countyExpenditureFacts.agencyId, agencies.agencyName)
+    .groupBy(countyExpenditureFacts.countyId, geographiesCounties.countyName)
     .orderBy(desc(sql`SUM(${countyExpenditureFacts.amount})`))
     .limit(query.limit)
     .offset(query.offset)
 
   return {
     filters_applied: query,
-    data: topAgencies.map((t) => ({
+    data: countyBreakdown.map((t) => ({
       ...t,
-      agency_name: formatAgencyDisplayName(t.agency_name),
+      county_name: formatCountyDisplayName(t.county_name, 'Unknown'),
       amount: Number(t.amount || 0),
     })),
     meta: { currency: 'USD' },

@@ -93,8 +93,8 @@ useSeo({
 })
 
 useWebPageSchema({
-  name: title.value,
-  description: description.value,
+  name: title,
+  description,
   type: 'CollectionPage',
 })
 

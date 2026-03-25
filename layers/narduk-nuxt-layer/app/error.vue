@@ -21,6 +21,8 @@ const description = computed(() => {
   return 'An unexpected error occurred. Please try again later.'
 })
 
+const errorTitle = computed(() => `${props.error?.statusCode || 'Error'} — ${title.value}`)
+
 function handleError() {
   clearError({ redirect: '/' })
 }
@@ -33,9 +35,15 @@ function refreshPage() {
 }
 
 useSeo({
-  title: `${props.error?.statusCode || 'Error'} — ${title.value}`,
-  description: description.value,
+  title: errorTitle,
+  description,
   robots: 'noindex, nofollow',
+})
+
+useWebPageSchema({
+  name: errorTitle,
+  description,
+  type: 'WebPage',
 })
 </script>
 

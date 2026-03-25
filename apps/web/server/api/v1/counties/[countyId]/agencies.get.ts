@@ -2,31 +2,31 @@ import { getRouterParam, getValidatedQuery } from 'h3'
 import { eq, desc, sql, and } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
 import { formatAgencyDisplayName } from '#server/utils/explorer'
-import { statePaymentFacts, agencies } from '#server/database/schema'
+import { countyExpenditureFacts, agencies } from '#server/database/schema'
 import { globalQuerySchema } from '#server/utils/query'
 
 export default defineEventHandler(async (event) => {
   const db = useAppDatabase(event)
-  const id = getRouterParam(event, 'id')
+  const countyId = getRouterParam(event, 'countyId')
   const query = await getValidatedQuery(event, globalQuerySchema.parse)
 
-  if (!id) throw createError({ statusCode: 400, message: 'Missing payee_id' })
+  if (!countyId) throw createError({ statusCode: 400, message: 'Missing county_id' })
 
-  const conditions = [eq(statePaymentFacts.payeeId, id)]
-  if (query.fiscal_year) conditions.push(eq(statePaymentFacts.fiscalYear, query.fiscal_year))
+  const conditions = [eq(countyExpenditureFacts.countyId, countyId)]
+  if (query.fiscal_year) conditions.push(eq(countyExpenditureFacts.fiscalYear, query.fiscal_year))
   const whereClause = and(...conditions)
 
   const topAgencies = await db
     .select({
-      agency_id: statePaymentFacts.agencyId,
+      agency_id: countyExpenditureFacts.agencyId,
       agency_name: agencies.agencyName,
-      amount: sql<string>`SUM(${statePaymentFacts.amount})`,
+      amount: sql<string>`SUM(${countyExpenditureFacts.amount})`,
     })
-    .from(statePaymentFacts)
-    .leftJoin(agencies, eq(statePaymentFacts.agencyId, agencies.id))
+    .from(countyExpenditureFacts)
+    .leftJoin(agencies, eq(countyExpenditureFacts.agencyId, agencies.id))
     .where(whereClause)
-    .groupBy(statePaymentFacts.agencyId, agencies.agencyName)
-    .orderBy(desc(sql`SUM(${statePaymentFacts.amount})`))
+    .groupBy(countyExpenditureFacts.agencyId, agencies.agencyName)
+    .orderBy(desc(sql`SUM(${countyExpenditureFacts.amount})`))
     .limit(query.limit)
     .offset(query.offset)
 

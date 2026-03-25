@@ -1,40 +1,45 @@
 import { getRouterParam, getValidatedQuery } from 'h3'
 import { eq, desc, sql, and } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
-import { countyExpenditureFacts, geographiesCounties } from '#server/database/schema'
-import { formatCountyDisplayName } from '#server/utils/explorer'
+import {
+  countyCategoryCodeSql,
+  countyCategoryTitleSql,
+  formatCategoryDisplayName,
+} from '#server/utils/explorer'
+import { countyExpenditureFacts } from '#server/database/schema'
 import { globalQuerySchema } from '#server/utils/query'
 
 export default defineEventHandler(async (event) => {
   const db = useAppDatabase(event)
-  const id = getRouterParam(event, 'id')
+  const countyId = getRouterParam(event, 'countyId')
   const query = await getValidatedQuery(event, globalQuerySchema.parse)
 
-  if (!id) throw createError({ statusCode: 400, message: 'Missing agency_id' })
+  if (!countyId) throw createError({ statusCode: 400, message: 'Missing county_id' })
 
-  const conditions = [eq(countyExpenditureFacts.agencyId, id)]
+  const conditions = [eq(countyExpenditureFacts.countyId, countyId)]
   if (query.fiscal_year) conditions.push(eq(countyExpenditureFacts.fiscalYear, query.fiscal_year))
   const whereClause = and(...conditions)
+  const categoryCode = countyCategoryCodeSql(countyExpenditureFacts.expenditureTypeRaw)
+  const categoryTitle = countyCategoryTitleSql(countyExpenditureFacts.expenditureTypeRaw)
 
-  const countyBreakdown = await db
+  const types = await db
     .select({
-      county_id: countyExpenditureFacts.countyId,
-      county_name: geographiesCounties.countyName,
+      category_code: categoryCode,
+      category_title: categoryTitle,
       amount: sql<string>`SUM(${countyExpenditureFacts.amount})`,
     })
     .from(countyExpenditureFacts)
-    .leftJoin(geographiesCounties, eq(countyExpenditureFacts.countyId, geographiesCounties.id))
     .where(whereClause)
-    .groupBy(countyExpenditureFacts.countyId, geographiesCounties.countyName)
+    .groupBy(categoryCode, categoryTitle)
     .orderBy(desc(sql`SUM(${countyExpenditureFacts.amount})`))
     .limit(query.limit)
     .offset(query.offset)
 
   return {
     filters_applied: query,
-    data: countyBreakdown.map((t) => ({
+    data: types.map((t) => ({
       ...t,
-      county_name: formatCountyDisplayName(t.county_name, 'Unknown'),
+      category_title: formatCategoryDisplayName(t.category_title, 'Uncategorized'),
       amount: Number(t.amount || 0),
     })),
     meta: { currency: 'USD' },

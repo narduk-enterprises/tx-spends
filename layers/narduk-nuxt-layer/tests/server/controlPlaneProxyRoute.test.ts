@@ -15,6 +15,7 @@ const mockGetRequestURL = vi.fn()
 vi.stubGlobal('defineEventHandler', (fn: (event: MockEvent) => unknown) => fn)
 vi.stubGlobal('fetch', mockFetch)
 vi.stubGlobal('getRequestURL', mockGetRequestURL)
+vi.stubGlobal('getRouterParam', (event: MockEvent, key: 'path') => event.context.params?.[key])
 vi.stubGlobal('useRuntimeConfig', () => ({
   public: {
     controlPlaneUrl: 'https://control-plane.nard.uk',

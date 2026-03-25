@@ -4,7 +4,7 @@ import { RATE_LIMIT_POLICIES } from '#layer/server/utils/rateLimit'
 import { eq, and } from 'drizzle-orm'
 
 /**
- * DELETE /api/auth/api-keys/:id
+ * DELETE /api/auth/api-keys/:apiKeyId
  * Revoke (delete) an API key. Users can only delete their own keys.
  */
 export default defineUserMutation(
@@ -13,9 +13,9 @@ export default defineUserMutation(
   },
   async ({ event, user }) => {
     const log = useLogger(event).child('Auth')
-    const id = getRouterParam(event, 'id')
+    const apiKeyId = getRouterParam(event, 'apiKeyId')
 
-    if (!id) {
+    if (!apiKeyId) {
       throw createError({ statusCode: 400, message: 'Missing key ID' })
     }
 
@@ -23,15 +23,15 @@ export default defineUserMutation(
 
     const deleted = await db
       .delete(apiKeys)
-      .where(and(eq(apiKeys.id, id), eq(apiKeys.userId, user.id)))
+      .where(and(eq(apiKeys.id, apiKeyId), eq(apiKeys.userId, user.id)))
       .returning({ id: apiKeys.id })
 
     if (deleted.length === 0) {
-      log.warn('API key not found for deletion', { keyId: id, userId: user.id })
+      log.warn('API key not found for deletion', { keyId: apiKeyId, userId: user.id })
       throw createError({ statusCode: 404, message: 'API key not found' })
     }
 
-    log.info('API key revoked', { keyId: id, userId: user.id })
+    log.info('API key revoked', { keyId: apiKeyId, userId: user.id })
     return { success: true }
   },
 )

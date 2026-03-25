@@ -6,9 +6,9 @@ import { statePaymentFacts, agencies, payees, comptrollerObjects } from '#server
 
 export default defineEventHandler(async (event) => {
   const db = useAppDatabase(event)
-  const id = getRouterParam(event, 'id')
+  const transactionId = getRouterParam(event, 'transactionId')
 
-  if (!id) throw createError({ statusCode: 400, message: 'Missing transaction_id' })
+  if (!transactionId) throw createError({ statusCode: 400, message: 'Missing transaction_id' })
 
   const [t] = await db
     .select({
@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
       comptrollerObjects,
       eq(statePaymentFacts.comptrollerObjectCode, comptrollerObjects.code),
     )
-    .where(eq(statePaymentFacts.sourceRowHash, id))
+    .where(eq(statePaymentFacts.sourceRowHash, transactionId))
     .limit(1)
 
   if (!t) throw createError({ statusCode: 404, message: 'Transaction not found' })

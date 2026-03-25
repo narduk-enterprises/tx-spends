@@ -1,7 +1,7 @@
 /**
- * DELETE /api/notifications/:id
+ * PATCH /api/notifications/:notificationId
  *
- * Delete a single notification. Owner-only.
+ * Mark a single notification as read. Owner-only.
  */
 import { defineUserMutation } from '#layer/server/utils/mutation'
 import { RATE_LIMIT_POLICIES } from '#layer/server/utils/rateLimit'
@@ -11,13 +11,13 @@ export default defineUserMutation(
     rateLimit: RATE_LIMIT_POLICIES.notifications,
   },
   async ({ event, user }) => {
-    const notificationId = getRouterParam(event, 'id')
+    const notificationId = getRouterParam(event, 'notificationId')
 
     if (!notificationId) {
       throw createError({ statusCode: 400, message: 'Notification ID is required.' })
     }
 
-    await deleteNotification(event, notificationId, user.id)
+    await markNotificationAsRead(event, notificationId, user.id)
 
     return { ok: true }
   },

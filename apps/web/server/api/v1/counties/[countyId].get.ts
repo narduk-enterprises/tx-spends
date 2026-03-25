@@ -13,20 +13,20 @@ import { globalQuerySchema } from '#server/utils/query'
 
 export default defineEventHandler(async (event) => {
   const db = useAppDatabase(event)
-  const id = getRouterParam(event, 'id')
+  const countyId = getRouterParam(event, 'countyId')
   const query = await getValidatedQuery(event, globalQuerySchema.parse)
 
-  if (!id) throw createError({ statusCode: 400, message: 'Missing county_id' })
+  if (!countyId) throw createError({ statusCode: 400, message: 'Missing county_id' })
 
   const [county] = await db
     .select()
     .from(geographiesCounties)
-    .where(eq(geographiesCounties.id, id))
+    .where(eq(geographiesCounties.id, countyId))
     .limit(1)
 
   if (!county) throw createError({ statusCode: 404, message: 'County not found' })
 
-  const conditions = [eq(countyExpenditureFacts.countyId, id)]
+  const conditions = [eq(countyExpenditureFacts.countyId, countyId)]
   if (query.fiscal_year) {
     conditions.push(eq(countyExpenditureFacts.fiscalYear, query.fiscal_year))
   }
@@ -77,8 +77,8 @@ export default defineEventHandler(async (event) => {
     .orderBy(desc(sql`COALESCE(SUM(${countyExpenditureFacts.amount}), 0)`))
 
   const statewideRank =
-    rankedCounties.findIndex((entry) => entry.county_id === id) >= 0
-      ? rankedCounties.findIndex((entry) => entry.county_id === id) + 1
+    rankedCounties.findIndex((entry) => entry.county_id === countyId) >= 0
+      ? rankedCounties.findIndex((entry) => entry.county_id === countyId) + 1
       : null
 
   const availableFiscalYears = await db
@@ -86,7 +86,7 @@ export default defineEventHandler(async (event) => {
       fiscal_year: countyExpenditureFacts.fiscalYear,
     })
     .from(countyExpenditureFacts)
-    .where(eq(countyExpenditureFacts.countyId, id))
+    .where(eq(countyExpenditureFacts.countyId, countyId))
     .groupBy(countyExpenditureFacts.fiscalYear)
     .orderBy(desc(countyExpenditureFacts.fiscalYear))
 

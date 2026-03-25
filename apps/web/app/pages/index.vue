@@ -148,8 +148,8 @@ useSeo({
 })
 
 useWebPageSchema({
-  name: pageTitle.value,
-  description: pageDescription.value,
+  name: pageTitle,
+  description: pageDescription,
 })
 
 const filters = computed({

@@ -6,12 +6,12 @@ import { globalQuerySchema } from '#server/utils/query'
 
 export default defineEventHandler(async (event) => {
   const db = useAppDatabase(event)
-  const id = getRouterParam(event, 'id')
+  const countyId = getRouterParam(event, 'countyId')
   const query = await getValidatedQuery(event, globalQuerySchema.parse)
 
-  if (!id) throw createError({ statusCode: 400, message: 'Missing county_id' })
+  if (!countyId) throw createError({ statusCode: 400, message: 'Missing county_id' })
 
-  const conditions = [eq(countyExpenditureFacts.countyId, id)]
+  const conditions = [eq(countyExpenditureFacts.countyId, countyId)]
   if (query.fiscal_year) {
     conditions.push(eq(countyExpenditureFacts.fiscalYear, query.fiscal_year))
   }

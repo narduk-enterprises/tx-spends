@@ -15,10 +15,10 @@ import { globalQuerySchema } from '#server/utils/query'
 
 export default defineEventHandler(async (event) => {
   const db = useAppDatabase(event)
-  const id = getRouterParam(event, 'id')
+  const payeeId = getRouterParam(event, 'payeeId')
   const query = await getValidatedQuery(event, globalQuerySchema.parse)
 
-  if (!id) {
+  if (!payeeId) {
     throw createError({ statusCode: 400, message: 'Missing payee_id' })
   }
 
@@ -40,7 +40,7 @@ export default defineEventHandler(async (event) => {
     .from(payees)
     .leftJoin(payeeVendorMatches, eq(payees.id, payeeVendorMatches.payeeId))
     .leftJoin(vendorEnrichment, eq(payeeVendorMatches.vendorEnrichmentId, vendorEnrichment.id))
-    .where(eq(payees.id, id))
+    .where(eq(payees.id, payeeId))
     .limit(1)
 
   if (!payee) {
@@ -64,12 +64,12 @@ export default defineEventHandler(async (event) => {
     .where(
       and(
         eq(paymentPayeeRollups.scopeFiscalYear, scopeFiscalYear),
-        eq(paymentPayeeRollups.payeeId, id),
+        eq(paymentPayeeRollups.payeeId, payeeId),
       ),
     )
     .limit(1)
 
-  const conditions = [eq(statePaymentFacts.payeeId, id)]
+  const conditions = [eq(statePaymentFacts.payeeId, payeeId)]
   if (query.fiscal_year) {
     conditions.push(eq(statePaymentFacts.fiscalYear, query.fiscal_year))
   }

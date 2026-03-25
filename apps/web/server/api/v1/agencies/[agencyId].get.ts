@@ -8,10 +8,10 @@ import { globalQuerySchema } from '#server/utils/query'
 
 export default defineEventHandler(async (event) => {
   const db = useAppDatabase(event)
-  const id = getRouterParam(event, 'id')
+  const agencyId = getRouterParam(event, 'agencyId')
   const query = await getValidatedQuery(event, globalQuerySchema.parse)
 
-  if (!id) {
+  if (!agencyId) {
     throw createError({
       statusCode: 400,
       statusMessage: 'Bad Request',
@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const [agency] = await db.select().from(agencies).where(eq(agencies.id, id)).limit(1)
+  const [agency] = await db.select().from(agencies).where(eq(agencies.id, agencyId)).limit(1)
 
   if (!agency) {
     throw createError({
@@ -50,7 +50,7 @@ export default defineEventHandler(async (event) => {
     .where(
       and(
         eq(paymentAgencyRollups.scopeFiscalYear, scopeFiscalYear),
-        eq(paymentAgencyRollups.agencyId, id),
+        eq(paymentAgencyRollups.agencyId, agencyId),
       ),
     )
     .limit(1)
@@ -66,7 +66,7 @@ export default defineEventHandler(async (event) => {
     .from(paymentAgencyRollups)
     .where(
       and(
-        eq(paymentAgencyRollups.agencyId, id),
+        eq(paymentAgencyRollups.agencyId, agencyId),
         sql`${paymentAgencyRollups.scopeFiscalYear} <> ${ROLLUP_ALL_YEARS}`,
       ),
     )

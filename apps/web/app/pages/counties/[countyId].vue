@@ -10,10 +10,10 @@ import {
   getNumberQueryValue,
 } from '~/utils/explorer'
 
-const route = useRoute()
+const route = useRoute('/counties/[countyId]')
 const router = useRouter()
 
-const countyId = computed(() => String(route.params.id))
+const countyId = computed(() => String(route.params.countyId))
 const fiscalYear = computed(() => getNumberQueryValue(route.query.fy))
 const activeTab = ref('overview')
 
@@ -103,8 +103,8 @@ useSeo({
 })
 
 useWebPageSchema({
-  name: title.value,
-  description: description.value,
+  name: title,
+  description,
   type: 'ItemPage',
 })
 

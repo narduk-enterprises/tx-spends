@@ -13,8 +13,9 @@ export default defineEventHandler(async (event) => {
 
   const config = useRuntimeConfig(event)
   const requestUrl = getRequestURL(event)
+  const path = getRouterParam(event, 'path')
   const upstreamUrl = buildControlPlaneUpstreamUrl(
-    event.context.params?.path,
+    path,
     requestUrl.search,
     config.public.controlPlaneUrl,
   )
