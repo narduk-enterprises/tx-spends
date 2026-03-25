@@ -26,6 +26,12 @@ export default defineNuxtConfig({
     compatibilityVersion: 4,
   },
 
+  vite: {
+    optimizeDeps: {
+      include: ['posthog-js'],
+    },
+  },
+
   devServer: {
     port: Number.isFinite(localNuxtPort) ? localNuxtPort : 3000,
   },
@@ -52,8 +58,7 @@ export default defineNuxtConfig({
   site: {
     url: process.env.SITE_URL || localSiteUrl,
     name: 'Texas Spends',
-    description:
-      'A Texas Government Spending Analysis Portal',
+    description: 'A Texas Government Spending Analysis Portal',
     defaultLocale: 'en',
   },
 
