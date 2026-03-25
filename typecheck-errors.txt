@@ -1,0 +1,454 @@
+
+> web@1.17.2 typecheck /Users/narduk/new-code/template-apps/tx-spends/apps/web
+> nuxt typecheck
+
+[nuxt-site-config]   - url "http://localhost:3000" from nuxt-site-config:config should not be localhost
+[nuxt-site-config] 
+app/components/GlobalSearch.vue(19,26): error TS2339: Property 'results' does not exist on type '{ agencies: never[]; counties: never[]; payees: never[]; } | { agencies: SerializeObject<{ id: string; name: string; type: any; }>[]; counties: any[]; payees: SerializeObject<{ id: string; name: string; type: any; }>[]; results: any[]; }'.
+  Property 'results' does not exist on type '{ agencies: never[]; counties: never[]; payees: never[]; }'.
+app/components/GlobalSearch.vue(20,26): error TS2339: Property 'results' does not exist on type '{ agencies: never[]; counties: never[]; payees: never[]; } | { agencies: SerializeObject<{ id: string; name: string; type: any; }>[]; counties: any[]; payees: SerializeObject<{ id: string; name: string; type: any; }>[]; results: any[]; }'.
+  Property 'results' does not exist on type '{ agencies: never[]; counties: never[]; payees: never[]; }'.
+app/pages/agencies/index.vue(38,43): error TS2322: Type '{ key: string; label: string; }[]' is not assignable to type 'TableColumn<unknown, unknown>[]'.
+  Type '{ key: string; label: string; }' is not assignable to type 'TableColumn<unknown, unknown>'.
+app/pages/agencies/index.vue(40,54): error TS2339: Property 'total_spend' does not exist on type 'Row<unknown>'.
+app/pages/agencies/index.vue(44,37): error TS2339: Property 'agency_id' does not exist on type 'Row<unknown>'.
+app/pages/categories/index.vue(40,43): error TS2322: Type '{ key: string; label: string; }[]' is not assignable to type 'TableColumn<unknown, unknown>[]'.
+  Type '{ key: string; label: string; }' is not assignable to type 'TableColumn<unknown, unknown>'.
+app/pages/categories/index.vue(42,54): error TS2339: Property 'total_spend' does not exist on type 'Row<unknown>'.
+app/pages/categories/index.vue(46,39): error TS2339: Property 'category_code' does not exist on type 'Row<unknown>'.
+app/pages/counties/index.vue(40,43): error TS2322: Type '{ key: string; label: string; }[]' is not assignable to type 'TableColumn<unknown, unknown>[]'.
+  Type '{ key: string; label: string; }' is not assignable to type 'TableColumn<unknown, unknown>'.
+app/pages/counties/index.vue(42,54): error TS2339: Property 'total_spend' does not exist on type 'Row<unknown>'.
+app/pages/counties/index.vue(46,37): error TS2339: Property 'county_id' does not exist on type 'Row<unknown>'.
+app/pages/payees/index.vue(40,43): error TS2322: Type '{ key: string; label: string; }[]' is not assignable to type 'TableColumn<unknown, unknown>[]'.
+  Type '{ key: string; label: string; }' is not assignable to type 'TableColumn<unknown, unknown>'.
+app/pages/payees/index.vue(42,54): error TS2339: Property 'total_spend' does not exist on type 'Row<unknown>'.
+app/pages/payees/index.vue(46,25): error TS2339: Property 'payee_id' does not exist on type 'Row<unknown>'.
+app/pages/payees/index.vue(47,35): error TS2339: Property 'payee_id' does not exist on type 'Row<unknown>'.
+app/pages/transactions/index.vue(44,44): error TS2339: Property 'URLSearchParams' does not exist on type '{ route: RouteLocationNormalizedLoadedGeneric; data: any; columns: { key: string; label: string; }[]; status: AsyncDataRequestStatus; ... 339 more ...; $colorMode: ColorModeInstance; }'.
+app/pages/transactions/index.vue(54,43): error TS2322: Type '{ key: string; label: string; }[]' is not assignable to type 'TableColumn<unknown, unknown>[]'.
+  Type '{ key: string; label: string; }' is not assignable to type 'TableColumn<unknown, unknown>'.
+app/pages/transactions/index.vue(57,28): error TS2339: Property 'payment_date' does not exist on type 'Row<unknown>'.
+app/pages/transactions/index.vue(62,37): error TS2339: Property 'agency_id' does not exist on type 'Row<unknown>'.
+app/pages/transactions/index.vue(64,27): error TS2339: Property 'agency_name' does not exist on type 'Row<unknown>'.
+app/pages/transactions/index.vue(66,22): error TS2339: Property 'agency_name' does not exist on type 'Row<unknown>'.
+app/pages/transactions/index.vue(71,25): error TS2339: Property 'payee_id' does not exist on type 'Row<unknown>'.
+app/pages/transactions/index.vue(72,35): error TS2339: Property 'payee_id' does not exist on type 'Row<unknown>'.
+app/pages/transactions/index.vue(74,27): error TS2339: Property 'payee_name' does not exist on type 'Row<unknown>'.
+app/pages/transactions/index.vue(76,22): error TS2339: Property 'payee_name' does not exist on type 'Row<unknown>'.
+app/pages/transactions/index.vue(78,76): error TS2339: Property 'payee_name' does not exist on type 'Row<unknown>'.
+app/pages/transactions/index.vue(81,68): error TS2339: Property 'object_title' does not exist on type 'Row<unknown>'.
+app/pages/transactions/index.vue(82,19): error TS2339: Property 'object_title' does not exist on type 'Row<unknown>'.
+app/pages/transactions/index.vue(82,39): error TS2339: Property 'object_code' does not exist on type 'Row<unknown>'.
+app/pages/transactions/index.vue(87,31): error TS2339: Property 'amount' does not exist on type 'Row<unknown>'.
+server/api/v1/agencies/[id].get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/agencies/[id].get.ts(4,26): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/agencies/[id]/counties.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/agencies/[id]/counties.get.ts(4,50): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/agencies/[id]/counties.get.ts(5,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/agencies/[id]/counties.get.ts(15,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/agencies/[id]/counties.get.ts(15,80): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/agencies/[id]/counties.get.ts(29,12): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/agencies/[id]/counties.get.ts(30,13): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/agencies/[id]/counties.get.ts(34,32): error TS7006: Parameter 't' implicitly has an 'any' type.
+server/api/v1/agencies/[id]/objects.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/agencies/[id]/objects.get.ts(4,55): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/agencies/[id]/objects.get.ts(5,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/agencies/[id]/objects.get.ts(15,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/agencies/[id]/objects.get.ts(15,75): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/agencies/[id]/objects.get.ts(32,12): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/agencies/[id]/objects.get.ts(33,13): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/agencies/[id]/objects.get.ts(37,24): error TS7006: Parameter 't' implicitly has an 'any' type.
+server/api/v1/agencies/[id]/payees.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/agencies/[id]/payees.get.ts(4,43): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/agencies/[id]/payees.get.ts(5,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/agencies/[id]/payees.get.ts(15,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/agencies/[id]/payees.get.ts(15,75): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/agencies/[id]/payees.get.ts(29,12): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/agencies/[id]/payees.get.ts(30,13): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/agencies/[id]/payees.get.ts(34,26): error TS7006: Parameter 't' implicitly has an 'any' type.
+server/api/v1/agencies/[id]/trends.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/agencies/[id]/trends.get.ts(4,40): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/agencies/[id]/trends.get.ts(5,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/agencies/[id]/trends.get.ts(29,23): error TS7006: Parameter 't' implicitly has an 'any' type.
+server/api/v1/agencies/index.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/agencies/index.get.ts(4,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/agencies/index.get.ts(5,50): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/agencies/index.get.ts(12,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/agencies/index.get.ts(13,65): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/agencies/index.get.ts(14,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/agencies/index.get.ts(18,13): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/agencies/index.get.ts(18,21): error TS2339: Property 'toUpperCase' does not exist on type 'string | number | true | Record<string, any> | QueryValue[] | QueryValue[]'.
+  Property 'toUpperCase' does not exist on type 'number'.
+server/api/v1/agencies/index.get.ts(38,12): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/agencies/index.get.ts(39,13): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/agencies/index.get.ts(43,21): error TS7006: Parameter 'a' implicitly has an 'any' type.
+server/api/v1/categories/[code].get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/categories/[code].get.ts(4,39): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/categories/[code]/agencies.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/categories/[code]/agencies.get.ts(4,50): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/categories/[code]/agencies.get.ts(5,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/categories/[code]/agencies.get.ts(15,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/categories/[code]/agencies.get.ts(15,80): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/categories/[code]/agencies.get.ts(29,12): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/categories/[code]/agencies.get.ts(30,13): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/categories/[code]/agencies.get.ts(34,28): error TS7006: Parameter 't' implicitly has an 'any' type.
+server/api/v1/categories/[code]/objects.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/categories/[code]/objects.get.ts(4,55): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/categories/[code]/objects.get.ts(5,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/categories/[code]/objects.get.ts(15,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/categories/[code]/objects.get.ts(15,75): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/categories/[code]/objects.get.ts(32,12): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/categories/[code]/objects.get.ts(33,13): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/categories/[code]/objects.get.ts(37,24): error TS7006: Parameter 't' implicitly has an 'any' type.
+server/api/v1/categories/[code]/payees.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/categories/[code]/payees.get.ts(4,43): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/categories/[code]/payees.get.ts(5,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/categories/[code]/payees.get.ts(17,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/categories/[code]/payees.get.ts(17,75): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/categories/[code]/payees.get.ts(31,12): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/categories/[code]/payees.get.ts(32,13): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/categories/[code]/payees.get.ts(36,26): error TS7006: Parameter 't' implicitly has an 'any' type.
+server/api/v1/categories/[code]/trends.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/categories/[code]/trends.get.ts(4,40): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/categories/[code]/trends.get.ts(5,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/categories/[code]/trends.get.ts(29,23): error TS7006: Parameter 't' implicitly has an 'any' type.
+server/api/v1/categories/index.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/categories/index.get.ts(4,63): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/categories/index.get.ts(5,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/categories/index.get.ts(12,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/categories/index.get.ts(13,59): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/categories/index.get.ts(16,28): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/categories/index.get.ts(17,46): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/categories/index.get.ts(37,12): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/categories/index.get.ts(38,13): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/categories/index.get.ts(42,21): error TS7006: Parameter 'c' implicitly has an 'any' type.
+server/api/v1/counties/[id].get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/counties/[id].get.ts(4,26): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/counties/[id]/agencies.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/counties/[id]/agencies.get.ts(4,50): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/counties/[id]/agencies.get.ts(5,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/counties/[id]/agencies.get.ts(15,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/counties/[id]/agencies.get.ts(15,80): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/counties/[id]/agencies.get.ts(29,12): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/counties/[id]/agencies.get.ts(30,13): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/counties/[id]/agencies.get.ts(34,28): error TS7006: Parameter 't' implicitly has an 'any' type.
+server/api/v1/counties/[id]/expenditure-types.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/counties/[id]/expenditure-types.get.ts(4,63): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/counties/[id]/expenditure-types.get.ts(5,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/counties/[id]/expenditure-types.get.ts(15,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/counties/[id]/expenditure-types.get.ts(15,80): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/counties/[id]/expenditure-types.get.ts(32,12): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/counties/[id]/expenditure-types.get.ts(33,13): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/counties/[id]/expenditure-types.get.ts(37,22): error TS7006: Parameter 't' implicitly has an 'any' type.
+server/api/v1/counties/[id]/trends.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/counties/[id]/trends.get.ts(4,40): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/counties/[id]/trends.get.ts(5,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/counties/[id]/trends.get.ts(29,23): error TS7006: Parameter 't' implicitly has an 'any' type.
+server/api/v1/counties/index.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/counties/index.get.ts(4,50): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/counties/index.get.ts(5,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/counties/index.get.ts(12,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/counties/index.get.ts(13,51): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/counties/index.get.ts(16,33): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/counties/index.get.ts(17,46): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/counties/index.get.ts(35,12): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/counties/index.get.ts(36,13): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/counties/index.get.ts(40,21): error TS7006: Parameter 'c' implicitly has an 'any' type.
+server/api/v1/objects/[code].get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/objects/[code].get.ts(4,36): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/objects/index.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/objects/index.get.ts(4,55): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/objects/index.get.ts(5,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/objects/index.get.ts(12,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/objects/index.get.ts(13,56): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/objects/index.get.ts(16,29): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/objects/index.get.ts(17,41): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/objects/index.get.ts(37,12): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/objects/index.get.ts(38,13): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/objects/index.get.ts(42,21): error TS7006: Parameter 'c' implicitly has an 'any' type.
+server/api/v1/overview.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/overview.get.ts(4,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/overview.get.ts(12,8): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/overview.get.ts(20,28): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/overview.get.ts(21,46): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/overview.get.ts(23,29): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/overview.get.ts(24,41): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/overview.get.ts(153,31): error TS7006: Parameter 't' implicitly has an 'any' type.
+server/api/v1/payees/[id].get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/payees/[id].get.ts(4,62): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/payees/[id]/agencies.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/payees/[id]/agencies.get.ts(4,45): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/payees/[id]/agencies.get.ts(5,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/payees/[id]/agencies.get.ts(15,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/payees/[id]/agencies.get.ts(15,75): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/payees/[id]/agencies.get.ts(29,12): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/payees/[id]/agencies.get.ts(30,13): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/payees/[id]/agencies.get.ts(34,28): error TS7006: Parameter 't' implicitly has an 'any' type.
+server/api/v1/payees/[id]/categories.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/payees/[id]/categories.get.ts(4,35): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/payees/[id]/categories.get.ts(5,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/payees/[id]/categories.get.ts(15,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/payees/[id]/categories.get.ts(15,75): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/payees/[id]/categories.get.ts(27,12): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/payees/[id]/categories.get.ts(28,13): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/payees/[id]/categories.get.ts(32,27): error TS7006: Parameter 't' implicitly has an 'any' type.
+server/api/v1/payees/[id]/trends.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/payees/[id]/trends.get.ts(4,35): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/payees/[id]/trends.get.ts(5,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/payees/[id]/trends.get.ts(15,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/payees/[id]/trends.get.ts(15,75): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/payees/[id]/trends.get.ts(30,23): error TS7006: Parameter 't' implicitly has an 'any' type.
+server/api/v1/payees/index.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/payees/index.get.ts(4,43): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/payees/index.get.ts(5,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/payees/index.get.ts(12,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/payees/index.get.ts(14,44): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/payees/index.get.ts(14,52): error TS2339: Property 'toUpperCase' does not exist on type 'string | number | true | Record<string, any> | QueryValue[] | QueryValue[]'.
+  Property 'toUpperCase' does not exist on type 'number'.
+server/api/v1/payees/index.get.ts(17,8): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/payees/index.get.ts(22,29): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/payees/index.get.ts(23,41): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/payees/index.get.ts(41,12): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/payees/index.get.ts(42,13): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/payees/index.get.ts(46,21): error TS7006: Parameter 'p' implicitly has an 'any' type.
+server/api/v1/search.get.ts(4,28): error TS2305: Module '"#server/database/schema"' has no exported member 'counties'.
+server/api/v1/search.get.ts(21,13): error TS2304: Cannot find name 'sql'.
+server/api/v1/search.get.ts(31,13): error TS2304: Cannot find name 'sql'.
+server/api/v1/search.get.ts(42,13): error TS2304: Cannot find name 'sql'.
+server/api/v1/transactions/[id].get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/transactions/[id].get.ts(9,8): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/transactions/index.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/transactions/index.get.ts(9,8): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/transactions/index.get.ts(10,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/transactions/index.get.ts(16,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(27,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(27,75): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(28,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(28,71): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(29,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(29,69): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(30,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(31,65): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(33,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(33,76): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(34,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(34,74): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(37,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(37,78): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(38,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(38,78): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(40,8): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(45,26): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(47,5): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(76,12): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(77,13): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(81,21): error TS7006: Parameter 't' implicitly has an 'any' type.
+server/api/v1/transactions/index.get.ts(83,33): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/agencies/[id].get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/agencies/[id].get.ts(4,26): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/agencies/[id]/counties.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/agencies/[id]/counties.get.ts(4,50): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/agencies/[id]/counties.get.ts(5,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/agencies/[id]/counties.get.ts(15,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/agencies/[id]/counties.get.ts(15,80): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/agencies/[id]/counties.get.ts(29,12): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/agencies/[id]/counties.get.ts(30,13): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/agencies/[id]/counties.get.ts(34,32): error TS7006: Parameter 't' implicitly has an 'any' type.
+server/api/v1/agencies/[id]/objects.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/agencies/[id]/objects.get.ts(4,55): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/agencies/[id]/objects.get.ts(5,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/agencies/[id]/objects.get.ts(15,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/agencies/[id]/objects.get.ts(15,75): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/agencies/[id]/objects.get.ts(32,12): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/agencies/[id]/objects.get.ts(33,13): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/agencies/[id]/objects.get.ts(37,24): error TS7006: Parameter 't' implicitly has an 'any' type.
+server/api/v1/agencies/[id]/payees.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/agencies/[id]/payees.get.ts(4,43): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/agencies/[id]/payees.get.ts(5,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/agencies/[id]/payees.get.ts(15,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/agencies/[id]/payees.get.ts(15,75): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/agencies/[id]/payees.get.ts(29,12): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/agencies/[id]/payees.get.ts(30,13): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/agencies/[id]/payees.get.ts(34,26): error TS7006: Parameter 't' implicitly has an 'any' type.
+server/api/v1/agencies/[id]/trends.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/agencies/[id]/trends.get.ts(4,40): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/agencies/[id]/trends.get.ts(5,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/agencies/[id]/trends.get.ts(29,23): error TS7006: Parameter 't' implicitly has an 'any' type.
+server/api/v1/agencies/index.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/agencies/index.get.ts(4,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/agencies/index.get.ts(5,50): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/agencies/index.get.ts(12,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/agencies/index.get.ts(13,65): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/agencies/index.get.ts(14,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/agencies/index.get.ts(18,13): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/agencies/index.get.ts(18,21): error TS2339: Property 'toUpperCase' does not exist on type 'string | number | true | Record<string, any> | QueryValue[] | QueryValue[]'.
+  Property 'toUpperCase' does not exist on type 'number'.
+server/api/v1/agencies/index.get.ts(38,12): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/agencies/index.get.ts(39,13): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/agencies/index.get.ts(43,21): error TS7006: Parameter 'a' implicitly has an 'any' type.
+server/api/v1/categories/[code].get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/categories/[code].get.ts(4,39): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/categories/[code]/agencies.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/categories/[code]/agencies.get.ts(4,50): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/categories/[code]/agencies.get.ts(5,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/categories/[code]/agencies.get.ts(15,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/categories/[code]/agencies.get.ts(15,80): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/categories/[code]/agencies.get.ts(29,12): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/categories/[code]/agencies.get.ts(30,13): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/categories/[code]/agencies.get.ts(34,28): error TS7006: Parameter 't' implicitly has an 'any' type.
+server/api/v1/categories/[code]/objects.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/categories/[code]/objects.get.ts(4,55): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/categories/[code]/objects.get.ts(5,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/categories/[code]/objects.get.ts(15,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/categories/[code]/objects.get.ts(15,75): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/categories/[code]/objects.get.ts(32,12): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/categories/[code]/objects.get.ts(33,13): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/categories/[code]/objects.get.ts(37,24): error TS7006: Parameter 't' implicitly has an 'any' type.
+server/api/v1/categories/[code]/payees.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/categories/[code]/payees.get.ts(4,43): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/categories/[code]/payees.get.ts(5,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/categories/[code]/payees.get.ts(17,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/categories/[code]/payees.get.ts(17,75): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/categories/[code]/payees.get.ts(31,12): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/categories/[code]/payees.get.ts(32,13): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/categories/[code]/payees.get.ts(36,26): error TS7006: Parameter 't' implicitly has an 'any' type.
+server/api/v1/categories/[code]/trends.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/categories/[code]/trends.get.ts(4,40): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/categories/[code]/trends.get.ts(5,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/categories/[code]/trends.get.ts(29,23): error TS7006: Parameter 't' implicitly has an 'any' type.
+server/api/v1/categories/index.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/categories/index.get.ts(4,63): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/categories/index.get.ts(5,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/categories/index.get.ts(12,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/categories/index.get.ts(13,59): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/categories/index.get.ts(16,28): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/categories/index.get.ts(17,46): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/categories/index.get.ts(37,12): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/categories/index.get.ts(38,13): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/categories/index.get.ts(42,21): error TS7006: Parameter 'c' implicitly has an 'any' type.
+server/api/v1/counties/[id].get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/counties/[id].get.ts(4,26): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/counties/[id]/agencies.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/counties/[id]/agencies.get.ts(4,50): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/counties/[id]/agencies.get.ts(5,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/counties/[id]/agencies.get.ts(15,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/counties/[id]/agencies.get.ts(15,80): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/counties/[id]/agencies.get.ts(29,12): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/counties/[id]/agencies.get.ts(30,13): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/counties/[id]/agencies.get.ts(34,28): error TS7006: Parameter 't' implicitly has an 'any' type.
+server/api/v1/counties/[id]/expenditure-types.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/counties/[id]/expenditure-types.get.ts(4,63): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/counties/[id]/expenditure-types.get.ts(5,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/counties/[id]/expenditure-types.get.ts(15,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/counties/[id]/expenditure-types.get.ts(15,80): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/counties/[id]/expenditure-types.get.ts(32,12): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/counties/[id]/expenditure-types.get.ts(33,13): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/counties/[id]/expenditure-types.get.ts(37,22): error TS7006: Parameter 't' implicitly has an 'any' type.
+server/api/v1/counties/[id]/trends.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/counties/[id]/trends.get.ts(4,40): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/counties/[id]/trends.get.ts(5,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/counties/[id]/trends.get.ts(29,23): error TS7006: Parameter 't' implicitly has an 'any' type.
+server/api/v1/counties/index.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/counties/index.get.ts(4,50): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/counties/index.get.ts(5,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/counties/index.get.ts(12,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/counties/index.get.ts(13,51): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/counties/index.get.ts(16,33): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/counties/index.get.ts(17,46): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/counties/index.get.ts(35,12): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/counties/index.get.ts(36,13): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/counties/index.get.ts(40,21): error TS7006: Parameter 'c' implicitly has an 'any' type.
+server/api/v1/objects/[code].get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/objects/[code].get.ts(4,36): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/objects/index.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/objects/index.get.ts(4,55): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/objects/index.get.ts(5,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/objects/index.get.ts(12,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/objects/index.get.ts(13,56): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/objects/index.get.ts(16,29): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/objects/index.get.ts(17,41): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/objects/index.get.ts(37,12): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/objects/index.get.ts(38,13): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/objects/index.get.ts(42,21): error TS7006: Parameter 'c' implicitly has an 'any' type.
+server/api/v1/overview.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/overview.get.ts(4,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/overview.get.ts(12,8): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/overview.get.ts(20,28): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/overview.get.ts(21,46): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/overview.get.ts(23,29): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/overview.get.ts(24,41): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/overview.get.ts(153,31): error TS7006: Parameter 't' implicitly has an 'any' type.
+server/api/v1/payees/[id].get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/payees/[id].get.ts(4,62): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/payees/[id]/agencies.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/payees/[id]/agencies.get.ts(4,45): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/payees/[id]/agencies.get.ts(5,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/payees/[id]/agencies.get.ts(15,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/payees/[id]/agencies.get.ts(15,75): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/payees/[id]/agencies.get.ts(29,12): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/payees/[id]/agencies.get.ts(30,13): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/payees/[id]/agencies.get.ts(34,28): error TS7006: Parameter 't' implicitly has an 'any' type.
+server/api/v1/payees/[id]/categories.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/payees/[id]/categories.get.ts(4,35): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/payees/[id]/categories.get.ts(5,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/payees/[id]/categories.get.ts(15,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/payees/[id]/categories.get.ts(15,75): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/payees/[id]/categories.get.ts(27,12): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/payees/[id]/categories.get.ts(28,13): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/payees/[id]/categories.get.ts(32,27): error TS7006: Parameter 't' implicitly has an 'any' type.
+server/api/v1/payees/[id]/trends.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/payees/[id]/trends.get.ts(4,35): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/payees/[id]/trends.get.ts(5,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/payees/[id]/trends.get.ts(15,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/payees/[id]/trends.get.ts(15,75): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/payees/[id]/trends.get.ts(30,23): error TS7006: Parameter 't' implicitly has an 'any' type.
+server/api/v1/payees/index.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/payees/index.get.ts(4,43): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/payees/index.get.ts(5,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/payees/index.get.ts(12,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/payees/index.get.ts(14,44): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/payees/index.get.ts(14,52): error TS2339: Property 'toUpperCase' does not exist on type 'string | number | true | Record<string, any> | QueryValue[] | QueryValue[]'.
+  Property 'toUpperCase' does not exist on type 'number'.
+server/api/v1/payees/index.get.ts(17,8): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/payees/index.get.ts(22,29): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/payees/index.get.ts(23,41): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/payees/index.get.ts(41,12): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/payees/index.get.ts(42,13): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/payees/index.get.ts(46,21): error TS7006: Parameter 'p' implicitly has an 'any' type.
+server/api/v1/search.get.ts(4,28): error TS2305: Module '"#server/database/schema"' has no exported member 'counties'.
+server/api/v1/search.get.ts(21,13): error TS2304: Cannot find name 'sql'.
+server/api/v1/search.get.ts(31,13): error TS2304: Cannot find name 'sql'.
+server/api/v1/search.get.ts(42,13): error TS2304: Cannot find name 'sql'.
+server/api/v1/transactions/[id].get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/transactions/[id].get.ts(9,8): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/transactions/index.get.ts(3,32): error TS2307: Cannot find module '#server/api/utils/database' or its corresponding type declarations.
+server/api/v1/transactions/index.get.ts(9,8): error TS2307: Cannot find module '#server/api/database/schema' or its corresponding type declarations.
+server/api/v1/transactions/index.get.ts(10,35): error TS2307: Cannot find module '#server/api/utils/query' or its corresponding type declarations.
+server/api/v1/transactions/index.get.ts(16,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(27,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(27,75): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(28,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(28,71): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(29,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(29,69): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(30,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(31,65): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(33,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(33,76): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(34,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(34,74): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(37,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(37,78): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(38,7): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(38,78): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(40,8): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(45,26): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(47,5): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(76,12): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(77,13): error TS18048: 'query' is possibly 'undefined'.
+server/api/v1/transactions/index.get.ts(81,21): error TS7006: Parameter 't' implicitly has an 'any' type.
+server/api/v1/transactions/index.get.ts(83,33): error TS18048: 'query' is possibly 'undefined'.
+/Users/narduk/new-code/template-apps/tx-spends/apps/web:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  web@1.17.2 typecheck: `nuxt typecheck`
+Exit status 1

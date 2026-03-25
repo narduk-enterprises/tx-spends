@@ -91,8 +91,7 @@ export default defineNuxtConfig({
      * `d1` — default; `useDatabase()` uses the D1 `DB` binding.
      * `postgres` — opt into Postgres via Hyperdrive + a Postgres Drizzle schema (see `useHyperdriveConnectionString`).
      */
-    databaseBackend:
-      process.env.NUXT_DATABASE_BACKEND === 'postgres' ? 'postgres' : 'd1',
+    databaseBackend: process.env.NUXT_DATABASE_BACKEND === 'postgres' ? 'postgres' : 'd1',
     /** Must match `hyperdrive[].binding` in wrangler (default `HYPERDRIVE`). */
     hyperdriveBinding: process.env.NUXT_HYPERDRIVE_BINDING || 'HYPERDRIVE',
     /** Optional: secret for cron routes (e.g. cache warming). Set CRON_SECRET in Doppler; provisioning sets it. */

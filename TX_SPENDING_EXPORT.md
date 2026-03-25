@@ -8,25 +8,27 @@ The source is a **369 MB SQLite** database at:
 /Users/narduk/new-code/texas-spending/data/texas_spending.db
 ```
 
-You can query it with `sqlite3 data/texas_spending.db` or programmatically via the `better-sqlite3` npm package (already installed in this project).
+You can query it with `sqlite3 data/texas_spending.db` or programmatically via
+the `better-sqlite3` npm package (already installed in this project).
 
 ## Row Counts
 
-| Table | Rows | Description |
-|-------|------|-------------|
-| `stg_expenditures_by_county_raw` | 527,341 | State expenditures broken down by county, FY2007–2024 |
-| `stg_annual_cash_report_raw` | 1,398,882 | Treasury fund detail from Annual Cash Reports, FY2018–2025 |
-| `stg_vendor_master_raw` | 11,697 | Active CMBL/VetHUB vendor records |
-| `stg_comptroller_objects_raw` | 103 | Expenditure/revenue object code reference data |
-| `stg_expenditure_categories_raw` | 18 | Expenditure category code reference data |
-| `stg_payments_to_payee_raw` | 0 | (Empty — requires Playwright browser scraper) |
-| `ingestion_log` | ~5 | Pipeline run metadata |
+| Table                            | Rows      | Description                                                |
+| -------------------------------- | --------- | ---------------------------------------------------------- |
+| `stg_expenditures_by_county_raw` | 527,341   | State expenditures broken down by county, FY2007–2024      |
+| `stg_annual_cash_report_raw`     | 1,398,882 | Treasury fund detail from Annual Cash Reports, FY2018–2025 |
+| `stg_vendor_master_raw`          | 11,697    | Active CMBL/VetHUB vendor records                          |
+| `stg_comptroller_objects_raw`    | 103       | Expenditure/revenue object code reference data             |
+| `stg_expenditure_categories_raw` | 18        | Expenditure category code reference data                   |
+| `stg_payments_to_payee_raw`      | 0         | (Empty — requires Playwright browser scraper)              |
+| `ingestion_log`                  | ~5        | Pipeline run metadata                                      |
 
 **Total: ~1,938,041 rows**
 
 ## Schema
 
-Every staging table (`stg_*`) shares a common provenance contract with these trailing columns:
+Every staging table (`stg_*`) shares a common provenance contract with these
+trailing columns:
 
 ```sql
 source_file_name TEXT,    -- origin filename or identifier
@@ -37,7 +39,9 @@ row_number INTEGER        -- row position within the source file
 ```
 
 ### stg_expenditures_by_county_raw
-The largest and most useful fact table. Each row is a state agency expenditure in a county.
+
+The largest and most useful fact table. Each row is a state agency expenditure
+in a county.
 
 ```sql
 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -50,7 +54,9 @@ amount REAL                     -- dollar amount (nullable for summary rows)
 ```
 
 ### stg_annual_cash_report_raw
-Parsed from Comptroller Annual Cash Report XLSX files. Each row is a line item from a fund detail or summary sheet.
+
+Parsed from Comptroller Annual Cash Report XLSX files. Each row is a line item
+from a fund detail or summary sheet.
 
 ```sql
 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -63,7 +69,9 @@ amount REAL              -- dollar amount
 ```
 
 ### stg_vendor_master_raw
-Active CMBL (Centralized Master Bidders List) / VetHUB vendors registered with the Comptroller.
+
+Active CMBL (Centralized Master Bidders List) / VetHUB vendors registered with
+the Comptroller.
 
 ```sql
 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -80,6 +88,7 @@ web_desc TEXT               -- commodity description
 ```
 
 ### stg_comptroller_objects_raw
+
 Reference table mapping 4-digit comptroller object codes to titles.
 
 ```sql
@@ -90,6 +99,7 @@ object_group TEXT    -- e.g. 'SALARIES AND WAGES'
 ```
 
 ### stg_expenditure_categories_raw
+
 Reference table for expenditure category codes.
 
 ```sql
@@ -99,6 +109,7 @@ category_title TEXT   -- e.g. 'SALARIES AND WAGES'
 ```
 
 ### stg_payments_to_payee_raw
+
 Individual payment transactions (currently empty — requires Playwright scraper).
 
 ```sql
@@ -117,6 +128,7 @@ fiscal_year INTEGER
 ```
 
 ### ingestion_log
+
 Pipeline metadata — tracks each scraper run.
 
 ```sql
@@ -137,6 +149,7 @@ error_message TEXT
 ### 1. Create the PostgreSQL schema
 
 Map SQLite types to Postgres:
+
 - `INTEGER PRIMARY KEY AUTOINCREMENT` → `SERIAL PRIMARY KEY`
 - `TEXT` → `TEXT`
 - `REAL` → `DOUBLE PRECISION` (or `NUMERIC(15,2)` for money columns)
@@ -167,32 +180,41 @@ done
 
 ### 4. Alternative: programmatic export
 
-Use the `better-sqlite3` (already installed) + `pg` packages to stream rows directly:
+Use the `better-sqlite3` (already installed) + `pg` packages to stream rows
+directly:
 
 ```typescript
-import Database from 'better-sqlite3';
-import { Pool } from 'pg';
+import Database from 'better-sqlite3'
+import { Pool } from 'pg'
 
-const sqlite = new Database('data/texas_spending.db', { readonly: true });
-const pg = new Pool({ connectionString: process.env.DATABASE_URL });
+const sqlite = new Database('data/texas_spending.db', { readonly: true })
+const pg = new Pool({ connectionString: process.env.DATABASE_URL })
 
-const BATCH_SIZE = 5000;
-const rows = sqlite.prepare('SELECT * FROM stg_expenditures_by_county_raw').iterate();
-let batch = [];
+const BATCH_SIZE = 5000
+const rows = sqlite
+  .prepare('SELECT * FROM stg_expenditures_by_county_raw')
+  .iterate()
+let batch = []
 
 for (const row of rows) {
-  batch.push(row);
+  batch.push(row)
   if (batch.length >= BATCH_SIZE) {
-    await insertBatch(pg, 'stg_expenditures_by_county_raw', batch);
-    batch = [];
+    await insertBatch(pg, 'stg_expenditures_by_county_raw', batch)
+    batch = []
   }
 }
-if (batch.length > 0) await insertBatch(pg, 'stg_expenditures_by_county_raw', batch);
+if (batch.length > 0)
+  await insertBatch(pg, 'stg_expenditures_by_county_raw', batch)
 ```
 
 ### Key Considerations
 
-- **Money columns**: `amount` is stored as `REAL` (float64). For Postgres, consider `NUMERIC(15,2)` to avoid floating point issues.
-- **Provenance columns**: Keep `source_file_name`, `source_url`, `source_loaded_at`, `source_snapshot_date`, `row_number` — they track data lineage.
-- **Indexes**: Add indexes on `fiscal_year`, `agency_name`, `county` in the county table, and `fiscal_year`, `fund_number` in the cash report table.
-- **The `id` column**: Auto-generated SQLite rowids. You can either preserve them or let Postgres generate new serial IDs.
+- **Money columns**: `amount` is stored as `REAL` (float64). For Postgres,
+  consider `NUMERIC(15,2)` to avoid floating point issues.
+- **Provenance columns**: Keep `source_file_name`, `source_url`,
+  `source_loaded_at`, `source_snapshot_date`, `row_number` — they track data
+  lineage.
+- **Indexes**: Add indexes on `fiscal_year`, `agency_name`, `county` in the
+  county table, and `fiscal_year`, `fund_number` in the cash report table.
+- **The `id` column**: Auto-generated SQLite rowids. You can either preserve
+  them or let Postgres generate new serial IDs.

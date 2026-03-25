@@ -4,19 +4,20 @@ const config = useRuntimeConfig()
 const appName = config.public.appName || 'Texas Spends'
 const siteUrl = config.public.appUrl || 'https://tx-spends.nard.uk'
 const pageTitle = `${appName} — Track Texas spending with clarity`
-const pageDescription = 'A clear, modern portal for exploring Texas government spending, surfacing trends, categories, and high-level budget signals in one place.'
+const pageDescription =
+  'A clear, modern portal for exploring Texas government spending, surfacing trends, categories, and high-level budget signals in one place.'
 
 useSeo({
   title: pageTitle,
   description: pageDescription,
   ogImage: {
-    title: pageTitle
-  }
+    title: pageTitle,
+  },
 })
 
 useWebPageSchema({
   name: pageTitle,
-  description: pageDescription
+  description: pageDescription,
 })
 
 const { data: landing } = await useAsyncData('landing-page', async () => {
@@ -25,46 +26,49 @@ const { data: landing } = await useAsyncData('landing-page', async () => {
       {
         label: 'Statewide visibility',
         value: 'Agency to category',
-        icon: 'i-lucide-map'
+        icon: 'i-lucide-map',
       },
       {
         label: 'Built for fast review',
         value: 'Simple, focused views',
-        icon: 'i-lucide-gauge'
+        icon: 'i-lucide-gauge',
       },
       {
         label: 'Useful for oversight',
         value: 'Signals over noise',
-        icon: 'i-lucide-badge-dollar-sign'
-      }
+        icon: 'i-lucide-badge-dollar-sign',
+      },
     ],
     features: [
       {
         title: 'Spending trends at a glance',
-        description: 'Quickly understand how public money moves with concise summaries, trend framing, and easy-to-scan visual sections.',
-        icon: 'i-lucide-line-chart'
+        description:
+          'Quickly understand how public money moves with concise summaries, trend framing, and easy-to-scan visual sections.',
+        icon: 'i-lucide-line-chart',
       },
       {
         title: 'Agency and category context',
-        description: 'Explore spending by department, purpose, or program area so visitors can move from headlines to useful context.',
-        icon: 'i-lucide-building-2'
+        description:
+          'Explore spending by department, purpose, or program area so visitors can move from headlines to useful context.',
+        icon: 'i-lucide-building-2',
       },
       {
         title: 'Clearer public accountability',
-        description: 'Designed to help researchers, journalists, and residents spot major patterns without wading through cluttered interfaces.',
-        icon: 'i-lucide-scale'
-      }
+        description:
+          'Designed to help researchers, journalists, and residents spot major patterns without wading through cluttered interfaces.',
+        icon: 'i-lucide-scale',
+      },
     ],
     highlights: [
       'Mobile-first layout for first-time visitors',
       'Polished presentation with strong information hierarchy',
-      'Purpose-built framing for a public spending portal'
+      'Purpose-built framing for a public spending portal',
     ],
     nav: [
       { label: 'Overview', to: '#overview', icon: 'i-lucide-home' },
       { label: 'Features', to: '#features', icon: 'i-lucide-layout-grid' },
-      { label: 'Why it matters', to: '#why-it-matters', icon: 'i-lucide-landmark' }
-    ]
+      { label: 'Why it matters', to: '#why-it-matters', icon: 'i-lucide-landmark' },
+    ],
   }
 })
 </script>
@@ -76,13 +80,19 @@ const { data: landing } = await useAsyncData('landing-page', async () => {
       <div class="absolute inset-x-0 top-0 h-32 bg-[var(--gradient-accent)] blur-3xl opacity-70" />
 
       <UContainer class="relative py-6 sm:py-8">
-        <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/70 bg-white/80 px-4 py-3 tx-panel">
+        <div
+          class="flex items-center justify-between gap-4 rounded-2xl border border-white/70 bg-white/80 px-4 py-3 tx-panel"
+        >
           <div class="flex items-center gap-3 min-w-0">
-            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20">
+            <div
+              class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20"
+            >
               <UIcon name="i-lucide-landmark" class="h-5 w-5" />
             </div>
             <div class="min-w-0">
-              <p class="truncate text-sm font-semibold tracking-[0.18em] text-slate-500 uppercase">tx-spends</p>
+              <p class="truncate text-sm font-semibold tracking-[0.18em] text-slate-500 uppercase">
+                tx-spends
+              </p>
               <p class="truncate text-base font-bold text-slate-950">{{ appName }}</p>
             </div>
           </div>
@@ -96,11 +106,18 @@ const { data: landing } = await useAsyncData('landing-page', async () => {
       <UContainer id="overview" class="relative pb-16 pt-6 sm:pb-24 sm:pt-10 lg:pb-28">
         <div class="grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:gap-14">
           <div>
-            <UBadge color="primary" variant="subtle" class="mb-5 rounded-full px-3 py-1.5" icon="i-lucide-star">
+            <UBadge
+              color="primary"
+              variant="subtle"
+              class="mb-5 rounded-full px-3 py-1.5"
+              icon="i-lucide-star"
+            >
               Public spending, presented more clearly
             </UBadge>
 
-            <h1 class="max-w-3xl text-4xl font-black tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
+            <h1
+              class="max-w-3xl text-4xl font-black tracking-tight text-slate-950 sm:text-5xl lg:text-6xl"
+            >
               See how Texas spending comes together.
             </h1>
 
@@ -112,7 +129,13 @@ const { data: landing } = await useAsyncData('landing-page', async () => {
               <UButton to="#features" color="primary" size="xl" icon="i-lucide-rocket">
                 Explore the portal
               </UButton>
-              <UButton :to="siteUrl" color="neutral" variant="soft" size="xl" icon="i-lucide-arrow-up-right">
+              <UButton
+                :to="siteUrl"
+                color="neutral"
+                variant="soft"
+                size="xl"
+                icon="i-lucide-arrow-up-right"
+              >
                 Visit site
               </UButton>
             </div>
@@ -124,7 +147,9 @@ const { data: landing } = await useAsyncData('landing-page', async () => {
                 class="border-white/70 bg-white/85 tx-glow"
               >
                 <div class="flex items-start gap-3">
-                  <div class="mt-0.5 flex h-10 w-10 items-center justify-center rounded-xl bg-secondary/10 text-secondary ring-1 ring-secondary/20">
+                  <div
+                    class="mt-0.5 flex h-10 w-10 items-center justify-center rounded-xl bg-secondary/10 text-secondary ring-1 ring-secondary/20"
+                  >
                     <UIcon :name="stat.icon" class="h-5 w-5" />
                   </div>
                   <div>
@@ -137,13 +162,23 @@ const { data: landing } = await useAsyncData('landing-page', async () => {
           </div>
 
           <div class="relative">
-            <div class="absolute -inset-4 rounded-[2rem] bg-[var(--gradient-accent)] blur-2xl opacity-70" />
-            <UCard class="relative overflow-hidden rounded-[2rem] border-white/70 bg-white/90 tx-elevated">
+            <div
+              class="absolute -inset-4 rounded-[2rem] bg-[var(--gradient-accent)] blur-2xl opacity-70"
+            />
+            <UCard
+              class="relative overflow-hidden rounded-[2rem] border-white/70 bg-white/90 tx-elevated"
+            >
               <div class="space-y-6 p-1">
-                <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-950 px-4 py-4 text-white">
+                <div
+                  class="flex items-center justify-between gap-3 rounded-2xl bg-slate-950 px-4 py-4 text-white"
+                >
                   <div>
-                    <p class="text-xs font-semibold tracking-[0.2em] text-slate-300 uppercase">Portal focus</p>
-                    <p class="mt-1 text-lg font-bold">Budget signals that are easier to interpret</p>
+                    <p class="text-xs font-semibold tracking-[0.2em] text-slate-300 uppercase">
+                      Portal focus
+                    </p>
+                    <p class="mt-1 text-lg font-bold">
+                      Budget signals that are easier to interpret
+                    </p>
                   </div>
                   <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">
                     <UIcon name="i-lucide-badge-dollar-sign" class="h-6 w-6 text-primary" />
@@ -153,11 +188,15 @@ const { data: landing } = await useAsyncData('landing-page', async () => {
                 <div class="grid gap-3 sm:grid-cols-2">
                   <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <p class="text-sm font-medium text-slate-500">Designed for</p>
-                    <p class="mt-2 text-base font-semibold text-slate-950">Residents, researchers, journalists, and policy teams</p>
+                    <p class="mt-2 text-base font-semibold text-slate-950">
+                      Residents, researchers, journalists, and policy teams
+                    </p>
                   </div>
                   <div class="rounded-2xl border border-primary/20 bg-primary/5 p-4">
                     <p class="text-sm font-medium text-slate-500">Core promise</p>
-                    <p class="mt-2 text-base font-semibold text-slate-950">Less friction, more visibility into where money goes</p>
+                    <p class="mt-2 text-base font-semibold text-slate-950">
+                      Less friction, more visibility into where money goes
+                    </p>
                   </div>
                 </div>
 
@@ -169,7 +208,9 @@ const { data: landing } = await useAsyncData('landing-page', async () => {
                     :key="item"
                     class="flex items-start gap-3 rounded-2xl border border-slate-200/80 bg-white px-4 py-3"
                   >
-                    <div class="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-success/10 text-success">
+                    <div
+                      class="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-success/10 text-success"
+                    >
                       <UIcon name="i-lucide-check" class="h-4 w-4" />
                     </div>
                     <p class="text-sm leading-6 text-slate-700">{{ item }}</p>
@@ -191,7 +232,8 @@ const { data: landing } = await useAsyncData('landing-page', async () => {
           A more approachable way to understand public spending
         </h2>
         <p class="mt-3 max-w-2xl text-slate-600">
-          Texas Spends is positioned as a clean front door for exploring government expenditure patterns without overwhelming first-time visitors.
+          Texas Spends is positioned as a clean front door for exploring government expenditure
+          patterns without overwhelming first-time visitors.
         </p>
       </div>
 
@@ -202,7 +244,9 @@ const { data: landing } = await useAsyncData('landing-page', async () => {
           class="rounded-2xl border-white/70 bg-white/90 tx-panel"
         >
           <div class="flex h-full flex-col">
-            <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
+            <div
+              class="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20"
+            >
               <UIcon :name="feature.icon" class="h-6 w-6" />
             </div>
             <h3 class="text-lg font-bold text-slate-950">{{ feature.title }}</h3>
@@ -213,7 +257,9 @@ const { data: landing } = await useAsyncData('landing-page', async () => {
     </UContainer>
 
     <UContainer id="why-it-matters" class="pb-20 sm:pb-24">
-      <UCard class="overflow-hidden rounded-[2rem] border-slate-200 bg-slate-950 text-white tx-elevated">
+      <UCard
+        class="overflow-hidden rounded-[2rem] border-slate-200 bg-slate-950 text-white tx-elevated"
+      >
         <div class="grid gap-8 p-6 sm:p-8 lg:grid-cols-[1fr_auto] lg:items-center lg:p-10">
           <div>
             <UBadge color="primary" variant="soft" class="mb-4" icon="i-lucide-landmark">
@@ -223,7 +269,8 @@ const { data: landing } = await useAsyncData('landing-page', async () => {
               Better visibility supports better public understanding.
             </h2>
             <p class="mt-4 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
-              When spending data is easier to navigate, more people can ask better questions, compare priorities, and understand the scale of public decisions.
+              When spending data is easier to navigate, more people can ask better questions,
+              compare priorities, and understand the scale of public decisions.
             </p>
           </div>
 
@@ -231,7 +278,13 @@ const { data: landing } = await useAsyncData('landing-page', async () => {
             <UButton to="#overview" color="primary" size="lg" icon="i-lucide-arrow-up">
               Back to top
             </UButton>
-            <UButton :to="siteUrl" color="neutral" variant="soft" size="lg" icon="i-lucide-external-link">
+            <UButton
+              :to="siteUrl"
+              color="neutral"
+              variant="soft"
+              size="lg"
+              icon="i-lucide-external-link"
+            >
               Open {{ appName }}
             </UButton>
           </div>

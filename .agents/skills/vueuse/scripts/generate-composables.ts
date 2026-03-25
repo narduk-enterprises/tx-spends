@@ -139,7 +139,7 @@ function extractOptions(tsContent: string, composableName: string): OptionInfo[]
     return options
 
   // Parse each property with JSDoc comments
-  // eslint-disable-next-line regexp/no-super-linear-backtracking
+  // eslint-disable-next-line regexp/no-super-linear-backtracking -- Allowed for generator parsing
   const propRegex = /\/\*\*\s*([\s\S]*?)\*\/\s*(\w+)\??:\s*([^;\n]+)/g
 
   for (const match of interfaceContent.matchAll(propRegex)) {

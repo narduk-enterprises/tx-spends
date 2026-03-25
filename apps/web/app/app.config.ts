@@ -7,7 +7,7 @@ export default defineAppConfig({
       success: 'emerald',
       info: 'sky',
       warning: 'amber',
-      error: 'rose'
-    }
-  }
+      error: 'rose',
+    },
+  },
 })

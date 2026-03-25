@@ -39,7 +39,9 @@ function makeLogger(event: H3Event, label: string) {
 function getHyperdriveConnectionString(event: H3Event): string {
   const config = useRuntimeConfig(event)
   const bindingName = (config as Record<string, unknown>).hyperdriveBinding || 'HYPERDRIVE'
-  const env = event.context.cloudflare?.env as Record<string, { connectionString?: string }> | undefined
+  const env = event.context.cloudflare?.env as
+    | Record<string, { connectionString?: string }>
+    | undefined
   const hd = env?.[bindingName as string]
   if (!hd?.connectionString) {
     throw createError({

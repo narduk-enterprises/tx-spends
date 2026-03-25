@@ -36,9 +36,7 @@ describe('useHyperdriveConnectionString', () => {
         },
       },
     }
-    expect(useHyperdriveConnectionString(event as never)).toBe(
-      'postgres://localhost:5432/app',
-    )
+    expect(useHyperdriveConnectionString(event as never)).toBe('postgres://localhost:5432/app')
   })
 
   it('uses custom binding name from runtime config', () => {

@@ -6,9 +6,7 @@
     "directory": ".output/public"
   },
   "compatibility_date": "2026-03-03",
-  "compatibility_flags": [
-    "nodejs_compat"
-  ],
+  "compatibility_flags": ["nodejs_compat"],
   "observability": {
     "enabled": true
   },
@@ -16,7 +14,7 @@
     {
       "binding": "HYPERDRIVE",
       "id": "ba94ea0f566f462497dd1159f650300b",
-      "localConnectionString": "postgresql://neondb_owner:npg_RWwUCxh2Pr5A@ep-ancient-term-an88xd1u-pooler.c-6.us-east-1.aws.neon.tech/neondb?sslmode=require"
+      "localConnectionString": "${DATABASE_URL}"
     }
   ],
   "ratelimits": [
