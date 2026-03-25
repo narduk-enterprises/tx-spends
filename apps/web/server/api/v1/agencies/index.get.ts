@@ -1,5 +1,5 @@
 import { getValidatedQuery } from 'h3'
-import { eq, desc, sql, like, or } from 'drizzle-orm'
+import { eq, desc, sql, like, or, and } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
 import { globalQuerySchema } from '#server/utils/query'
 import { countyExpenditureFacts, agencies } from '#server/database/schema'
@@ -20,8 +20,7 @@ export default defineEventHandler(async (event) => {
     )
   }
 
-  const whereCounty =
-    countyConditions.length > 0 ? sql.join(countyConditions, sql` and `) : undefined
+  const whereCounty = countyConditions.length > 0 ? and(...countyConditions) : undefined
 
   const list = await db
     .select({
@@ -42,7 +41,7 @@ export default defineEventHandler(async (event) => {
     filters_applied: query,
     data: list.map((a) => ({
       ...a,
-      amount: Number(a.amount || 0),
+      total_spend: Number(a.amount || 0),
     })),
     meta: {
       currency: 'USD',
