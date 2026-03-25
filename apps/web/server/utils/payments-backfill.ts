@@ -33,6 +33,8 @@ export async function getPaymentsBackfillStatus(db: AppDatabase): Promise<Paymen
     ...PAYMENTS_EXPORT_SUMMARY,
     fiscal_years: [...PAYMENTS_EXPORT_SUMMARY.fiscal_years],
     active,
+    // Retained for API backward compatibility; runtime tracking was removed
+    // along with the pg_stat_activity dependency.
     active_runtime_seconds: null,
   }
 }

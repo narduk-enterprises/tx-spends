@@ -21,6 +21,12 @@ const ROOT_DIR = path.resolve(__dirname, '..')
 const TEMPLATE_NAME = ['narduk', 'nuxt', 'template'].join('-')
 
 // --- Helper Functions ---
+
+function resolveWranglerPath(dir: string): string {
+  const jsoncPath = path.join(dir, 'wrangler.jsonc')
+  return existsSync(jsoncPath) ? jsoncPath : path.join(dir, 'wrangler.json')
+}
+
 function checkCommand(
   command: string,
   args: string[],
@@ -39,9 +45,7 @@ function checkCommand(
 
 async function getPrimaryWebDatabaseName(): Promise<string | null> {
   try {
-    const jsonc = path.join(ROOT_DIR, 'apps', 'web', 'wrangler.jsonc')
-    const json = path.join(ROOT_DIR, 'apps', 'web', 'wrangler.json')
-    const webWranglerPath = existsSync(jsonc) ? jsonc : json
+    const webWranglerPath = resolveWranglerPath(path.join(ROOT_DIR, 'apps', 'web'))
     const webWranglerContent = await fs.readFile(webWranglerPath, 'utf-8')
     const webWrangler = JSON.parse(webWranglerContent) as {
       d1_databases?: Array<{ database_name?: string }>
@@ -77,9 +81,7 @@ async function main() {
     let checkedAny = false
 
     for (const appDir of appDirs) {
-      const jsoncPath = path.join(appsDir, appDir, 'wrangler.jsonc')
-      const jsonPath = path.join(appsDir, appDir, 'wrangler.json')
-      const wranglerPath = existsSync(jsoncPath) ? jsoncPath : jsonPath
+      const wranglerPath = resolveWranglerPath(path.join(appsDir, appDir))
       try {
         const wranglerContent = await fs.readFile(wranglerPath, 'utf-8')
         const parsedWrangler = JSON.parse(wranglerContent)
@@ -117,9 +119,7 @@ async function main() {
     let foundAny = false
 
     for (const appDir of appDirs) {
-      const jsoncPath = path.join(appsDir, appDir, 'wrangler.jsonc')
-      const jsonPath = path.join(appsDir, appDir, 'wrangler.json')
-      const wranglerPath = existsSync(jsoncPath) ? jsoncPath : jsonPath
+      const wranglerPath = resolveWranglerPath(path.join(appsDir, appDir))
       try {
         const wranglerContent = await fs.readFile(wranglerPath, 'utf-8')
         const parsedWrangler = JSON.parse(wranglerContent)
