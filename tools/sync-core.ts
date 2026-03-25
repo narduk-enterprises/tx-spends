@@ -15,6 +15,7 @@ import {
 import { basename, dirname, join, relative } from 'node:path'
 import { ensureSkillsLinks } from './ensure-skills-links'
 import { runCommand } from './command'
+import { parseJsonc } from './parse-jsonc'
 import {
   BOOTSTRAP_SYNC_FILES,
   FLEET_ROOT_SCRIPT_PATCHES,
@@ -545,9 +546,11 @@ function patchWebPackage(
         }
       }
 
-      const wranglerPath = join(appDir, 'apps/web/wrangler.json')
+      const wranglerJsonc = join(appDir, 'apps/web/wrangler.jsonc')
+      const wranglerJson = join(appDir, 'apps/web/wrangler.json')
+      const wranglerPath = existsSync(wranglerJsonc) ? wranglerJsonc : wranglerJson
       if (existsSync(wranglerPath)) {
-        const wrangler = JSON.parse(readFileSync(wranglerPath, 'utf-8')) as {
+        const wrangler = parseJsonc(readFileSync(wranglerPath, 'utf-8')) as {
           d1_databases?: Array<{ database_name?: string }>
         }
         const databaseName = wrangler.d1_databases?.[0]?.database_name

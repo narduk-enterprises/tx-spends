@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { runCommand } from './command'
+import { parseJsonc } from './parse-jsonc'
 
 const DEFAULT_CONTROL_PLANE_URL = 'https://control-plane.nard.uk'
 
@@ -90,7 +91,8 @@ function readWranglerConfig(appDir: string): WranglerConfig | null {
   if (!existsSync(wranglerPath)) return null
 
   try {
-    return JSON.parse(readFileSync(wranglerPath, 'utf8')) as WranglerConfig
+    const raw = readFileSync(wranglerPath, 'utf8')
+    return parseJsonc(raw) as WranglerConfig
   } catch {
     return null
   }

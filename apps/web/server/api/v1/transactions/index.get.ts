@@ -88,9 +88,9 @@ export default defineEventHandler(async (event) => {
   const sortCol =
     query.sort === 'payment_date'
       ? statePaymentFacts.paymentDate
-      : query.sort === 'agency'
+      : query.sort === 'agency_name'
         ? agencies.agencyName
-        : query.sort === 'payee'
+        : query.sort === 'payee_name'
           ? payees.payeeNameRaw
           : statePaymentFacts.amount
 

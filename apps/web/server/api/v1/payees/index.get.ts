@@ -43,9 +43,7 @@ export default defineEventHandler(async (event) => {
   const conditions = [eq(paymentPayeeRollups.scopeFiscalYear, scopeFiscalYear)]
 
   if (query.q) {
-    conditions.push(
-      like(payees.payeeNameNormalized, `%${normalizeSearchTerm(query.q)}%`),
-    )
+    conditions.push(like(payees.payeeNameNormalized, `%${normalizeSearchTerm(query.q)}%`))
   }
   if (!query.include_confidential) {
     conditions.push(eq(payees.isConfidential, false))

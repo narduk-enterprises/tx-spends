@@ -84,6 +84,12 @@ export default defineNuxtConfig({
     defaultLocale: 'en',
   },
 
+  // Avoid public/robots.txt vs generated route conflict (@nuxt/robots renames to _robots.txt).
+  robots: {
+    mergeWithRobotsTxtPath: false,
+    sitemap: [`${canonicalSiteUrl}/sitemap.xml`],
+  },
+
   schemaOrg: {
     identity: {
       type: 'Organization',

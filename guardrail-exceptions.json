@@ -12,7 +12,7 @@
   {
     "file": "apps/web/app/components/TrendChartCard.vue",
     "line": 69,
-    "kind": "eslint-disable-next-line",
+    "kind": "eslint-disable",
     "rule": "narduk/no-inline-svg",
     "reason": "Inline SVG is required because the chart is rendered programmatically via computed polyline points and circles.",
     "owner": "app",
@@ -22,7 +22,7 @@
   {
     "file": "apps/web/app/components/TexasCountyChoropleth.client.vue",
     "line": 146,
-    "kind": "eslint-disable-next-line",
+    "kind": "eslint-disable",
     "rule": "narduk/no-inline-svg",
     "reason": "Inline SVG is required because the choropleth map is rendered programmatically via D3 geo path projections.",
     "owner": "app",

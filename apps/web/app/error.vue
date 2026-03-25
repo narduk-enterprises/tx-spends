@@ -33,9 +33,15 @@ function refreshPage() {
 }
 
 useSeo({
-  title: `${props.error?.statusCode || 'Error'} — ${title.value}`,
-  description: description.value,
+  title: () => `${props.error?.statusCode || 'Error'} — ${title.value}`,
+  description: () => description.value,
   robots: 'noindex, nofollow',
+})
+
+useWebPageSchema({
+  name: `${props.error?.statusCode || 'Error'} — ${title.value}`,
+  description: description.value,
+  type: 'WebPage',
 })
 </script>
 

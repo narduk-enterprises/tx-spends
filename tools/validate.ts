@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { runCommand } from './command'
+import { parseJsonc } from './parse-jsonc'
 
 /**
  * VALIDATE.TS — Nuxt v4 Template Setup Validation Script
@@ -47,7 +48,7 @@ async function getPrimaryWebDatabaseName(): Promise<string | null> {
   try {
     const webWranglerPath = resolveWranglerPath(path.join(ROOT_DIR, 'apps', 'web'))
     const webWranglerContent = await fs.readFile(webWranglerPath, 'utf-8')
-    const webWrangler = JSON.parse(webWranglerContent) as {
+    const webWrangler = parseJsonc(webWranglerContent) as {
       d1_databases?: Array<{ database_name?: string }>
     }
 
@@ -84,7 +85,7 @@ async function main() {
       const wranglerPath = resolveWranglerPath(path.join(appsDir, appDir))
       try {
         const wranglerContent = await fs.readFile(wranglerPath, 'utf-8')
-        const parsedWrangler = JSON.parse(wranglerContent)
+        const parsedWrangler = parseJsonc(wranglerContent) as Record<string, unknown>
         if (parsedWrangler.d1_databases && parsedWrangler.d1_databases.length > 0) {
           const dbName = parsedWrangler.d1_databases[0].database_name
           if (dbName) {
@@ -122,7 +123,7 @@ async function main() {
       const wranglerPath = resolveWranglerPath(path.join(appsDir, appDir))
       try {
         const wranglerContent = await fs.readFile(wranglerPath, 'utf-8')
-        const parsedWrangler = JSON.parse(wranglerContent)
+        const parsedWrangler = parseJsonc(wranglerContent) as Record<string, unknown>
         foundAny = true
 
         if (parsedWrangler.d1_databases && parsedWrangler.d1_databases.length > 0) {
@@ -130,7 +131,9 @@ async function main() {
           if (dbId && dbId.length > 0 && dbId !== 'REPLACE_VIA_PNPM_SETUP') {
             console.log(`  ✅ apps/${appDir}/wrangler config — database_id: ${dbId}`)
           } else {
-            console.error(`  ❌ apps/${appDir}/wrangler config — database_id missing or placeholder.`)
+            console.error(
+              `  ❌ apps/${appDir}/wrangler config — database_id missing or placeholder.`,
+            )
             allGood = false
           }
         }
