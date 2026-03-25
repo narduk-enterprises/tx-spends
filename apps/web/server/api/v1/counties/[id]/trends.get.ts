@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
 
   return {
     filters_applied: query,
-    data: trends.map((t: any) => ({
+    data: trends.map((t) => ({
       ...t,
       amount: Number(t.amount || 0),
     })),

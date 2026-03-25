@@ -31,7 +31,7 @@ export default defineEventHandler(async (event) => {
 
   return {
     filters_applied: query,
-    data: topPayees.map((t: any) => ({
+    data: topPayees.map((t) => ({
       ...t,
       amount: Number(t.amount || 0),
     })),

@@ -34,7 +34,7 @@ export default defineEventHandler(async (event) => {
 
   return {
     filters_applied: query,
-    data: topAgencies.map((t: any) => ({
+    data: topAgencies.map((t) => ({
       ...t,
       agency_name: formatAgencyDisplayName(t.agency_name),
       amount: Number(t.amount || 0),

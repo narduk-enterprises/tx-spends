@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://tx-spends.org/sitemap.xml

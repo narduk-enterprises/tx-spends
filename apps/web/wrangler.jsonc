@@ -10,10 +10,12 @@
   "observability": {
     "enabled": true
   },
+  // Hyperdrive ID is injected at deploy time via `wrangler deploy --var` or Doppler.
+  // See: https://developers.cloudflare.com/hyperdrive/
   "hyperdrive": [
     {
       "binding": "HYPERDRIVE",
-      "id": "ba94ea0f566f462497dd1159f650300b"
+      "id": "REPLACE_VIA_DOPPLER"
     }
   ],
   "ratelimits": [

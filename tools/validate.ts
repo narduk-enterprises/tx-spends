@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises'
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { runCommand } from './command'
@@ -38,7 +39,9 @@ function checkCommand(
 
 async function getPrimaryWebDatabaseName(): Promise<string | null> {
   try {
-    const webWranglerPath = path.join(ROOT_DIR, 'apps', 'web', 'wrangler.json')
+    const jsonc = path.join(ROOT_DIR, 'apps', 'web', 'wrangler.jsonc')
+    const json = path.join(ROOT_DIR, 'apps', 'web', 'wrangler.json')
+    const webWranglerPath = existsSync(jsonc) ? jsonc : json
     const webWranglerContent = await fs.readFile(webWranglerPath, 'utf-8')
     const webWrangler = JSON.parse(webWranglerContent) as {
       d1_databases?: Array<{ database_name?: string }>
@@ -65,7 +68,7 @@ async function main() {
 
   console.log(`\n🔍 Validating Setup for: ${APP_NAME}`)
 
-  // 1. Check D1 Databases (reads database_name from each app's wrangler.json)
+  // 1. Check D1 Databases (reads database_name from each app's wrangler.jsonc)
   console.log('\nStep 1/6: Validating D1 Databases...')
   try {
     const appsDir = path.join(ROOT_DIR, 'apps')
@@ -74,7 +77,9 @@ async function main() {
     let checkedAny = false
 
     for (const appDir of appDirs) {
-      const wranglerPath = path.join(appsDir, appDir, 'wrangler.json')
+      const jsoncPath = path.join(appsDir, appDir, 'wrangler.jsonc')
+      const jsonPath = path.join(appsDir, appDir, 'wrangler.json')
+      const wranglerPath = existsSync(jsoncPath) ? jsoncPath : jsonPath
       try {
         const wranglerContent = await fs.readFile(wranglerPath, 'utf-8')
         const parsedWrangler = JSON.parse(wranglerContent)
@@ -92,7 +97,7 @@ async function main() {
           }
         }
       } catch {
-        // App doesn't have a wrangler.json — skip
+        // App doesn't have a wrangler config — skip
       }
     }
     if (!checkedAny) {
@@ -103,8 +108,8 @@ async function main() {
     allGood = false
   }
 
-  // 2. Check wrangler.json database_id values
-  console.log('\nStep 2/6: Validating wrangler.json database IDs...')
+  // 2. Check wrangler config database_id values
+  console.log('\nStep 2/6: Validating wrangler config database IDs...')
   try {
     const appsDir = path.join(ROOT_DIR, 'apps')
     const entries = await fs.readdir(appsDir, { withFileTypes: true })
@@ -112,7 +117,9 @@ async function main() {
     let foundAny = false
 
     for (const appDir of appDirs) {
-      const wranglerPath = path.join(appsDir, appDir, 'wrangler.json')
+      const jsoncPath = path.join(appsDir, appDir, 'wrangler.jsonc')
+      const jsonPath = path.join(appsDir, appDir, 'wrangler.json')
+      const wranglerPath = existsSync(jsoncPath) ? jsoncPath : jsonPath
       try {
         const wranglerContent = await fs.readFile(wranglerPath, 'utf-8')
         const parsedWrangler = JSON.parse(wranglerContent)
@@ -121,20 +128,20 @@ async function main() {
         if (parsedWrangler.d1_databases && parsedWrangler.d1_databases.length > 0) {
           const dbId = parsedWrangler.d1_databases[0].database_id
           if (dbId && dbId.length > 0 && dbId !== 'REPLACE_VIA_PNPM_SETUP') {
-            console.log(`  ✅ apps/${appDir}/wrangler.json — database_id: ${dbId}`)
+            console.log(`  ✅ apps/${appDir}/wrangler config — database_id: ${dbId}`)
           } else {
-            console.error(`  ❌ apps/${appDir}/wrangler.json — database_id missing or placeholder.`)
+            console.error(`  ❌ apps/${appDir}/wrangler config — database_id missing or placeholder.`)
             allGood = false
           }
         }
         // Apps without d1_databases are valid (e.g. marketing, og-image) — skip silently
       } catch {
-        // App doesn't have a wrangler.json — skip
+        // App doesn't have a wrangler config — skip
       }
     }
 
     if (!foundAny) {
-      console.error('  ❌ No wrangler.json files found in apps/*/')
+      console.error('  ❌ No wrangler config files found in apps/*/')
       allGood = false
     }
   } catch (e: any) {

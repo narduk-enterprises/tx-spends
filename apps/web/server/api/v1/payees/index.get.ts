@@ -4,6 +4,7 @@ import { useAppDatabase } from '#server/utils/database'
 import { payeeVendorMatches, payees, paymentPayeeRollups } from '#server/database/schema'
 import { getPaymentsBackfillStatus } from '#server/utils/payments-backfill'
 import { getRollupScopeFiscalYear } from '#server/utils/payment-rollups'
+import { normalizeSearchTerm } from '#server/utils/explorer'
 import { globalQuerySchema } from '#server/utils/query'
 
 export default defineEventHandler(async (event) => {
@@ -43,7 +44,7 @@ export default defineEventHandler(async (event) => {
 
   if (query.q) {
     conditions.push(
-      like(payees.payeeNameNormalized, `%${query.q.toUpperCase().replaceAll(/[^A-Z0-9 ]/g, '')}%`),
+      like(payees.payeeNameNormalized, `%${normalizeSearchTerm(query.q)}%`),
     )
   }
   if (!query.include_confidential) {

@@ -84,7 +84,9 @@ function normalizeValue(value: string | null | undefined): string {
 }
 
 function readWranglerConfig(appDir: string): WranglerConfig | null {
-  const wranglerPath = resolve(appDir, 'wrangler.json')
+  const jsonc = resolve(appDir, 'wrangler.jsonc')
+  const json = resolve(appDir, 'wrangler.json')
+  const wranglerPath = existsSync(jsonc) ? jsonc : json
   if (!existsSync(wranglerPath)) return null
 
   try {

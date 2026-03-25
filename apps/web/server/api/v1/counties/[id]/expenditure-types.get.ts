@@ -37,7 +37,7 @@ export default defineEventHandler(async (event) => {
 
   return {
     filters_applied: query,
-    data: types.map((t: any) => ({
+    data: types.map((t) => ({
       ...t,
       category_title: formatCategoryDisplayName(t.category_title, 'Uncategorized'),
       amount: Number(t.amount || 0),
