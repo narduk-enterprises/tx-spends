@@ -16,11 +16,11 @@ const emit = defineEmits<{
 }>()
 
 const nuxtUiItems = computed(() => {
-  return props.tabs.map(tab => ({
+  return props.tabs.map((tab) => ({
     label: tab.label,
     value: tab.key,
     icon: tab.icon,
-    disabled: tab.disabled
+    disabled: tab.disabled,
   }))
 })
 </script>

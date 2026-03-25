@@ -38,7 +38,6 @@ useSeoMeta({
 
 <template>
   <div>
-    <FilterBar />
     <UContainer class="py-8">
       <div v-if="detailStatus === 'pending'" class="py-12 flex justify-center">
         <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin" />

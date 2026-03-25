@@ -4,6 +4,9 @@ import { runCommand } from './command'
 
 const DEFAULT_CONTROL_PLANE_URL = 'https://control-plane.nard.uk'
 
+/** Doppler config used for build, migrate, deploy, and secret reads during ship. */
+const SHIP_DOPPLER_CONFIG = 'prd'
+
 interface WranglerRouteConfig {
   pattern?: string
   custom_domain?: boolean
@@ -91,19 +94,36 @@ function readWranglerConfig(appDir: string): WranglerConfig | null {
   }
 }
 
-function readDopplerSecret(appDir: string, secretName: string, projectHints: string[]): string {
+function readDopplerSecret(
+  appDir: string,
+  secretName: string,
+  projectHints: (string | undefined | null)[],
+): string {
   const uniqueHints = [...new Set(projectHints.map((hint) => normalizeValue(hint)).filter(Boolean))]
 
   for (const project of uniqueHints) {
     const value = runQuiet(
       'doppler',
-      ['secrets', 'get', secretName, '--project', project, '--config', 'prd', '--plain'],
+      [
+        'secrets',
+        'get',
+        secretName,
+        '--project',
+        project,
+        '--config',
+        SHIP_DOPPLER_CONFIG,
+        '--plain',
+      ],
       appDir,
     )
     if (value) return value
   }
 
-  return runQuiet('doppler', ['secrets', 'get', secretName, '--plain'], appDir)
+  return runQuiet(
+    'doppler',
+    ['secrets', 'get', secretName, '--config', SHIP_DOPPLER_CONFIG, '--plain'],
+    appDir,
+  )
 }
 
 function routePatternToUrl(pattern: string): string {
@@ -200,7 +220,7 @@ async function shipApp(appTarget: string) {
   // 1. Build Verification
   console.log(`\n🏗️ Building ${appTarget}...`)
   try {
-    run('doppler', ['run', '--', 'pnpm', 'run', 'build'], appDir)
+    run('doppler', ['run', '--config', SHIP_DOPPLER_CONFIG, '--', 'pnpm', 'run', 'build'], appDir)
   } catch (error) {
     console.error(`\n❌ Build failed for ${appTarget}. Aborting ship to prevent broken commit.`)
     process.exit(1)
@@ -243,13 +263,13 @@ async function shipApp(appTarget: string) {
     console.log(`\n🗄️ Running remote D1 migrations for ${appTarget}...`)
     const migrateCmd = pkg.scripts['db:migrate'].replaceAll('--local', '--remote')
     const migrateArgs = parseMigrateCommand(migrateCmd)
-    run('doppler', ['run', '--', ...migrateArgs], appDir)
+    run('doppler', ['run', '--config', SHIP_DOPPLER_CONFIG, '--', ...migrateArgs], appDir)
   }
 
   // 4. Deploy
   console.log(`\n☁️ Deploying ${appTarget} to Edge...`)
   try {
-    run('doppler', ['run', '--', 'pnpm', 'run', 'deploy'], appDir)
+    run('doppler', ['run', '--config', SHIP_DOPPLER_CONFIG, '--', 'pnpm', 'run', 'deploy'], appDir)
   } catch (error) {
     console.error(`\n❌ Deploy failed for ${appTarget}.`)
     process.exit(1)

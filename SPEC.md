@@ -1,8 +1,10 @@
 # Texas State Spending Explorer — Implementation Specification (v1)
 
 **Audience:** coding agents, implementers, reviewers.  
-**Stack assumption:** PostgreSQL, read-only JSON API (`/api/v1`), Nuxt 4+
-(SSR-first), optional ETL in Node/TypeScript.  
+**Stack assumption:** PostgreSQL, read-only JSON API (`/api/v1`), Nuxt 4.3+
+inside `apps/web/`, shared Nuxt layer in `layers/narduk-nuxt-layer/`,
+`@nuxt/ui` v4, `@nuxtjs/seo`, Cloudflare Workers for deployed server code, and
+optional ETL in Node/TypeScript.  
 **Non-negotiable:** Do not claim capabilities the public Comptroller / open data
 does not support.
 
@@ -956,15 +958,47 @@ implementation.
 
 ## 11. Frontend route contract (Nuxt)
 
-### 11.1 File structure (recommended)
+### 11.1 Repository implementation paths (locked)
 
+All v1 application work lands in `apps/web/`:
+
+```text
+apps/web/
+  app/
+    app.vue
+    assets/css/
+    components/
+    pages/
+    layouts/
+  server/
+    api/v1/
+    database/
+    utils/
+  nuxt.config.ts
 ```
-pages/
+
+Implementation must prefer layer-provided helpers before creating app-local
+alternatives:
+
+- SEO: `useSeo(...)`
+- Schema.org: `useWebPageSchema(...)` and sibling helpers from
+  `layers/narduk-nuxt-layer/app/composables/useSchemaOrg.ts`
+- Tabs: `AppTabs` and `usePersistentTab`
+- Server imports: `#server/*`
+
+### 11.2 Locked page files
+
+Target page surface for v1:
+
+```text
+apps/web/app/pages/
   index.vue
   about.vue
   methodology.vue
   data-sources.vue
   disclaimers.vue
+  search/index.vue
+  transactions/index.vue
   agencies/index.vue
   agencies/[agencyId].vue
   payees/index.vue
@@ -975,74 +1009,154 @@ pages/
   objects/[objectCode].vue
   counties/index.vue
   counties/[countyId].vue
-  transactions/index.vue
-  search/index.vue
 ```
 
-### 11.2 URL query parameters (public)
+Current placeholder param files such as `[id].vue` or `[code].vue` may exist in
+the repo. When an agent edits those routes, it should converge them to
+**descriptive param names** that match Nuxt 4 routing guidance:
 
-Shared: `fy`, `fyStart`, `fyEnd`, `agency`, `payee`, `category`, `object`,
-`county`, `dateStart`, `dateEnd`, `minAmount`, `maxAmount`,
-`includeConfidential`, `matchedVendorOnly`, `q`, `sort`, `order`, `page`.
+- `[agencyId].vue`
+- `[payeeId].vue`
+- `[categoryCode].vue`
+- `[objectCode].vue`
+- `[countyId].vue`
 
-**Map to API:** e.g. `fy` → `fiscal_year`; `page` →
-`offset = (page - 1) * limit`.
+### 11.3 Locked API file targets
 
-### 11.3 Tabs
+Server handlers live under `apps/web/server/api/v1/`:
 
-- Detail pages use **tabs** (Overview, Payees, etc.) as **components** or
-  query-driven state—**no** separate routes per tab in v1 unless SEO requires
-  later.
+```text
+overview.get.ts
+search.get.ts
+agencies/index.get.ts
+agencies/[agencyId].get.ts
+agencies/[agencyId]/payees.get.ts
+agencies/[agencyId]/objects.get.ts
+agencies/[agencyId]/counties.get.ts
+agencies/[agencyId]/trends.get.ts
+payees/index.get.ts
+payees/[payeeId].get.ts
+payees/[payeeId]/agencies.get.ts
+payees/[payeeId]/categories.get.ts
+payees/[payeeId]/trends.get.ts
+categories/index.get.ts
+categories/[categoryCode].get.ts
+categories/[categoryCode]/agencies.get.ts
+categories/[categoryCode]/payees.get.ts
+categories/[categoryCode]/objects.get.ts
+categories/[categoryCode]/trends.get.ts
+objects/index.get.ts
+objects/[objectCode].get.ts
+counties/index.get.ts
+counties/[countyId].get.ts
+counties/[countyId]/agencies.get.ts
+counties/[countyId]/expenditure-types.get.ts
+counties/[countyId]/trends.get.ts
+transactions/index.get.ts
+transactions/[transactionId].get.ts
+```
 
-### 11.4 Navigation
+### 11.4 Nuxt page implementation rules
 
-- Primary: Overview, Agencies, Payees, Categories, Counties, Transactions.
-- Global: search, fiscal year selector, methodology/disclaimers.
+- Use `<script setup lang="ts">` on every page.
+- Every page must call `useSeo(...)` and a Schema.org helper such as
+  `useWebPageSchema(...)`.
+- Page data must use `await useFetch(...)`, `useLazyFetch(...)`,
+  `useAsyncData(...)`, or `useLazyAsyncData(...)`. Do **not** use raw `$fetch`
+  directly in page `script setup`.
+- Use Nuxt’s `useRoute()` composable, not the `vue-router` import directly.
+- Use `useRequestURL()` to derive canonical URLs, absolute OG image links, and
+  SSR-safe origin/path data.
+- Do not drive SSR-rendered markup from `route.fullPath`; URL fragments are
+  client-only.
+- Keep the first SSR render deterministic. Browser-only logic belongs behind
+  `onMounted`, `ClientOnly`, or a `.client.vue` component.
 
-### 11.5 SEO indexing
+### 11.5 Server route implementation rules
 
-- **Index:** `/`, `/agencies`, `/agencies/[id]`, `/payees`, `/payees/[id]`,
-  `/categories`, `/categories/[code]`, `/objects`, `/objects/[code]`,
-  `/counties`, `/counties/[id]`.
-- **Noindex:** `/transactions`, `/search` by default.
+- Read query parameters with `getValidatedQuery(event, schema.parse)`.
+- Route-specific query schemas may extend `globalQuerySchema` from
+  `apps/web/server/utils/query.ts`.
+- Use `createError(...)` for `400`, `404`, and unsupported filter combinations.
+- Read DB access through `useAppDatabase(event)` from
+  `apps/web/server/utils/database.ts`.
+- Use `#server/database/schema` and `#server/utils/*` imports only.
+- Future mutation routes must use the layer mutation wrappers
+  (`withValidatedBody`, `withOptionalValidatedBody`, `define*Mutation`), but
+  v1 of this product is read-only and should not invent writes.
 
-### 11.6 Canonical policy
+### 11.6 URL query parameters (public)
 
-- Entity detail canonical URLs **without** non-essential query params unless
-  FY-specific canonicals are explicitly chosen later.
+Shared URL params:
 
-### 11.7 Metadata examples
+`fy`, `fyStart`, `fyEnd`, `agency`, `payee`, `category`, `object`, `county`,
+`dateStart`, `dateEnd`, `minAmount`, `maxAmount`, `includeConfidential`,
+`matchedVendorOnly`, `q`, `sort`, `order`, `page`.
+
+Mapping rules:
+
+- `fy` → `fiscal_year`
+- `fyStart` → `fiscal_year_start`
+- `fyEnd` → `fiscal_year_end`
+- `page` → `offset = (page - 1) * limit`
+- `agency`, `payee`, `county` map to UUID filters when present
+
+### 11.7 Tabs and navigation
+
+- Detail pages use in-page tabs only. Do **not** create nested tab routes in v1.
+- Prefer the layer `AppTabs` + `usePersistentTab` over custom tab persistence.
+- Primary navigation: Overview, Agencies, Payees, Categories, Counties,
+  Transactions.
+- Secondary/global navigation: search, fiscal year selector, methodology,
+  disclaimers, data sources.
+
+### 11.8 SEO indexing
+
+- **Index:** `/`, `/agencies`, `/agencies/[agencyId]`, `/payees`,
+  `/payees/[payeeId]`, `/categories`, `/categories/[categoryCode]`, `/objects`,
+  `/objects/[objectCode]`, `/counties`, `/counties/[countyId]`, `/about`,
+  `/methodology`, `/data-sources`.
+- **Noindex:** `/transactions`, `/search`, `/disclaimers`.
+
+### 11.9 Canonical policy
+
+- Canonical URLs for entity detail pages omit non-essential query params by
+  default.
+- Fiscal-year filters may alter visible page state, but do not become canonical
+  variants in v1.
+
+### 11.10 Metadata examples
 
 - **Agency title:** `{Agency Name} Spending in Texas`
 - **County title:** `Texas State Spending in {County Name} County`
 - **Payee title:** `{Payee Name} Payments from Texas Agencies`
+- **Category title:** `{Category Title} Spending in Texas`
+- **Object title:** `Texas Spending for Comptroller Object {Object Code}`
 
-### 11.8 Errors and empty states
+### 11.11 Errors and empty states
 
-- 404 for missing entity with explicit copy (“Agency not found”).
-- Empty states: specific message + reset filters + one navigation CTA (see UI
-  contract).
+- 404 for missing entities with explicit copy:
+  `Agency not found`, `Payee not found`, `County not found`, `Category not found`.
+- Empty states must include a clear message, a reset action, and one relevant
+  navigation CTA.
 
-### 11.9 Build order (frontend)
+### 11.12 Build order (frontend)
 
-`/`, `/agencies`, `/agencies/[id]`, `/categories`, `/counties`,
-`/counties/[id]`, `/transactions`, then payee pages.
+`/`, `/agencies`, `/agencies/[agencyId]`, `/categories`, `/counties`,
+`/counties/[countyId]`, `/transactions`, then payee and object pages.
 
-### 11.10 Texas county geometry and map API contract
+### 11.13 Texas county geometry and map API contract
 
-- **Primary map layer:** U.S. Census **cartographic boundary** county geometries
-  (simplified, thematic).
-- **Backup / reference:** Texas Open Data `vazh-2ajc` (TX Counties) where
-  needed.
+- **Primary map layer:** U.S. Census cartographic boundary county geometries.
+- **Backup / reference:** Texas Open Data `vazh-2ajc` (TX Counties).
 - **Join key:** **5-digit county FIPS** stored as
   `geographies_counties.fips_code` and returned by county APIs as `fips_code`.
-- **Map components:** join GeoJSON features to API metrics using
-  **`fips_code`**, not internal `county_id`.
-- **Entity URLs:** user-facing routes and deep links continue to use internal
-  **`county_id` (UUID)**; client resolves `county_id` ↔ `fips_code` from API
-  payload.
-- **API:** list/detail county responses include **both** `county_id` and
-  `fips_code` for charting and linking.
+- **Map components:** join GeoJSON features to API metrics using `fips_code`,
+  not internal `county_id`.
+- **Entity URLs:** user-facing routes continue to use internal UUID
+  `county_id`; client resolves `county_id` ↔ `fips_code` from API payload.
+- **API:** list/detail county responses include both `county_id` and
+  `fips_code`.
 
 ---
 
@@ -1050,109 +1164,297 @@ Shared: `fy`, `fyStart`, `fyEnd`, `agency`, `payee`, `category`, `object`,
 
 ### 12.1 Global principles
 
-- Editorial, data-first, trust-forward; minimal decoration.
-- **Summary first**, breakdown second, raw rows last.
-- **Every chart** has a numeric anchor; **map never sole county
-  interface**—always pair with table.
+- Editorial, data-first, trust-forward, minimal decoration.
+- Summary first, breakdown second, raw rows last.
+- Every chart needs a numeric anchor.
+- The map is never the only county interface; always pair it with a ranked
+  table.
 
-### 12.2 Shell
+### 12.2 Nuxt UI foundation (locked)
 
-- Header: product name, global search, FY selector, methodology link.
-- Sticky **FilterBar** (desktop); mobile: filters in bottom sheet.
-- Optional **DisclaimerStrip** on sensitive views.
+- App root is already wrapped in `<UApp>` via `apps/web/app/app.vue`.
+- Use Nuxt UI primitives for interactive and structural UI:
+  `UButton`, `UCard`, `UTable`, `UTabs`, `UInput`, `USelectMenu`,
+  `UCheckbox` or `USwitch`, `UAlert`, `UBadge`, `UPagination`,
+  `USkeleton`, `UContainer`, `UDrawer` or `USlideover`.
+- Prefer semantic colors (`primary`, `neutral`, `success`, `warning`, `error`)
+  and semantic text/background utilities from the layer (`text-default`,
+  `text-muted`, `bg-default`, `border-default`, etc.).
+- Inputs do not auto-stretch; add `class="w-full"` unless a narrower layout is
+  intentional.
+- Use `i-lucide-*` icons only.
 
-### 12.3 Filter visibility
+### 12.3 Shell
 
-- **Hide** unsupported filters on a page (do not show disabled county on
-  transactions).
+- Header: product name, global search, fiscal year selector, methodology link.
+- Sticky `FilterBar` on desktop.
+- Mobile filters open in `UDrawer` or `USlideover`.
+- Use `DisclaimerStrip` on sensitive views.
 
-### 12.4 Page anatomy (by route)
+### 12.4 Filter visibility
+
+- Hide unsupported filters entirely instead of showing disabled controls.
+- `/transactions` must not show county filters.
+- County detail pages may replace the county selector with compare controls.
+
+### 12.5 Page anatomy (by route)
 
 - **`/`:** KPI row → trend chart + top categories → top agencies / payees →
   county choropleth preview → latest transactions preview.
-- **`/agencies`:** searchable table (agency, total spend, payment count,
-  distinct payees, recent FY activity).
-- **`/agencies/[id]`:** header KPIs + tabs (Overview, Payees, Objects, Counties,
-  Trends). County tab: **disclaimer** that data is annual county layer, not
-  payment geography.
-- **`/payees/[id]`:** header + vendor enrichment **badge row** with tooltip;
+- **`/agencies`:** searchable, sortable table of agencies.
+- **`/agencies/[agencyId]`:** header KPIs + tabs (Overview, Payees, Objects,
+  Counties, Trends). County tab always includes the county-layer disclaimer.
+- **`/payees/[payeeId]`:** header + vendor enrichment badge row with tooltip;
   tabs: Overview, Agencies, Categories, Trends.
-- **`/categories/[code]`:** analytical layout—trend, top agencies, top payees,
-  object breakdown.
-- **`/counties`:** map-first + ranked table + compare; strong scope copy.
-- **`/counties/[id]`:** header + tabs (Overview, Agencies, Expenditure Types,
-  Trends); optional locator highlight.
-- **`/transactions`:** table-first; **no map**, **no county** column;
-  confidentiality disclaimer.
+- **`/categories/[categoryCode]`:** analytical layout: trend, top agencies, top
+  payees, object breakdown.
+- **`/objects/[objectCode]`:** compact detail page in v1; trends and related
+  entities may remain below the fold.
+- **`/counties`:** map-first + ranked table + compare.
+- **`/counties/[countyId]`:** header + tabs (Overview, Agencies, Expenditure
+  Types, Trends); optional locator highlight.
+- **`/transactions`:** table-first, no map, no county column, confidentiality
+  disclaimer.
 
-### 12.5 Charts allowed (v1)
+### 12.6 Charts allowed (v1)
 
-Line (trends), horizontal bar (rankings), stacked bar (composition), choropleth
-(counties), simple donut (small composition only).
+Use only:
 
-**Avoid:** sankey, treemap, radar, packed bubbles.
+- line charts for trends
+- horizontal bars for rankings
+- stacked bars for composition
+- choropleth for county geography
+- simple donuts for small composition views
 
-### 12.6 Tables
+Avoid sankey, treemap, radar, packed bubbles, or novelty charts.
 
-- Sortable, paginated, sticky header (desktop), responsive cards on mobile if
-  needed.
-- Display: abbreviated millions on cards; full precision in tables/tooltips.
-- Explicit strings for unknown/confidential/enrichment absence.
+### 12.7 Tables
 
-### 12.7 Search UX
+- Sortable and paginated.
+- Sticky header on desktop.
+- Responsive card-list fallback on small screens when needed.
+- Abbreviated currency on cards/charts; full precision in tables and tooltips.
+- Explicit copy for `Unknown`, `Not available`, `Confidential`, and
+  `No enrichment match`.
 
-- Grouped autocomplete (agencies, payees, categories, objects, counties); Enter
-  → `/search?q=…`.
+### 12.8 Search UX
 
-### 12.8 Accessibility
+- Grouped autocomplete results: agencies, payees, categories, objects,
+  counties.
+- Enter routes to `/search?q=...`.
+- Click routes directly to the entity page.
 
-- Keyboard filters/tabs; chart summaries or data table alternatives; correct
-  `th` scope; focus visible.
+### 12.9 Accessibility
+
+- Keyboard-accessible filters, tabs, drawers, and tables.
+- Visible focus states.
+- Correct header cell semantics for tables.
+- Charts require accessible summary text or a data-table fallback.
+- County map must have a readable paired table.
 
 ---
 
 ## 13. Component and data-binding contract
 
-| Component             | Responsibility                        | Primary props                                    | Data source (API)        |
-| --------------------- | ------------------------------------- | ------------------------------------------------ | ------------------------ | ----- | ------------- | -------------------- |
-| `PageHeader`          | Title, subtitle, optional breadcrumbs | `title`, `subtitle`, `breadcrumbs?`              | —                        |
-| `DisclaimerStrip`     | Short legal/data scope                | `variant: global                                 | county                   | payee | transactions` | Static copy from §16 |
-| `FilterBar`           | URL-synced filters                    | `availableFilters`, `modelValue` / bindings      | —                        |
-| `KpiCard`             | Single metric                         | `label`, `value: number`, `delta?`, `helper?`    | Overview, entity headers |
-| `TrendChartCard`      | FY (or month) trend                   | `series`, `xKey`, `yKey`, `title`                | `*/trends`, overview     |
-| `RankedBarCard`       | Top-N horizontal bars                 | `items`, `labelKey`, `valueKey`                  | breakdown endpoints      |
-| `DataTableCard`       | Paginated table                       | `columns`, `rows`, `meta`, `@sort`, `@page`      | list endpoints           |
-| `CountyMapCard`       | Choropleth + legend                   | `countyMetrics`, `fy`, `@selectCounty`           | `/counties`              |
-| `EntityTabs`          | Tab UI                                | `tabs`, `activeTab`                              | —                        |
-| `SearchAutocomplete`  | Typeahead                             | `onSearch(q)`                                    | `/search`                |
-| `EmptyState`          | No data UX                            | `title`, `body`, `actions`                       | —                        |
-| `VendorMatchBadgeRow` | HUB/SB/county etc.                    | `enrichment`, `matchConfidence`, `disclaimerRef` | `/payees/:id`            |
+### 13.1 Component file map (locked)
 
-**Binding rules:**
+| File                                               | Responsibility                  | Nuxt UI / layer primitives                           | API source / data owner                | SSR vs client                                        |
+| -------------------------------------------------- | ------------------------------- | ---------------------------------------------------- | -------------------------------------- | ---------------------------------------------------- |
+| `apps/web/app/components/PageHeader.vue`           | Title, subtitle, breadcrumbs    | `UPageHeader`, `UBreadcrumb`, `UButton`              | Page-level props                       | SSR                                                  |
+| `apps/web/app/components/AppHeader.vue`            | Global top nav                  | `UContainer`, `UButton`, `UInputMenu`                | Global navigation/search               | SSR shell + client interactions                      |
+| `apps/web/app/components/DisclaimerStrip.vue`      | Short scope/data warning        | `UAlert`, `UBadge`, `ULink`                          | Static copy from §16                   | SSR                                                  |
+| `apps/web/app/components/FilterBar.vue`            | URL-synced page filters         | `UCard`, `UFormField`, `USelectMenu`, `UInput`, `USwitch`, `UButton`, `UDrawer` or `USlideover` | Route query + page config              | SSR default state, client updates                    |
+| `apps/web/app/components/KpiCard.vue`              | Single KPI                      | `UCard`, `UBadge`, `UIcon`                           | Overview/detail header endpoints       | SSR                                                  |
+| `apps/web/app/components/TrendChartCard.vue`       | Trend chart wrapper             | `UCard`, `USkeleton`; chart lib kept abstract        | `*/trends`, overview                   | SSR if deterministic; hydrate chart only if required |
+| `apps/web/app/components/RankedBarCard.vue`        | Top-N ranked chart              | `UCard`, `USkeleton`                                 | Breakdown endpoints                    | SSR if deterministic; hydrate if chart library needs |
+| `apps/web/app/components/DataTableCard.vue`        | Sortable paginated table        | `UTable`, `UPagination`, `USkeleton`, `UButton`      | List endpoints                         | SSR first page, client pagination/sort               |
+| `apps/web/app/components/CountyMapCard.vue`        | Choropleth + legend             | `UCard`, `USkeleton`, `ClientOnly` if browser map    | `/counties` or county detail rollups   | Lazy/client if browser-only map lib is used          |
+| `apps/web/app/components/EntityTabs.vue`           | Entity tab shell                | `AppTabs` from layer or `UTabs`                      | Local tab definitions                  | SSR default tab, client tab switching                |
+| `apps/web/app/components/SearchAutocomplete.vue`   | Inline typeahead                | `UInputMenu` or `UCommandPalette`                    | `/api/v1/search`                       | Client, lazy after input                             |
+| `apps/web/app/components/GlobalSearch.vue`         | Header/global search            | `UInputMenu` or `UCommandPalette`                    | `/api/v1/search`                       | Client, lazy after input                             |
+| `apps/web/app/components/EmptyState.vue`           | No-data view                    | `UCard`, `UButton`, optional `UEmpty`                | Local props                            | SSR                                                  |
+| `apps/web/app/components/VendorMatchBadgeRow.vue`  | Enrichment badges + tooltip     | `UBadge`, `UTooltip`, `USeparator`                   | `/api/v1/payees/:payeeId`              | SSR                                                  |
+| `apps/web/app/components/DisclaimerFooter.vue`     | Persistent source/footnote area | `USeparator`, `ULink`                                | Static copy + source links             | SSR                                                  |
 
-- **County amounts on agency page:** `GET /agencies/:id/counties` only.
-- **Transactions:** `GET /transactions` only; never pass `county_id`.
+### 13.2 Component prop contracts
+
+Minimum prop contracts:
+
+- `PageHeader`
+  - `title: string`
+  - `subtitle?: string`
+  - `breadcrumbs?: Array<{ label: string; to?: string }>`
+  - `actions?: Array<{ label: string; to?: string }>`
+- `DisclaimerStrip`
+  - `variant: 'global' | 'county' | 'payee' | 'transactions' | 'confidentiality'`
+  - `compact?: boolean`
+- `FilterBar`
+  - `availableFilters: FilterDefinition[]`
+  - `modelValue: Record<string, string | number | boolean | null>`
+  - `loading?: boolean`
+- `KpiCard`
+  - `label: string`
+  - `value: string | number`
+  - `delta?: number | null`
+  - `helper?: string`
+- `TrendChartCard`
+  - `title: string`
+  - `series: Array<Record<string, unknown>>`
+  - `xKey: string`
+  - `yKey: string`
+  - `valueFormatter?: (value: number) => string`
+- `RankedBarCard`
+  - `title: string`
+  - `items: Array<Record<string, unknown>>`
+  - `labelKey: string`
+  - `valueKey: string`
+- `DataTableCard`
+  - `columns: Array<{ key: string; label: string; sortable?: boolean }>`
+  - `rows: Array<Record<string, unknown>>`
+  - `meta?: { limit: number; offset: number; total: number }`
+  - `loading?: boolean`
+- `CountyMapCard`
+  - `countyMetrics: Array<{ county_id: string; fips_code?: string; county_name: string; amount: number }>`
+  - `fy?: number`
+  - `loading?: boolean`
+- `EntityTabs`
+  - `tabs: Array<{ key: string; label: string }>`
+  - `activeTab: string`
+- `VendorMatchBadgeRow`
+  - `enrichment: VendorEnrichmentPublic | null`
+  - `matchConfidence?: number | null`
+  - `showDisclaimer?: boolean`
+
+### 13.3 Binding rules
+
+- County amounts on agency pages come from `GET /agencies/:agency_id/counties`
+  only.
+- County pages and county maps read only from county fact endpoints.
+- Transactions pages read only from `/transactions` endpoints and must never
+  receive or synthesize county fields.
+- Search components call `/search`; they do not hit list endpoints directly for
+  autocomplete.
+- Tabbed detail pages SSR the header + overview tab only; secondary tabs fetch
+  on demand.
+
+### 13.4 Loading, empty, and error states
+
+- Every card/table/chart component accepts an explicit loading state.
+- Use `USkeleton` for loading, not spinners as the only loading affordance.
+- Every data block supports a specific empty state via `EmptyState.vue`.
+- Endpoint failures should render a retry CTA and preserve surrounding page
+  shell content.
 
 ---
 
 ## 14. SSR vs client loading
 
-- **SSR (initial):** `/`, entity index first page, **entity detail header +
-  default tab** (Overview).
-- **Client:** filter changes, pagination, tab switches, autocomplete, secondary
-  tab lazy-load if heavy.
-- **Do not** SSR unbounded tables or huge chart payloads—use limits aligned with
-  API defaults.
+### 14.1 SSR-first surfaces
+
+SSR these surfaces:
+
+- `/`
+- entity index pages with the first page of results
+- entity detail pages: header + overview tab
+- static trust pages: `/about`, `/methodology`, `/data-sources`,
+  `/disclaimers`
+
+Use `await useFetch(...)` or `await useAsyncData(...)` so the server payload is
+forwarded into hydration cleanly.
+
+### 14.2 Client-hydrated surfaces
+
+Hydrate on the client for:
+
+- filter changes
+- pagination
+- sorting
+- tab switching
+- autocomplete search
+- map selection / hover details
+- non-critical below-the-fold charts
+
+### 14.3 Lazy data and lazy hydration
+
+- Use `lazy: true`, `useLazyFetch`, or `useLazyAsyncData` for secondary tabs and
+  below-the-fold data.
+- Use a stable async-data key per page/tab/filter combination.
+- Use `server: false` only for non-SEO surfaces such as autocomplete or
+  browser-only map helpers.
+- Heavy interactive islands may use `Lazy*` components or `ClientOnly`, but the
+  surrounding card/layout should still SSR.
+
+### 14.4 Hydration safety rules
+
+- Do not render `Date.now()`, `Math.random()`, storage reads, or browser-only
+  state in the first SSR pass.
+- Do not rely on `window.location`, `window.origin`, or direct browser APIs in
+  SSR paths; use `useRequestURL()`.
+- Keep chart/table fallback markup deterministic so SSR and hydration match.
+
+### 14.5 Query-sync pattern
+
+- Route query params are the source of truth for filter state.
+- Client filter changes update the route query first, then refresh data.
+- Pagination and sorting must remain deep-linkable through the URL.
 
 ---
 
 ## 15. SEO, indexing, and metadata
 
-- Index entity pages; noindex transactions and search.
-- Unique titles/descriptions per entity; include FY in **title only** if
-  canonical strategy allows (default: canonical without FY).
-- Optional JSON-LD for `WebSite` + `SearchAction` if implementing sitelinks
-  search box—**not** required for MVP.
+### 15.1 Foundation
+
+The app already extends the shared Nuxt layer and uses `@nuxtjs/seo`. SEO
+implementation must build on that foundation instead of bypassing it.
+
+- `apps/web/nuxt.config.ts` owns `site.url`, `site.name`, and
+  `site.description`.
+- Use `SITE_URL` and `APP_NAME` as the runtime source of truth for deployed
+  metadata.
+- Every page calls `useSeo(...)` instead of raw `useSeoMeta()` / `useHead()`.
+- Every page also calls a Schema.org helper such as `useWebPageSchema(...)`.
+
+### 15.2 Robots and indexing
+
+- Index entity pages and trust pages that explain the product.
+- Apply `useRobotsRule('noindex, nofollow')` on `/transactions`, `/search`, and
+  `/disclaimers`.
+- Keep non-production environments non-indexable.
+
+### 15.3 Sitemap contract
+
+- Provide sitemap coverage for:
+  - `/`
+  - `/about`
+  - `/methodology`
+  - `/data-sources`
+  - agencies
+  - payees
+  - categories
+  - objects
+  - counties
+- Exclude `/transactions`, `/search`, `/disclaimers`, and any purely filtered
+  result variants.
+- Dynamic entity URLs may be emitted via `server/api/__sitemap__/urls.ts` using
+  `defineSitemapEventHandler(...)`.
+
+### 15.4 Schema.org contract
+
+- Minimum schema on every page: `WebPage`.
+- Use breadcrumbs on entity detail pages when practical.
+- Home page may include `WebSite` + `SearchAction` later, but that is optional
+  for v1.
+- Payee and county pages remain informational pages; do not misuse product,
+  local business, or dataset schema types.
+
+### 15.5 Canonical and metadata rules
+
+- Unique titles and descriptions per entity page.
+- Canonical URL defaults to the clean entity route without non-essential query
+  params.
+- Build canonical URLs with `useRequestURL()` or explicit route builders.
+- Use the layer `useSeo` OG-image integration (`defineOgImage`) instead of
+  manual OG tags.
 
 ---
 
@@ -1183,11 +1485,19 @@ Use verbatim unless legal requests edits:
 > Some transactions are masked or aggregated in the public source data due to
 > confidentiality rules.
 
+### 16.1 Placement matrix
+
+- `global`: `/`, `/about`, `/methodology`, `/data-sources`
+- `county`: `/counties`, `/counties/[countyId]`, agency county tab
+- `payee/vendor`: `/payees/[payeeId]` when enrichment is shown
+- `confidentiality`: `/transactions` and any page where
+  `include_confidential=true`
+
 ---
 
 ## 17. Caching and performance
 
-Suggested HTTP/CDN cache hints (adjust to infra):
+### 17.1 Suggested HTTP/CDN cache hints (adjust to infra)
 
 | Endpoint pattern                   | TTL        |
 | ---------------------------------- | ---------- |
@@ -1198,6 +1508,40 @@ Suggested HTTP/CDN cache hints (adjust to infra):
 | Taxonomy                           | 24 hours   |
 | County-specific annual endpoints   | 24 hours   |
 | Cash report–backed                 | 24 hours   |
+
+### 17.2 Nuxt route rules (target)
+
+Use route rules to reflect freshness and SEO needs:
+
+```ts
+routeRules: {
+  '/': { swr: 3600 },
+  '/about': { prerender: true },
+  '/methodology': { prerender: true },
+  '/data-sources': { prerender: true },
+  '/disclaimers': { prerender: true, robots: 'noindex, nofollow' },
+  '/agencies/**': { swr: 3600 },
+  '/payees/**': { swr: 3600 },
+  '/categories/**': { swr: 3600 },
+  '/objects/**': { swr: 3600 },
+  '/counties/**': { swr: 86400 },
+  '/transactions/**': { ssr: true, robots: 'noindex, nofollow' },
+  '/search/**': { ssr: true, robots: 'noindex, nofollow' },
+  '/api/v1/overview': { cache: { maxAge: 3600 } },
+}
+```
+
+If platform support varies, keep the TTL intent even if the exact syntax
+changes.
+
+### 17.3 Payload and rendering discipline
+
+- Keep initial payloads shallow; use `pick` or narrower response shapes when
+  possible.
+- Do not SSR unbounded tables.
+- Lazy-load secondary tabs and browser-only map code.
+- Pair map rendering with server-rendered ranked-table data so the page remains
+  useful before client hydration.
 
 ---
 

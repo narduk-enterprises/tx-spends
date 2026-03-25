@@ -22,20 +22,22 @@ const props = defineProps<{
         v-if="delta"
         :class="[
           'text-sm font-medium',
-          delta.direction === 'up' ? 'text-green-600 dark:text-green-400' : 
-          delta.direction === 'down' ? 'text-red-600 dark:text-red-400' : 
-          'text-gray-500 dark:text-gray-400'
+          delta.direction === 'up'
+            ? 'text-green-600 dark:text-green-400'
+            : delta.direction === 'down'
+              ? 'text-red-600 dark:text-red-400'
+              : 'text-gray-500 dark:text-gray-400',
         ]"
       >
-        <UIcon 
-          v-if="delta.direction === 'up'" 
-          name="i-heroicons-arrow-up-right" 
-          class="w-4 h-4 inline" 
+        <UIcon
+          v-if="delta.direction === 'up'"
+          name="i-heroicons-arrow-up-right"
+          class="w-4 h-4 inline"
         />
-        <UIcon 
-          v-else-if="delta.direction === 'down'" 
-          name="i-heroicons-arrow-down-right" 
-          class="w-4 h-4 inline" 
+        <UIcon
+          v-else-if="delta.direction === 'down'"
+          name="i-heroicons-arrow-down-right"
+          class="w-4 h-4 inline"
         />
         {{ delta.value }}%
       </span>
