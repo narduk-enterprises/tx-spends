@@ -78,7 +78,7 @@
 
   "routes": [
     {
-      "pattern": "${SITE_URL}",
+      "pattern": "tx-spends.org",
       "custom_domain": true
     }
   ]
