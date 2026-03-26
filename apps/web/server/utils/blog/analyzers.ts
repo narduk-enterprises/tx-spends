@@ -546,8 +546,10 @@ async function analyzeFiscalYearContrast(event: H3Event): Promise<SpotlightFindi
 async function analyzeAgencyGrowthMovers(event: H3Event): Promise<SpotlightFindings> {
   const db = useAppDatabase(event)
 
+  // Latest two distinct fiscal years — agency rollups are one row per (year, agency);
+  // plain .select().limit(2) can return the same year twice, yielding zero YoY deltas.
   const fyRows = await db
-    .select({ fy: paymentAgencyRollups.scopeFiscalYear })
+    .selectDistinct({ fy: paymentAgencyRollups.scopeFiscalYear })
     .from(paymentAgencyRollups)
     .where(ne(paymentAgencyRollups.scopeFiscalYear, ROLLUP_ALL_YEARS))
     .orderBy(desc(paymentAgencyRollups.scopeFiscalYear))
