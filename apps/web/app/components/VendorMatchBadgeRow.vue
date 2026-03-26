@@ -1,12 +1,46 @@
 <script setup lang="ts">
+/** Confidence score at or above which a match is considered exact. */
+const EXACT_MATCH_CONFIDENCE_THRESHOLD = 0.98
+
+type VendorEnrichment = {
+  vendor_name?: string | null
+  hub_status?: string | null
+  small_business_flag?: boolean | null
+  sdv_flag?: boolean | null
+  city?: string | null
+  county?: string | null
+  state?: string | null
+  zip?: string | null
+  is_manual_override?: boolean | null
+  review_status?: string | null
+}
+
 const props = defineProps<{
-  enrichment: Record<string, unknown>
+  enrichment: VendorEnrichment
   matchConfidence: number
+  matchMethod?: string | null
 }>()
 
-const matchVariant = computed(() =>
-  Number(props.matchConfidence) >= 0.98 ? 'Exact match' : 'Probable match',
+const confidencePercent = computed(() => Math.round(Number(props.matchConfidence) * 100))
+
+const isExactMatch = computed(
+  () =>
+    props.matchMethod === 'exact_normalized' ||
+    Number(props.matchConfidence) >= EXACT_MATCH_CONFIDENCE_THRESHOLD,
 )
+
+const matchLabel = computed(() => {
+  if (isExactMatch.value) return 'Exact match'
+  if (confidencePercent.value > 0) return `Approximate match — ${confidencePercent.value}% confidence`
+  return 'Matched vendor'
+})
+
+const matchColor = computed<'success' | 'warning'>(() => (isExactMatch.value ? 'success' : 'warning'))
+
+const locationLabel = computed(() => {
+  const parts = [props.enrichment.city, props.enrichment.state].filter(Boolean)
+  return parts.length > 0 ? parts.join(', ') : null
+})
 </script>
 
 <template>
@@ -24,29 +58,37 @@ const matchVariant = computed(() =>
           </div>
           <div>
             <p class="text-sm font-semibold text-default">
-              {{
-                enrichment.vendor_name ||
-                enrichment.vendor_name_normalized ||
-                enrichment.vendor_name_raw
-              }}
+              {{ enrichment.vendor_name }}
             </p>
             <p class="text-xs text-muted">Procurement/vendor enrichment attached to this payee</p>
           </div>
         </div>
 
         <div class="flex flex-wrap gap-2">
-          <UBadge color="neutral" variant="soft">{{ matchVariant }}</UBadge>
-          <UBadge v-if="enrichment.hub_status" color="primary" variant="soft">HUB</UBadge>
-          <UBadge v-if="enrichment.small_business_flag" color="primary" variant="soft"
-            >Small business</UBadge
-          >
-          <UBadge v-if="enrichment.sdv_flag" color="error" variant="soft"
-            >Service-disabled veteran</UBadge
-          >
-          <UBadge v-if="enrichment.city || enrichment.state" color="neutral" variant="soft">
-            {{ [enrichment.city, enrichment.state].filter(Boolean).join(', ') }}
+          <UBadge :color="matchColor" variant="soft">{{ matchLabel }}</UBadge>
+          <UBadge v-if="enrichment.is_manual_override" color="info" variant="soft">
+            Manually reviewed
+          </UBadge>
+          <UBadge v-if="enrichment.hub_status" color="primary" variant="soft">
+            HUB — {{ enrichment.hub_status }}
+          </UBadge>
+          <UBadge v-if="enrichment.small_business_flag" color="primary" variant="soft">
+            Small business
+          </UBadge>
+          <UBadge v-if="enrichment.sdv_flag" color="error" variant="soft">
+            Service-disabled veteran
+          </UBadge>
+          <UBadge v-if="enrichment.state === 'TX'" color="neutral" variant="soft">
+            Texas vendor
+          </UBadge>
+          <UBadge v-else-if="locationLabel" color="neutral" variant="soft">
+            {{ locationLabel }}
           </UBadge>
         </div>
+
+        <p v-if="!isExactMatch" class="text-xs text-muted">
+          This match is based on name similarity and may not be an exact identity match.
+        </p>
       </div>
 
       <UTooltip

@@ -1,7 +1,12 @@
 import { getValidatedQuery } from 'h3'
-import { and, asc, desc, eq, like, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, isNotNull, isNull, like, ne, or, sql } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
-import { payeeVendorMatches, payees, paymentPayeeRollups } from '#server/database/schema'
+import {
+  payeeVendorMatches,
+  payees,
+  paymentPayeeRollups,
+  vendorEnrichment,
+} from '#server/database/schema'
 import { getPaymentsBackfillStatus } from '#server/utils/payments-backfill'
 import { getRollupScopeFiscalYear } from '#server/utils/payment-rollups'
 import { normalizeSearchTerm } from '#server/utils/explorer'
@@ -35,11 +40,7 @@ export default defineEventHandler(async (event) => {
   const agencyCountColumn = query.include_confidential
     ? paymentPayeeRollups.agencyCountAll
     : paymentPayeeRollups.agencyCountPublic
-  const matchedVendorExists = sql<boolean>`EXISTS (
-    SELECT 1
-    FROM ${payeeVendorMatches}
-    WHERE ${payeeVendorMatches.payeeId} = ${paymentPayeeRollups.payeeId}
-  )`
+
   const conditions = [eq(paymentPayeeRollups.scopeFiscalYear, scopeFiscalYear)]
 
   if (query.q) {
@@ -48,8 +49,21 @@ export default defineEventHandler(async (event) => {
   if (!query.include_confidential) {
     conditions.push(eq(payees.isConfidential, false))
   }
+  // Vendor-match and vendor-attribute filters — all rely on the LEFT JOINs below
   if (query.matched_vendor_only) {
-    conditions.push(matchedVendorExists)
+    conditions.push(isNotNull(payeeVendorMatches.payeeId))
+  }
+  if (query.hub_only) {
+    conditions.push(isNotNull(vendorEnrichment.hubStatus))
+  }
+  if (query.small_business_only) {
+    conditions.push(eq(vendorEnrichment.smallBusinessFlag, true))
+  }
+  if (query.sdv_only) {
+    conditions.push(eq(vendorEnrichment.sdvFlag, true))
+  }
+  if (query.in_state_only) {
+    conditions.push(eq(vendorEnrichment.state, 'TX'))
   }
 
   const whereClause = and(...conditions)
@@ -61,6 +75,15 @@ export default defineEventHandler(async (event) => {
         : amountColumn
   const orderDirection = query.order === 'asc' ? asc : desc
 
+  // LEFT JOIN vendor tables (excluding tentative matches per §8 public API rule).
+  // A 1:1 unique constraint on payee_vendor_matches.payee_id keeps this join cheap.
+  // The or(isNull(...)) guard ensures unmatched payees (NULL from LEFT JOIN) are not
+  // accidentally excluded by the ne() condition in three-valued SQL logic.
+  const vendorJoinCondition = and(
+    eq(payeeVendorMatches.payeeId, paymentPayeeRollups.payeeId),
+    or(isNull(payeeVendorMatches.reviewStatus), ne(payeeVendorMatches.reviewStatus, 'tentative')),
+  )
+
   const list = await db
     .select({
       payee_id: payees.id,
@@ -68,10 +91,15 @@ export default defineEventHandler(async (event) => {
       is_confidential: payees.isConfidential,
       amount: amountColumn,
       agency_count: agencyCountColumn,
-      matched_vendor: matchedVendorExists,
+      matched_vendor: sql<boolean>`${payeeVendorMatches.payeeId} IS NOT NULL`,
+      hub_status: vendorEnrichment.hubStatus,
+      small_business_flag: vendorEnrichment.smallBusinessFlag,
+      sdv_flag: vendorEnrichment.sdvFlag,
     })
     .from(paymentPayeeRollups)
     .innerJoin(payees, eq(payees.id, paymentPayeeRollups.payeeId))
+    .leftJoin(payeeVendorMatches, vendorJoinCondition)
+    .leftJoin(vendorEnrichment, eq(payeeVendorMatches.vendorEnrichmentId, vendorEnrichment.id))
     .where(whereClause)
     .orderBy(orderDirection(sortColumn), asc(payees.payeeNameRaw))
     .limit(query.limit)
@@ -83,6 +111,8 @@ export default defineEventHandler(async (event) => {
     })
     .from(paymentPayeeRollups)
     .innerJoin(payees, eq(payees.id, paymentPayeeRollups.payeeId))
+    .leftJoin(payeeVendorMatches, vendorJoinCondition)
+    .leftJoin(vendorEnrichment, eq(payeeVendorMatches.vendorEnrichmentId, vendorEnrichment.id))
     .where(whereClause)
 
   return {
