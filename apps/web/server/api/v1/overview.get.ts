@@ -297,13 +297,28 @@ export default defineEventHandler(async (event) => {
       const currentYear = latestFiscalYears[0].fiscalYear
       const priorYear = latestFiscalYears[1].fiscalYear
 
-      const overviewByYear = await db
-        .select({
-          fiscalYear: paymentOverviewRollups.scopeFiscalYear,
-          totalSpend: overviewAmountColumn,
-        })
-        .from(paymentOverviewRollups)
-        .where(inArray(paymentOverviewRollups.scopeFiscalYear, [currentYear, priorYear]))
+      // Run the overview totals and top-agency queries in parallel — both depend only on
+      // currentYear/priorYear, not on each other.
+      const [overviewByYear, currentYearAgencies] = await Promise.all([
+        db
+          .select({
+            fiscalYear: paymentOverviewRollups.scopeFiscalYear,
+            totalSpend: overviewAmountColumn,
+          })
+          .from(paymentOverviewRollups)
+          .where(inArray(paymentOverviewRollups.scopeFiscalYear, [currentYear, priorYear])),
+        db
+          .select({
+            agencyId: paymentAgencyRollups.agencyId,
+            agencyName: agencies.agencyName,
+            totalSpend: agencyAmountColumn,
+          })
+          .from(paymentAgencyRollups)
+          .leftJoin(agencies, eq(paymentAgencyRollups.agencyId, agencies.id))
+          .where(eq(paymentAgencyRollups.scopeFiscalYear, currentYear))
+          .orderBy(desc(agencyAmountColumn))
+          .limit(YOY_AGENCY_POOL_SIZE),
+      ])
 
       const currentOverview = overviewByYear.find((r) => r.fiscalYear === currentYear)
       const priorOverview = overviewByYear.find((r) => r.fiscalYear === priorYear)
@@ -314,18 +329,6 @@ export default defineEventHandler(async (event) => {
               Number(priorOverview.totalSpend || 0),
             )
           : null
-
-      const currentYearAgencies = await db
-        .select({
-          agencyId: paymentAgencyRollups.agencyId,
-          agencyName: agencies.agencyName,
-          totalSpend: agencyAmountColumn,
-        })
-        .from(paymentAgencyRollups)
-        .leftJoin(agencies, eq(paymentAgencyRollups.agencyId, agencies.id))
-        .where(eq(paymentAgencyRollups.scopeFiscalYear, currentYear))
-        .orderBy(desc(agencyAmountColumn))
-        .limit(YOY_AGENCY_POOL_SIZE)
 
       const currentIds = currentYearAgencies
         .map((row) => row.agencyId)
