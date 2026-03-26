@@ -255,7 +255,7 @@ const tabs = [
         description="Agencies contributing to this category."
         :columns="[
           { key: 'agency_name', label: 'Agency' },
-          { key: 'amount', label: 'Amount', sortable: true },
+          { key: 'amount', label: 'Amount' },
         ]"
         :rows="agencies?.data || []"
       >
@@ -281,7 +281,7 @@ const tabs = [
         description="Public payees whose payment rows fall into this category."
         :columns="[
           { key: 'payee_name', label: 'Payee' },
-          { key: 'amount', label: 'Amount', sortable: true },
+          { key: 'amount', label: 'Amount' },
         ]"
         :loading="payeesStatus === 'pending'"
         :rows="payees?.data || []"
@@ -309,7 +309,7 @@ const tabs = [
         :columns="[
           { key: 'object_code', label: 'Object code' },
           { key: 'object_title', label: 'Object title' },
-          { key: 'amount', label: 'Amount', sortable: true },
+          { key: 'amount', label: 'Amount' },
         ]"
         :loading="objectsStatus === 'pending'"
         :rows="objects?.data || []"

@@ -182,6 +182,8 @@ function updateSort(value: { column: string; direction: 'asc' | 'desc' }) {
       :rows="counties"
       :meta="meta"
       :loading="status === 'pending'"
+      :sort-column="sort"
+      :sort-order="order"
       @page="updatePage"
       @sort="updateSort"
     >
@@ -191,16 +193,16 @@ function updateSort(value: { column: string; direction: 'asc' | 'desc' }) {
           :prefetch="false"
           color="neutral"
           variant="link"
-          class="px-0 font-semibold text-primary"
+          class="h-auto min-h-0 px-0 py-0 text-sm leading-tight font-semibold text-primary"
         >
           {{ formatCountyLabel(row.county_name) }}
         </UButton>
       </template>
       <template #amount-data="{ row }">
-        <div class="space-y-1 text-right">
-          <p class="font-semibold text-default">{{ formatUsd(row.amount) }}</p>
-          <p class="text-xs text-muted">{{ formatUsdCompact(row.amount) }}</p>
-        </div>
+        <p class="text-right text-sm tabular-nums whitespace-normal">
+          <span class="font-semibold text-default">{{ formatUsd(row.amount) }}</span>
+          <span class="text-xs text-muted"> · {{ formatUsdCompact(row.amount) }}</span>
+        </p>
       </template>
     </DataTableCard>
   </UContainer>

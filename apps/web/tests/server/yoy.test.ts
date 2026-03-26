@@ -64,13 +64,21 @@ describe('computeYoyMovers', () => {
   })
 
   it('excludes rows with zero prior amount', () => {
-    const prior = [{ id: 'a', amount: 0 }, { id: 'b', amount: 100 }, { id: 'c', amount: 100 }]
+    const prior = [
+      { id: 'a', amount: 0 },
+      { id: 'b', amount: 100 },
+      { id: 'c', amount: 100 },
+    ]
     const { increases, decreases } = computeYoyMovers(currentRows, prior)
     expect([...increases, ...decreases].every((m) => m.id !== 'a')).toBe(true)
   })
 
   it('excludes rows with negative prior amount', () => {
-    const prior = [{ id: 'a', amount: -50 }, { id: 'b', amount: 100 }, { id: 'c', amount: 100 }]
+    const prior = [
+      { id: 'a', amount: -50 },
+      { id: 'b', amount: 100 },
+      { id: 'c', amount: 100 },
+    ]
     const { increases, decreases } = computeYoyMovers(currentRows, prior)
     expect([...increases, ...decreases].every((m) => m.id !== 'a')).toBe(true)
   })

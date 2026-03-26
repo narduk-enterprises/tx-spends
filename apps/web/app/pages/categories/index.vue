@@ -165,6 +165,8 @@ function updateSort(value: { column: string; direction: 'asc' | 'desc' }) {
       :loading="status === 'pending'"
       :empty-title="emptyTitle"
       :empty-description="emptyDescription"
+      :sort-column="sort"
+      :sort-order="order"
       @page="updatePage"
       @sort="updateSort"
     >

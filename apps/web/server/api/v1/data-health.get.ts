@@ -13,63 +13,60 @@ import {
 export default defineEventHandler(async (event) => {
   const db = useAppDatabase(event)
 
-  const [
-    paymentRollupRows,
-    countyAggRows,
-    payeeTotalRows,
-    payeeMatchedRows,
-    latestIngestionRows,
-  ] = await Promise.all([
-    // Use the pre-computed rollup table — avoids a full scan of the ~27.6M-row fact table.
-    // The all-years row (scopeFiscalYear=0) provides total/public counts and last-updated time.
-    // Per-year rows provide the list of loaded fiscal years.
-    db
-      .select({
-        scopeFiscalYear: paymentOverviewRollups.scopeFiscalYear,
-        paymentCountAll: paymentOverviewRollups.paymentCountAll,
-        paymentCountPublic: paymentOverviewRollups.paymentCountPublic,
-        updatedAt: paymentOverviewRollups.updatedAt,
-      })
-      .from(paymentOverviewRollups)
-      .orderBy(paymentOverviewRollups.scopeFiscalYear),
+  const [paymentRollupRows, countyAggRows, payeeTotalRows, payeeMatchedRows, latestIngestionRows] =
+    await Promise.all([
+      // Use the pre-computed rollup table — avoids a full scan of the ~27.6M-row fact table.
+      // The all-years row (scopeFiscalYear=0) provides total/public counts and last-updated time.
+      // Per-year rows provide the list of loaded fiscal years.
+      db
+        .select({
+          scopeFiscalYear: paymentOverviewRollups.scopeFiscalYear,
+          paymentCountAll: paymentOverviewRollups.paymentCountAll,
+          paymentCountPublic: paymentOverviewRollups.paymentCountPublic,
+          updatedAt: paymentOverviewRollups.updatedAt,
+        })
+        .from(paymentOverviewRollups)
+        .orderBy(paymentOverviewRollups.scopeFiscalYear),
 
-    db
-      .select({
-        totalCount: sql<number>`count(*)`,
-        latestLoad: sql<string | null>`MAX(${countyExpenditureFacts.sourceLoadedAt})`,
-        fiscalYears: sql<number[]>`array_agg(DISTINCT ${countyExpenditureFacts.fiscalYear} ORDER BY ${countyExpenditureFacts.fiscalYear})`,
-      })
-      .from(countyExpenditureFacts),
+      db
+        .select({
+          totalCount: sql<number>`count(*)`,
+          latestLoad: sql<string | null>`MAX(${countyExpenditureFacts.sourceLoadedAt})`,
+          fiscalYears: sql<
+            number[]
+          >`array_agg(DISTINCT ${countyExpenditureFacts.fiscalYear} ORDER BY ${countyExpenditureFacts.fiscalYear})`,
+        })
+        .from(countyExpenditureFacts),
 
-    db
-      .select({ count: sql<number>`count(*)` })
-      .from(payees)
-      .where(eq(payees.isConfidential, false)),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(payees)
+        .where(eq(payees.isConfidential, false)),
 
-    db
-      .select({ count: sql<number>`count(*)` })
-      .from(payeeVendorMatches)
-      .innerJoin(payees, eq(payeeVendorMatches.payeeId, payees.id))
-      .where(
-        and(
-          eq(payees.isConfidential, false),
-          inArray(payeeVendorMatches.reviewStatus, ['approved', 'auto-accepted']),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(payeeVendorMatches)
+        .innerJoin(payees, eq(payeeVendorMatches.payeeId, payees.id))
+        .where(
+          and(
+            eq(payees.isConfidential, false),
+            inArray(payeeVendorMatches.reviewStatus, ['approved', 'auto-accepted']),
+          ),
         ),
-      ),
 
-    db
-      .select({
-        jobName: ingestionRuns.jobName,
-        sourceName: ingestionRuns.sourceName,
-        status: ingestionRuns.status,
-        rowsInserted: ingestionRuns.rowsInserted,
-        startedAt: ingestionRuns.startedAt,
-        finishedAt: ingestionRuns.finishedAt,
-      })
-      .from(ingestionRuns)
-      .orderBy(desc(ingestionRuns.startedAt))
-      .limit(5),
-  ])
+      db
+        .select({
+          jobName: ingestionRuns.jobName,
+          sourceName: ingestionRuns.sourceName,
+          status: ingestionRuns.status,
+          rowsInserted: ingestionRuns.rowsInserted,
+          startedAt: ingestionRuns.startedAt,
+          finishedAt: ingestionRuns.finishedAt,
+        })
+        .from(ingestionRuns)
+        .orderBy(desc(ingestionRuns.startedAt))
+        .limit(5),
+    ])
 
   const allYearsRow = paymentRollupRows.find((r) => r.scopeFiscalYear === ROLLUP_ALL_YEARS)
   const paymentFiscalYears = paymentRollupRows

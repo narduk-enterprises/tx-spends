@@ -9,11 +9,13 @@ const props = withDefaults(
     title?: string
     description?: string
     valueFormatter?: (value: number) => string
+    loading?: boolean
   }>(),
   {
     title: '',
     description: '',
     valueFormatter: undefined,
+    loading: false,
   },
 )
 
@@ -64,7 +66,23 @@ function formatValue(value: number) {
       </div>
     </template>
 
-    <div v-if="series.length > 1" class="space-y-4">
+    <div v-if="loading" class="space-y-4">
+      <div class="overflow-hidden rounded-[1.5rem] border border-default bg-elevated/80 p-4">
+        <USkeleton class="h-64 w-full rounded-xl" />
+      </div>
+      <div class="grid gap-3 sm:grid-cols-4">
+        <div
+          v-for="i in 4"
+          :key="i"
+          class="rounded-2xl border border-default bg-default px-4 py-3"
+        >
+          <USkeleton class="h-3 w-12 rounded-md" />
+          <USkeleton class="mt-3 h-5 w-24 rounded-md" />
+        </div>
+      </div>
+    </div>
+
+    <div v-else-if="series.length > 1" class="space-y-4">
       <div class="overflow-hidden rounded-[1.5rem] border border-default bg-elevated/80 p-4">
         <!-- eslint-disable-next-line narduk/no-inline-svg -- Inline SVG is the chart renderer -->
         <svg viewBox="0 0 720 240" preserveAspectRatio="none" class="h-64 w-full">
@@ -118,7 +136,7 @@ function formatValue(value: number) {
     </div>
 
     <div
-      v-else-if="series.length === 1"
+      v-else-if="!loading && series.length === 1"
       class="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]"
     >
       <div

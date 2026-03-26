@@ -91,7 +91,7 @@ export default defineEventHandler(async (event) => {
       is_confidential: payees.isConfidential,
       amount: amountColumn,
       agency_count: agencyCountColumn,
-      matched_vendor: sql<boolean>`${payeeVendorMatches.payeeId} IS NOT NULL`,
+      matched_vendor: isNotNull(payeeVendorMatches.payeeId),
       hub_status: vendorEnrichment.hubStatus,
       small_business_flag: vendorEnrichment.smallBusinessFlag,
       sdv_flag: vendorEnrichment.sdvFlag,
@@ -107,7 +107,12 @@ export default defineEventHandler(async (event) => {
 
   // Only add vendor LEFT JOINs to the count query when at least one vendor filter is
   // active — the WHERE clause won't reference vendor columns otherwise.
-  const needsVendorJoin = query.matched_vendor_only || query.hub_only || query.small_business_only || query.sdv_only || query.in_state_only
+  const needsVendorJoin =
+    query.matched_vendor_only ||
+    query.hub_only ||
+    query.small_business_only ||
+    query.sdv_only ||
+    query.in_state_only
   const countBase = db
     .select({ total: sql<number>`COUNT(*)` })
     .from(paymentPayeeRollups)

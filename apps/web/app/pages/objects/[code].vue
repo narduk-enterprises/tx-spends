@@ -153,7 +153,7 @@ const filters = computed({
           { key: 'payment_date', label: 'Date' },
           { key: 'agency_name', label: 'Agency' },
           { key: 'payee_name', label: 'Payee' },
-          { key: 'amount', label: 'Amount', sortable: true },
+          { key: 'amount', label: 'Amount' },
         ]"
         :rows="transactions?.data || []"
         :loading="transactionsStatus === 'pending'"

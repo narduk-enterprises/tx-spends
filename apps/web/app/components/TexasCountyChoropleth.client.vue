@@ -79,9 +79,7 @@ const choroplethThresholds = computed(() => {
     const lo = Math.floor(position)
     const hi = Math.ceil(position)
     const t =
-      lo === hi
-        ? amounts[lo]!
-        : amounts[lo]! + (amounts[hi]! - amounts[lo]!) * (position - lo)
+      lo === hi ? amounts[lo]! : amounts[lo]! + (amounts[hi]! - amounts[lo]!) * (position - lo)
     thresholds.push(t)
   }
 
@@ -257,8 +255,8 @@ function openCounty(metric: CountyMetric | null) {
           />
         </div>
         <p class="mt-3 text-xs text-muted">
-          Colors use equal-count spending tiers among counties with totals (not linear to the largest
-          county). Slate means no matched annual total.
+          Colors use equal-count spending tiers among counties with totals (not linear to the
+          largest county). Slate means no matched annual total.
         </p>
       </div>
 

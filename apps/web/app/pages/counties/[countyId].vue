@@ -235,7 +235,7 @@ const tabs = [
         description="Agencies with spending landing in this county."
         :columns="[
           { key: 'agency_name', label: 'Agency' },
-          { key: 'amount', label: 'Amount', sortable: true },
+          { key: 'amount', label: 'Amount' },
         ]"
         :rows="agencies?.data || []"
       >
@@ -261,7 +261,7 @@ const tabs = [
         description="Broad categories used in the county expenditure layer."
         :columns="[
           { key: 'category_title', label: 'Type' },
-          { key: 'amount', label: 'Amount', sortable: true },
+          { key: 'amount', label: 'Amount' },
         ]"
         :loading="expenditureTypesStatus === 'pending'"
         :rows="expenditureTypes?.data || []"

@@ -6,6 +6,7 @@ import {
   formatCount,
   formatUsd,
   formatUsdCompact,
+  getBooleanQueryValue,
   getNumberQueryValue,
 } from '~/utils/explorer'
 
@@ -14,6 +15,7 @@ const router = useRouter()
 
 const payeeId = computed(() => String(route.params.payeeId))
 const fiscalYear = computed(() => getNumberQueryValue(route.query.fy))
+const includeConfidential = computed(() => getBooleanQueryValue(route.query.includeConfidential))
 const activeTab = ref('overview')
 
 type PayeeCategoryApiRow = {
@@ -25,6 +27,7 @@ type PayeeCategoryApiRow = {
 const requestQuery = computed(() =>
   cleanQueryObject({
     fiscal_year: fiscalYear.value,
+    include_confidential: includeConfidential.value ? 'true' : undefined,
   }),
 )
 
@@ -76,7 +79,44 @@ watch(
   { immediate: true },
 )
 
-const payee = computed(() => detail.value?.data)
+/** Keeps header + shell visible while fiscal/confidential filters refetch (avoids full-page spinner). */
+const displayPayee = shallowRef<(NonNullable<(typeof detail)['value']>['data']) | null>(null)
+
+watch(
+  payeeId,
+  () => {
+    displayPayee.value = null
+  },
+  { flush: 'sync' },
+)
+
+watch(
+  () => detail.value?.data,
+  (d) => {
+    if (d) {
+      displayPayee.value = d
+    }
+  },
+  { immediate: true },
+)
+
+const initialLoading = computed(() => !displayPayee.value && status.value === 'pending')
+
+const metricsRefreshing = computed(
+  () =>
+    Boolean(displayPayee.value) &&
+    (status.value === 'pending' ||
+      agenciesStatus.value === 'pending' ||
+      trendsStatus.value === 'pending'),
+)
+
+const payeeMetrics = computed(() => {
+  if (metricsRefreshing.value) {
+    return null
+  }
+  return detail.value?.data ?? displayPayee.value
+})
+
 const payeeCategoryRows = computed(() =>
   ((categories.value?.data || []) as PayeeCategoryApiRow[]).map((category) => ({
     category_code: category.category_code,
@@ -86,13 +126,13 @@ const payeeCategoryRows = computed(() =>
 )
 
 const title = computed(() =>
-  payee.value
-    ? `${payee.value.payee_name} Payments from Texas Agencies`
+  displayPayee.value
+    ? `${displayPayee.value.payee_name} Payments from Texas Agencies`
     : 'Payee Detail | Texas State Spending Explorer',
 )
 const description = computed(() =>
-  payee.value
-    ? `See how much ${payee.value.payee_name} received from Texas agencies, plus agency relationships, category mix, and trend data.`
+  displayPayee.value
+    ? `See how much ${displayPayee.value.payee_name} received from Texas agencies, plus agency relationships, category mix, and trend data.`
     : 'See how much a payee received from Texas agencies, plus category and trend data.',
 )
 
@@ -115,13 +155,15 @@ useWebPageSchema({
 const filters = computed({
   get: () => ({
     fiscal_year: fiscalYear.value ? String(fiscalYear.value) : null,
+    include_confidential: includeConfidential.value,
   }),
-  set: (value: { fiscal_year: string | null }) => {
+  set: (value: { fiscal_year: string | null; include_confidential: boolean | null }) => {
     router.replace({
       query: cleanQueryObject({
         ...route.query,
         fy:
           value.fiscal_year && value.fiscal_year !== 'all' ? String(value.fiscal_year) : undefined,
+        includeConfidential: value.include_confidential ? 'true' : undefined,
       }),
     })
   },
@@ -135,32 +177,34 @@ const tabs = [
 ]
 
 const enrichment = computed(() => {
-  if (!payee.value?.vendor_id) {
+  const p = displayPayee.value
+  if (!p?.vendor_id) {
     return null
   }
 
   return {
-    vendor_name: payee.value.vendor_name,
-    hub_status: payee.value.hub_status,
-    small_business_flag: payee.value.small_business_flag,
-    sdv_flag: payee.value.sdv_flag,
-    city: payee.value.city,
-    county: payee.value.county,
-    state: payee.value.state,
-    zip: payee.value.zip,
-    is_manual_override: payee.value.is_manual_override,
-    review_status: payee.value.review_status,
+    vendor_name: p.vendor_name,
+    hub_status: p.hub_status,
+    small_business_flag: p.small_business_flag,
+    sdv_flag: p.sdv_flag,
+    city: p.city,
+    county: p.county,
+    state: p.state,
+    zip: p.zip,
+    is_manual_override: p.is_manual_override,
+    review_status: p.review_status,
   }
 })
 
 const matchMethodLabel = computed(() => {
-  const method = payee.value?.match_method
+  const p = displayPayee.value
+  const method = p?.match_method
 
   if (method === 'exact_normalized') return 'Exact normalized name match'
   if (method === 'trigram_similarity') return 'Approximate name match'
 
   // For unknown methods, humanize the raw string when a vendor match exists
-  if (payee.value?.vendor_id && typeof method === 'string' && method.length > 0) {
+  if (p?.vendor_id && typeof method === 'string' && method.length > 0) {
     return method
       .split('_')
       .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
@@ -173,32 +217,31 @@ const matchMethodLabel = computed(() => {
 
 <template>
   <UContainer class="space-y-8 py-8">
-    <div
-      v-if="status === 'pending' || agenciesStatus === 'pending' || trendsStatus === 'pending'"
-      class="flex min-h-64 items-center justify-center"
-    >
+    <div v-if="initialLoading" class="flex min-h-64 items-center justify-center">
       <UIcon name="i-lucide-loader-circle" class="size-10 animate-spin text-primary" />
     </div>
 
-    <template v-else-if="payee">
+    <template v-else-if="displayPayee">
       <PageHeader
         eyebrow="Payee detail"
-        :title="payee.payee_name"
+        :title="displayPayee.payee_name"
         :subtitle="
-          payee.is_confidential
+          displayPayee.is_confidential
             ? 'This payee is marked confidential in the public dataset.'
             : 'Public recipient profile from the Texas state payment feed.'
         "
         :breadcrumbs="[
           { label: 'Home', to: '/' },
           { label: 'Payees', to: '/payees' },
-          { label: payee.payee_name },
+          { label: displayPayee.payee_name },
         ]"
         :badge="fiscalYear ? `FY ${fiscalYear}` : 'All fiscal years'"
       >
         <template #actions>
           <UButton
-            :to="`/transactions?payee_id=${payee.payee_id}${fiscalYear ? `&fy=${fiscalYear}` : ''}`"
+            :to="
+              `/transactions?payee_id=${displayPayee.payee_id}${fiscalYear ? `&fy=${fiscalYear}` : ''}${includeConfidential ? '&includeConfidential=true' : ''}`
+            "
             color="primary"
             variant="soft"
             icon="i-lucide-arrow-right"
@@ -220,42 +263,51 @@ const matchMethodLabel = computed(() => {
             type: 'select',
             options: FISCAL_YEAR_OPTIONS,
           },
+          {
+            key: 'include_confidential',
+            label: 'Include confidential rows',
+            type: 'boolean',
+          },
         ]"
       />
 
       <VendorMatchBadgeRow
         v-if="enrichment"
         :enrichment="enrichment"
-        :match-confidence="Number(payee.match_confidence || 0)"
-        :match-method="payee.match_method"
+        :match-confidence="Number(displayPayee.match_confidence || 0)"
+        :match-method="displayPayee.match_method"
       />
 
       <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <KpiCard
+          :loading="metricsRefreshing"
           label="Total received"
-          :value="formatUsdCompact(payee.total_received)"
-          :helper="formatUsd(payee.total_received)"
+          :value="formatUsdCompact(payeeMetrics?.total_received ?? 0)"
+          :helper="formatUsd(payeeMetrics?.total_received ?? 0)"
           icon="i-lucide-wallet-cards"
         />
         <KpiCard
+          :loading="metricsRefreshing"
           label="Agencies paying"
-          :value="formatCount(payee.agency_count)"
+          :value="formatCount(payeeMetrics?.agency_count ?? 0)"
           helper="Distinct agency relationships"
           icon="i-lucide-building-2"
         />
         <KpiCard
+          :loading="metricsRefreshing"
           label="Largest payer"
-          :value="payee.largest_agency?.agency_name || 'Unlisted'"
+          :value="payeeMetrics?.largest_agency?.agency_name || 'Unlisted'"
           :helper="
-            payee.largest_agency
-              ? formatUsd(payee.largest_agency.amount)
+            payeeMetrics?.largest_agency
+              ? formatUsd(payeeMetrics.largest_agency.amount)
               : 'No agency summary available'
           "
           icon="i-lucide-hand-coins"
         />
         <KpiCard
+          :loading="metricsRefreshing"
           label="Vendor match"
-          :value="payee.vendor_id ? 'Available' : 'Not matched'"
+          :value="payeeMetrics?.vendor_id ? 'Available' : 'Not matched'"
           :helper="matchMethodLabel || 'No procurement enrichment attached'"
           icon="i-lucide-scan-search"
         />
@@ -271,7 +323,8 @@ const matchMethodLabel = computed(() => {
           class="h-auto self-start"
           title="Payee trend"
           description="Annual total receipts for this payee."
-          :series="trends?.data || []"
+          :loading="metricsRefreshing"
+          :series="metricsRefreshing ? [] : trends?.data || []"
           x-key="fiscal_year"
           y-key="amount"
           :value-formatter="formatUsdCompact"
@@ -279,7 +332,8 @@ const matchMethodLabel = computed(() => {
         <RankedBarCard
           title="Agencies paying this payee"
           description="Which agencies account for the largest share of payments."
-          :items="(agencies?.data || []).slice(0, 10)"
+          :loading="metricsRefreshing"
+          :items="metricsRefreshing ? [] : (agencies?.data || []).slice(0, 10)"
           label-key="agency_name"
           value-key="amount"
           :value-formatter="formatUsdCompact"
@@ -292,9 +346,10 @@ const matchMethodLabel = computed(() => {
         description="All agencies that paid this recipient."
         :columns="[
           { key: 'agency_name', label: 'Agency' },
-          { key: 'amount', label: 'Amount', sortable: true },
+          { key: 'amount', label: 'Amount' },
         ]"
-        :rows="agencies?.data || []"
+        :loading="metricsRefreshing"
+        :rows="metricsRefreshing ? [] : agencies?.data || []"
       >
         <template #agency_name-data="{ row }">
           <UButton
@@ -318,7 +373,7 @@ const matchMethodLabel = computed(() => {
         description="Broad payment categories associated with this payee."
         :columns="[
           { key: 'category_title', label: 'Category' },
-          { key: 'amount', label: 'Amount', sortable: true },
+          { key: 'amount', label: 'Amount' },
         ]"
         :loading="categoriesStatus === 'pending'"
         :rows="payeeCategoryRows"
@@ -343,7 +398,8 @@ const matchMethodLabel = computed(() => {
         v-else
         title="Trend view"
         description="Annual payment totals for this payee."
-        :series="trends?.data || []"
+        :loading="metricsRefreshing"
+        :series="metricsRefreshing ? [] : trends?.data || []"
         x-key="fiscal_year"
         y-key="amount"
         :value-formatter="formatUsdCompact"

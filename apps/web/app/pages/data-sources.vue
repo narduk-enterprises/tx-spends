@@ -218,8 +218,8 @@ useWebPageSchema({
           <div class="space-y-1">
             <p class="text-sm font-semibold text-default">Live coverage and freshness report</p>
             <p class="text-sm text-muted">
-              Payment rows loaded, county fiscal years available, approximate vendor match
-              coverage, and the timestamps of the most recent data loads.
+              Payment rows loaded, county fiscal years available, approximate vendor match coverage,
+              and the timestamps of the most recent data loads.
             </p>
           </div>
           <UButton

@@ -47,8 +47,17 @@ function formatValue(value: number) {
       </div>
     </template>
 
-    <div v-if="loading" class="flex min-h-48 items-center justify-center">
-      <UIcon name="i-lucide-loader-circle" class="size-8 animate-spin text-primary" />
+    <div v-if="loading" class="min-h-48 space-y-4">
+      <div v-for="i in 6" :key="i" class="space-y-2">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0 flex-1 space-y-2">
+            <USkeleton class="h-4 w-[min(100%,14rem)] rounded-md" />
+            <USkeleton class="h-3 w-16 rounded-md" />
+          </div>
+          <USkeleton class="h-4 w-20 shrink-0 rounded-md" />
+        </div>
+        <USkeleton class="h-2.5 w-full rounded-full" />
+      </div>
     </div>
 
     <div v-else-if="items.length" class="space-y-4">

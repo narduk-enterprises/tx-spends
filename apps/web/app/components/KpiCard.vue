@@ -6,11 +6,14 @@ const props = withDefaults(
     icon?: string
     helper?: string
     delta?: { value: number; direction: 'up' | 'down' | 'neutral' }
+    /** When true, value/helper render as skeletons (e.g. filter refetch). */
+    loading?: boolean
   }>(),
   {
     icon: 'i-lucide-chart-column-big',
     helper: '',
     delta: undefined,
+    loading: false,
   },
 )
 
@@ -53,10 +56,14 @@ const deltaClass = computed(() => {
       <div class="space-y-3">
         <p class="text-xs font-semibold uppercase tracking-[0.16em] text-muted">{{ label }}</p>
         <div class="space-y-2">
-          <p class="text-3xl font-semibold tracking-tight text-default sm:text-4xl">
+          <USkeleton v-if="loading" class="h-10 w-36 rounded-lg sm:h-12 sm:w-44" />
+          <p v-else class="text-3xl font-semibold tracking-tight text-default sm:text-4xl">
             {{ value }}
           </p>
-          <div v-if="helper || delta" class="flex flex-wrap items-center gap-3 text-sm">
+          <div v-if="loading" class="flex flex-wrap items-center gap-3 text-sm">
+            <USkeleton class="h-4 w-28 rounded-md" />
+          </div>
+          <div v-else-if="helper || delta" class="flex flex-wrap items-center gap-3 text-sm">
             <span
               v-if="delta"
               :class="['inline-flex items-center gap-1.5 font-medium', deltaClass]"

@@ -14,6 +14,9 @@ export default defineEventHandler(async (event) => {
 
   const conditions = [eq(statePaymentFacts.payeeId, payeeId)]
   if (query.fiscal_year) conditions.push(eq(statePaymentFacts.fiscalYear, query.fiscal_year))
+  if (!query.include_confidential) {
+    conditions.push(eq(statePaymentFacts.isConfidential, false))
+  }
   const whereClause = and(...conditions)
 
   const topAgencies = await db

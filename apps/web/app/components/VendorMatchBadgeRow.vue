@@ -24,11 +24,14 @@ const isExactMatch = computed(() => props.matchMethod === 'exact_normalized')
 
 const matchLabel = computed(() => {
   if (isExactMatch.value) return 'Exact match'
-  if (confidencePercent.value > 0) return `Approximate match — ${confidencePercent.value}% confidence`
+  if (confidencePercent.value > 0)
+    return `Approximate match — ${confidencePercent.value}% confidence`
   return 'Matched vendor'
 })
 
-const matchColor = computed<'success' | 'warning'>(() => (isExactMatch.value ? 'success' : 'warning'))
+const matchColor = computed<'success' | 'warning'>(() =>
+  isExactMatch.value ? 'success' : 'warning',
+)
 
 const locationLabel = computed(() => {
   const parts = [props.enrichment.city, props.enrichment.state].filter(Boolean)

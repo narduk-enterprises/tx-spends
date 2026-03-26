@@ -45,9 +45,7 @@ function formatTs(ts: Date | string | null | undefined): string {
   }).format(d)
 }
 
-function statusColor(
-  s: string | null | undefined,
-): 'success' | 'error' | 'warning' | 'neutral' {
+function statusColor(s: string | null | undefined): 'success' | 'error' | 'warning' | 'neutral' {
   if (!s) return 'neutral'
   if (s === 'success') return 'success'
   if (s === 'failed' || s === 'error') return 'error'
@@ -63,7 +61,11 @@ function statusColor(
       :title="title"
       :subtitle="description"
       badge="Live metrics"
-      :breadcrumbs="[{ label: 'Home', to: '/' }, { label: 'Data Sources', to: '/data-sources' }, { label: 'Data Health' }]"
+      :breadcrumbs="[
+        { label: 'Home', to: '/' },
+        { label: 'Data Sources', to: '/data-sources' },
+        { label: 'Data Health' },
+      ]"
     />
 
     <div v-if="status === 'pending'" class="flex justify-center py-16">
@@ -156,7 +158,9 @@ function statusColor(
       <!-- County facts -->
       <section class="space-y-4">
         <div class="space-y-1">
-          <h2 class="text-2xl font-semibold tracking-tight text-default">County expenditure facts</h2>
+          <h2 class="text-2xl font-semibold tracking-tight text-default">
+            County expenditure facts
+          </h2>
           <p class="max-w-3xl text-sm leading-7 text-muted">
             Annual aggregate expenditures by county. This is a separate fact table — county pages
             are not a geocoded rollup of individual payment rows.
@@ -205,7 +209,9 @@ function statusColor(
           </UCard>
         </div>
 
-        <div class="rounded-[1.25rem] border border-default bg-elevated/40 px-4 py-3 text-sm leading-7 text-muted">
+        <div
+          class="rounded-[1.25rem] border border-default bg-elevated/40 px-4 py-3 text-sm leading-7 text-muted"
+        >
           {{ health.county_facts.note }}
         </div>
       </section>
@@ -250,7 +256,9 @@ function statusColor(
           </UCard>
         </div>
 
-        <div class="rounded-[1.25rem] border border-default bg-elevated/40 px-4 py-3 text-sm leading-7 text-muted">
+        <div
+          class="rounded-[1.25rem] border border-default bg-elevated/40 px-4 py-3 text-sm leading-7 text-muted"
+        >
           {{ health.vendor_matching.note }}
         </div>
       </section>
@@ -276,7 +284,11 @@ function statusColor(
                 <p class="text-xs text-muted">{{ run.job_name }}</p>
               </div>
               <div class="flex shrink-0 flex-wrap items-center gap-3 text-right">
-                <UBadge :color="statusColor(run.status)" variant="soft" class="rounded-full px-3 py-1">
+                <UBadge
+                  :color="statusColor(run.status)"
+                  variant="soft"
+                  class="rounded-full px-3 py-1"
+                >
                   {{ run.status }}
                 </UBadge>
                 <div>
@@ -291,7 +303,9 @@ function statusColor(
         </UCard>
       </section>
 
-      <div class="rounded-[1.25rem] border border-default bg-elevated/40 px-4 py-3 text-xs leading-6 text-muted">
+      <div
+        class="rounded-[1.25rem] border border-default bg-elevated/40 px-4 py-3 text-xs leading-6 text-muted"
+      >
         Metrics generated at {{ formatTs(health.generated_at) }}. This page has a short cache and
         reflects the live database state within a few minutes.
       </div>

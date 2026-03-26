@@ -161,7 +161,12 @@ function updateSort(value: { column: string; direction: 'asc' | 'desc' }) {
   })
 }
 
-type PayeeRow = { hub_status?: string | null; small_business_flag?: boolean | null; sdv_flag?: boolean | null; matched_vendor?: boolean }
+type PayeeRow = {
+  hub_status?: string | null
+  small_business_flag?: boolean | null
+  sdv_flag?: boolean | null
+  matched_vendor?: boolean
+}
 
 /** Returns true when the row already shows a specific vendor-attribute badge. */
 function hasSpecificVendorBadge(row: PayeeRow): boolean {
@@ -234,6 +239,8 @@ function hasSpecificVendorBadge(row: PayeeRow): boolean {
       :loading="status === 'pending'"
       :empty-title="emptyTitle"
       :empty-description="emptyDescription"
+      :sort-column="sort"
+      :sort-order="order"
       @page="updatePage"
       @sort="updateSort"
     >
@@ -269,9 +276,7 @@ function hasSpecificVendorBadge(row: PayeeRow): boolean {
             {{ row.payee_name }}
           </UButton>
           <UBadge v-if="row.hub_status" color="primary" variant="soft">HUB</UBadge>
-          <UBadge v-if="row.small_business_flag" color="primary" variant="soft"
-            >Small biz</UBadge
-          >
+          <UBadge v-if="row.small_business_flag" color="primary" variant="soft">Small biz</UBadge>
           <UBadge v-if="row.sdv_flag" color="error" variant="soft">SDV</UBadge>
           <UBadge
             v-if="row.matched_vendor && !hasSpecificVendorBadge(row)"

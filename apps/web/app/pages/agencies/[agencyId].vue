@@ -263,7 +263,7 @@ const tabs = [
         description="Recipients of this agency's spending."
         :columns="[
           { key: 'payee_name', label: 'Payee' },
-          { key: 'amount', label: 'Amount', sortable: true },
+          { key: 'amount', label: 'Amount' },
         ]"
         :loading="payeesStatus === 'pending'"
         :rows="payees?.data || []"
@@ -294,7 +294,7 @@ const tabs = [
         :columns="[
           { key: 'object_code', label: 'Object code' },
           { key: 'object_title', label: 'Object title' },
-          { key: 'amount', label: 'Amount', sortable: true },
+          { key: 'amount', label: 'Amount' },
         ]"
         :loading="objectsStatus === 'pending'"
         :rows="objects?.data || []"
@@ -325,7 +325,7 @@ const tabs = [
           description="Annual county-level spending attributed to this agency."
           :columns="[
             { key: 'county_name', label: 'County' },
-            { key: 'amount', label: 'Amount', sortable: true },
+            { key: 'amount', label: 'Amount' },
           ]"
           :rows="counties?.data || []"
         >

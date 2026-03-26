@@ -63,7 +63,7 @@ const yoyMovers = computed(() => overview.value?.yoy_movers ?? null)
 
 const headlineSpendDelta = computed(() => {
   const pct = yoyMovers.value?.total_change_pct
-  if (pct == null) return undefined
+  if (pct == null) return
   return {
     value: Math.abs(pct),
     direction: pct > 0 ? ('up' as const) : pct < 0 ? ('down' as const) : ('neutral' as const),
@@ -408,11 +408,11 @@ const filters = computed({
         title="Recent transactions"
         description="Latest public payment rows from the state payment feed."
         :columns="[
-          { key: 'payment_date', label: 'Date', sortable: true },
+          { key: 'payment_date', label: 'Date' },
           { key: 'agency_name', label: 'Agency' },
           { key: 'payee_name', label: 'Payee' },
           { key: 'object_code', label: 'Object' },
-          { key: 'amount', label: 'Amount', sortable: true },
+          { key: 'amount', label: 'Amount' },
         ]"
         :rows="overview.recent_transactions || []"
         :empty-title="hasPaymentFacts ? 'No recent transactions' : 'Payment feed pending'"

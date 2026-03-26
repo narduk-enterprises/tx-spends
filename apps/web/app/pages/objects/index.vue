@@ -154,6 +154,8 @@ function updateSort(value: { column: string; direction: 'asc' | 'desc' }) {
       :rows="objects"
       :meta="meta"
       :loading="status === 'pending'"
+      :sort-column="sort"
+      :sort-order="order"
       @page="updatePage"
       @sort="updateSort"
     >
