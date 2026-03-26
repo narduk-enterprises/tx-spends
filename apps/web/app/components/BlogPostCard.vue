@@ -7,14 +7,6 @@ const props = defineProps<{
   publishedAt: string | Date | null
 }>()
 
-const formattedDate = computed(() => {
-  if (!props.publishedAt) return null
-  return new Date(props.publishedAt).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  })
-})
 </script>
 
 <template>
@@ -42,9 +34,9 @@ const formattedDate = computed(() => {
       </p>
     </div>
 
-    <div v-if="formattedDate" class="flex items-center gap-2 text-xs text-muted">
+    <div v-if="publishedAt" class="flex items-center gap-2 text-xs text-muted">
       <UIcon name="i-lucide-calendar" class="size-3.5 shrink-0" />
-      <time>{{ formattedDate }}</time>
+      <NuxtTime :datetime="publishedAt" year="numeric" month="short" day="numeric" />
     </div>
   </NuxtLink>
 </template>

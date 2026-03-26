@@ -133,15 +133,13 @@ const body = computed<PostBody>(() => {
 
         <div class="flex items-center gap-3 text-sm text-muted">
           <UIcon name="i-lucide-calendar" class="size-4 shrink-0" />
-          <time v-if="post.published_at" :datetime="new Date(post.published_at).toISOString()">
-            {{
-              new Date(post.published_at).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })
-            }}
-          </time>
+          <NuxtTime
+            v-if="post.published_at"
+            :datetime="post.published_at"
+            year="numeric"
+            month="long"
+            day="numeric"
+          />
           <USeparator orientation="vertical" class="h-4" />
           <UIcon name="i-lucide-database" class="size-4 shrink-0" />
           <span>Texas Comptroller data</span>
