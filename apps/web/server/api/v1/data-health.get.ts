@@ -1,33 +1,37 @@
-import { and, desc, eq, inArray, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, ne, sql } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
-import { PAYMENTS_EXPORT_SUMMARY } from '#server/utils/payments-backfill'
+import { BACKFILL_THRESHOLD, PAYMENTS_EXPORT_SUMMARY } from '#server/utils/payments-backfill'
+import { ROLLUP_ALL_YEARS } from '#server/utils/payment-rollups'
 import {
   countyExpenditureFacts,
   ingestionRuns,
   payeeVendorMatches,
   payees,
-  statePaymentFacts,
+  paymentOverviewRollups,
 } from '#server/database/schema'
 
 export default defineEventHandler(async (event) => {
   const db = useAppDatabase(event)
 
   const [
-    paymentAggRows,
+    paymentRollupRows,
     countyAggRows,
     payeeTotalRows,
     payeeMatchedRows,
     latestIngestionRows,
   ] = await Promise.all([
+    // Use the pre-computed rollup table — avoids a full scan of the ~27.6M-row fact table.
+    // The all-years row (scopeFiscalYear=0) provides total/public counts and last-updated time.
+    // Per-year rows provide the list of loaded fiscal years.
     db
       .select({
-        totalCount: sql<number>`count(*)`,
-        publicCount: sql<number>`count(*) filter (where ${statePaymentFacts.isConfidential} = false)`,
-        confidentialCount: sql<number>`count(*) filter (where ${statePaymentFacts.isConfidential} = true)`,
-        latestLoad: sql<string | null>`MAX(${statePaymentFacts.sourceLoadedAt})`,
-        fiscalYears: sql<number[]>`array_agg(DISTINCT ${statePaymentFacts.fiscalYear} ORDER BY ${statePaymentFacts.fiscalYear})`,
+        scopeFiscalYear: paymentOverviewRollups.scopeFiscalYear,
+        paymentCountAll: paymentOverviewRollups.paymentCountAll,
+        paymentCountPublic: paymentOverviewRollups.paymentCountPublic,
+        updatedAt: paymentOverviewRollups.updatedAt,
       })
-      .from(statePaymentFacts),
+      .from(paymentOverviewRollups)
+      .orderBy(paymentOverviewRollups.scopeFiscalYear),
 
     db
       .select({
@@ -67,14 +71,16 @@ export default defineEventHandler(async (event) => {
       .limit(5),
   ])
 
-  const paymentAgg = paymentAggRows[0]
-  const paymentCount = Number(paymentAgg?.totalCount ?? 0)
-  const publicCount = Number(paymentAgg?.publicCount ?? 0)
-  const confidentialCount = Number(paymentAgg?.confidentialCount ?? 0)
-  const paymentLatestLoad = paymentAgg?.latestLoad ?? null
-  const paymentFiscalYears: number[] = paymentAgg?.fiscalYears ?? []
+  const allYearsRow = paymentRollupRows.find((r) => r.scopeFiscalYear === ROLLUP_ALL_YEARS)
+  const paymentFiscalYears = paymentRollupRows
+    .filter((r) => r.scopeFiscalYear !== ROLLUP_ALL_YEARS)
+    .map((r) => r.scopeFiscalYear)
+  const paymentCount = Number(allYearsRow?.paymentCountAll ?? 0)
+  const publicCount = Number(allYearsRow?.paymentCountPublic ?? 0)
+  const confidentialCount = paymentCount - publicCount
+  const paymentLatestLoad = allYearsRow?.updatedAt?.toISOString() ?? null
   const backfillActive =
-    paymentCount > 0 && paymentCount < PAYMENTS_EXPORT_SUMMARY.source_row_count * 0.995
+    paymentCount > 0 && paymentCount < PAYMENTS_EXPORT_SUMMARY.source_row_count * BACKFILL_THRESHOLD
 
   const countyAgg = countyAggRows[0]
   const countyCount = Number(countyAgg?.totalCount ?? 0)
@@ -96,7 +102,7 @@ export default defineEventHandler(async (event) => {
       public_count: publicCount,
       confidential_count: confidentialCount,
       latest_source_loaded_at: paymentLatestLoad,
-      note: 'Row counts reflect the current state of the payment fact table and may be incomplete while a backfill is active.',
+      note: 'Row counts are sourced from the pre-computed rollup table and reflect the most recently refreshed aggregate. The rollup is updated with each ingestion run.',
     },
     county_facts: {
       row_count: countyCount,
