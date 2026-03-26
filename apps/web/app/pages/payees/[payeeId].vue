@@ -154,8 +154,19 @@ const enrichment = computed(() => {
 })
 
 const matchMethodLabel = computed(() => {
-  if (payee.value?.match_method === 'exact_normalized') return 'Exact normalized name match'
-  if (payee.value?.match_method === 'trigram_similarity') return 'Approximate name match'
+  const method = payee.value?.match_method
+
+  if (method === 'exact_normalized') return 'Exact normalized name match'
+  if (method === 'trigram_similarity') return 'Approximate name match'
+
+  // For unknown methods, humanize the raw string when a vendor match exists
+  if (payee.value?.vendor_id && typeof method === 'string' && method.length > 0) {
+    return method
+      .split('_')
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ')
+  }
+
   return null
 })
 </script>
