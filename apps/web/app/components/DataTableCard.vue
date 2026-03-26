@@ -1,6 +1,4 @@
 <script setup lang="ts" generic="T extends Record<string, unknown>">
-import { h, resolveComponent } from 'vue'
-
 /** TanStack Table sorting state shape (matches @tanstack/vue-table). */
 type SortingState = { id: string; desc: boolean }[]
 

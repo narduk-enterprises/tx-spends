@@ -26,12 +26,7 @@ function makeLogger(event: H3Event, label: string) {
 }
 
 function executeCompatQuery(query: unknown) {
-  if (
-    query &&
-    typeof query === 'object' &&
-    'execute' in query &&
-    typeof query.execute === 'function'
-  ) {
+  if (query && typeof query === 'object' && 'execute' in query && typeof query.execute === 'function') {
     return query.execute()
   }
 

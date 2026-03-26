@@ -1,38 +1,18 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { runCommand } from './command'
-import { parseJsonc } from './parse-jsonc'
 
-const DEFAULT_CONTROL_PLANE_URL = 'https://control-plane.nard.uk'
-
-/** Doppler config used for build, migrate, deploy, and secret reads during ship. */
+type WranglerRoute = string | { pattern?: string; custom_domain?: boolean }
 const SHIP_DOPPLER_CONFIG = 'prd'
 
-interface WranglerRouteConfig {
-  pattern?: string
-  custom_domain?: boolean
-}
-
-interface WranglerConfig {
-  name?: string
-  routes?: Array<string | WranglerRouteConfig>
-}
-
-function run(command: string, args: string[] = [], cwd = process.cwd()) {
+function run(
+  command: string,
+  args: string[] = [],
+  cwd = process.cwd(),
+  env: NodeJS.ProcessEnv | undefined = undefined,
+) {
   console.log(`\n> ${command} ${args.join(' ')}`.trim())
-  runCommand(command, args, { stdio: 'inherit', cwd })
-}
-
-function runQuiet(command: string, args: string[] = [], cwd = process.cwd()) {
-  try {
-    return runCommand(command, args, {
-      encoding: 'utf-8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-      cwd,
-    }).trim()
-  } catch (e) {
-    return ''
-  }
+  runCommand(command, args, { stdio: 'inherit', cwd, env })
 }
 
 function tokenizeCommand(command: string): string[] {
@@ -63,140 +43,144 @@ function parseMigrateCommand(rawCommand: string): string[] {
   return tokens
 }
 
-function buildFleetSyncUrl(baseUrl: string, appName: string): string | null {
-  if (!/^[a-zA-Z0-9][a-zA-Z0-9-]*$/.test(appName)) {
-    return null
+function unwrapDopplerRun(tokens: string[]): string[] {
+  if (tokens[0] !== 'doppler' || tokens[1] !== 'run') {
+    return tokens
   }
+
+  const separatorIndex = tokens.indexOf('--')
+  if (separatorIndex === -1 || separatorIndex === tokens.length - 1) {
+    return tokens
+  }
+
+  return unwrapDopplerRun(tokens.slice(separatorIndex + 1))
+}
+
+function normalizeShipMigrateCommand(tokens: string[]): string[] {
+  const commandTokens = unwrapDopplerRun(tokens)
+  if (commandTokens.length === 0) {
+    throw new Error('db:migrate script resolved to an empty command.')
+  }
+
+  if (commandTokens[0] === 'pnpm') {
+    return commandTokens
+  }
+
+  return ['pnpm', 'exec', ...commandTokens]
+}
+
+function getOutput(command: string, args: string[] = [], cwd = process.cwd()): string {
+  return runCommand(command, args, {
+    cwd,
+    encoding: 'utf-8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+  }).trim()
+}
+
+function getUntrackedFiles(cwd: string): string[] {
+  const output = getOutput('git', ['ls-files', '--others', '--exclude-standard'], cwd)
+  if (!output) return []
+  return output
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+}
+
+function isLocalhostUrl(value: string | null | undefined): boolean {
+  if (!value) return false
 
   try {
-    const parsed = new URL(baseUrl)
-    if (!['http:', 'https:'].includes(parsed.protocol)) return null
-
-    const basePath = (parsed.pathname || '').replace(/\/$/, '')
-    const path = `${basePath}/api/fleet/apps/${encodeURIComponent(appName)}`
-    return `${parsed.origin}${path}`
+    const hostname = new URL(value).hostname
+    return hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.localhost')
   } catch {
-    return null
+    return false
   }
 }
 
-function normalizeValue(value: string | null | undefined): string {
-  return value?.trim() || ''
+function normalizeRoutePattern(pattern: string): string | null {
+  const trimmed = pattern.trim()
+  if (!trimmed) return null
+
+  const withoutScheme = trimmed.replace(/^[a-z]+:\/\//i, '')
+  const host = withoutScheme.split('/')[0]?.trim()
+  if (!host || host.includes('*')) return null
+
+  return `https://${host}`
 }
 
-function readWranglerConfig(appDir: string): WranglerConfig | null {
-  const jsonc = resolve(appDir, 'wrangler.jsonc')
-  const json = resolve(appDir, 'wrangler.json')
-  const wranglerPath = existsSync(jsonc) ? jsonc : json
+function resolveCanonicalSiteUrl(appDir: string): string | null {
+  const wranglerPath = resolve(appDir, 'wrangler.json')
   if (!existsSync(wranglerPath)) return null
 
   try {
-    const raw = readFileSync(wranglerPath, 'utf8')
-    return parseJsonc(raw) as WranglerConfig
-  } catch {
-    return null
+    const parsed = JSON.parse(readFileSync(wranglerPath, 'utf8')) as {
+      routes?: WranglerRoute[]
+    }
+    const routes = Array.isArray(parsed.routes) ? parsed.routes : []
+
+    for (const route of routes) {
+      if (typeof route === 'string') {
+        const normalized = normalizeRoutePattern(route)
+        if (normalized) return normalized
+        continue
+      }
+
+      if (!route?.pattern) continue
+      if (route.custom_domain === false) continue
+
+      const normalized = normalizeRoutePattern(route.pattern)
+      if (normalized) return normalized
+    }
+  } catch (error) {
+    console.warn(`⚠️ Failed to parse wrangler.json for ${appDir}: ${String(error)}`)
   }
+
+  return null
 }
 
-function readDopplerSecret(
-  appDir: string,
-  secretName: string,
-  projectHints: (string | undefined | null)[],
-): string {
-  const uniqueHints = [...new Set(projectHints.map((hint) => normalizeValue(hint)).filter(Boolean))]
-
-  for (const project of uniqueHints) {
-    const value = runQuiet(
-      'doppler',
-      [
-        'secrets',
-        'get',
-        secretName,
-        '--project',
-        project,
-        '--config',
-        SHIP_DOPPLER_CONFIG,
-        '--plain',
-      ],
-      appDir,
-    )
-    if (value) return value
-  }
-
-  return runQuiet(
+function getDopplerSiteUrl(appDir: string): string {
+  const envOutput = getOutput(
     'doppler',
-    ['secrets', 'get', secretName, '--config', SHIP_DOPPLER_CONFIG, '--plain'],
+    ['run', '--config', SHIP_DOPPLER_CONFIG, '--', 'printenv'],
     appDir,
   )
-}
 
-function routePatternToUrl(pattern: string): string {
-  const normalized = normalizeValue(pattern)
-    .replace(/\/\*.*$/, '')
-    .replace(/\*.*$/, '')
-    .replace(/\/$/, '')
-  if (!normalized) return ''
-  if (normalized.includes('*')) return ''
-
-  const candidate = normalized.includes('://') ? normalized : `https://${normalized}`
-
-  try {
-    const parsed = new URL(candidate)
-    return `${parsed.origin}${parsed.pathname.replace(/\/$/, '')}`
-  } catch {
-    return ''
-  }
-}
-
-function inferSiteUrlFromWrangler(wranglerConfig: WranglerConfig | null): string {
-  const routes = wranglerConfig?.routes
-  if (!Array.isArray(routes)) return ''
-
-  for (const route of routes) {
-    if (typeof route === 'string') {
-      const inferred = routePatternToUrl(route)
-      if (inferred) return inferred
-      continue
+  for (const line of envOutput.split('\n')) {
+    if (line.startsWith('SITE_URL=')) {
+      return line.slice('SITE_URL='.length).trim()
     }
-
-    if (!route || typeof route !== 'object') continue
-    const inferred = routePatternToUrl(route.pattern || '')
-    if (inferred) return inferred
   }
 
   return ''
 }
 
-function resolveFleetSyncContext(appTarget: string, appDir: string) {
-  const wranglerConfig = readWranglerConfig(appDir)
-  const workerName = normalizeValue(wranglerConfig?.name) || appTarget
-  const projectHints = [process.env.APP_NAME, workerName, appTarget]
-  const appName =
-    normalizeValue(process.env.APP_NAME) ||
-    readDopplerSecret(appDir, 'APP_NAME', projectHints) ||
-    workerName
-  const siteUrl =
-    normalizeValue(process.env.SITE_URL) ||
-    readDopplerSecret(appDir, 'SITE_URL', [appName, workerName, appTarget]) ||
-    inferSiteUrlFromWrangler(wranglerConfig)
-  const controlPlaneUrl =
-    normalizeValue(process.env.CONTROL_PLANE_URL) ||
-    readDopplerSecret(appDir, 'CONTROL_PLANE_URL', [appName, workerName, appTarget]) ||
-    (appName === 'control-plane' ? siteUrl : '') ||
-    DEFAULT_CONTROL_PLANE_URL
-  const fleetApiKey =
-    normalizeValue(process.env.CONTROL_PLANE_API_KEY) ||
-    normalizeValue(process.env.FLEET_API_KEY) ||
-    normalizeValue(process.env.AGENT_ADMIN_API_KEY) ||
-    readDopplerSecret(appDir, 'CONTROL_PLANE_API_KEY', [appName, workerName, appTarget]) ||
-    readDopplerSecret(appDir, 'FLEET_API_KEY', [appName, workerName, appTarget]) ||
-    readDopplerSecret(appDir, 'AGENT_ADMIN_API_KEY', [appName, workerName, appTarget])
+function resolveShipEnvironment(appDir: string): NodeJS.ProcessEnv | undefined {
+  const canonicalSiteUrl = resolveCanonicalSiteUrl(appDir)
+  const dopplerSiteUrl = getDopplerSiteUrl(appDir)
+
+  if (!canonicalSiteUrl) {
+    if (isLocalhostUrl(dopplerSiteUrl)) {
+      console.warn(
+        `⚠️ Doppler SITE_URL is localhost for ${appDir}, but no canonical route was found in wrangler.json.`,
+      )
+    }
+    return undefined
+  }
+
+  if (dopplerSiteUrl && !isLocalhostUrl(dopplerSiteUrl)) {
+    return undefined
+  }
+
+  const reason = dopplerSiteUrl ? `Doppler SITE_URL=${dopplerSiteUrl}` : 'Doppler SITE_URL is unset'
+  console.log(`Using canonical site URL ${canonicalSiteUrl} for build/deploy because ${reason}.`)
 
   return {
-    appName,
-    siteUrl,
-    controlPlaneUrl,
-    fleetApiKey,
+    ...process.env,
+    SITE_URL: canonicalSiteUrl,
+    APP_URL: canonicalSiteUrl,
+    NUXT_SITE_URL: canonicalSiteUrl,
+    NUXT_PUBLIC_SITE_URL: canonicalSiteUrl,
+    NUXT_PUBLIC_APP_URL: canonicalSiteUrl,
   }
 }
 
@@ -220,11 +204,17 @@ async function shipApp(appTarget: string) {
       hasMigrate = true
     }
   }
+  const shipEnv = resolveShipEnvironment(appDir)
 
   // 1. Build Verification
   console.log(`\n🏗️ Building ${appTarget}...`)
   try {
-    run('doppler', ['run', '--config', SHIP_DOPPLER_CONFIG, '--', 'pnpm', 'run', 'build'], appDir)
+    run(
+      'doppler',
+      ['run', '--config', SHIP_DOPPLER_CONFIG, '--', 'pnpm', 'run', 'build'],
+      appDir,
+      shipEnv,
+    )
   } catch (error) {
     console.error(`\n❌ Build failed for ${appTarget}. Aborting ship to prevent broken commit.`)
     process.exit(1)
@@ -232,7 +222,12 @@ async function shipApp(appTarget: string) {
 
   // 2. Git operations
   console.log(`\n📦 Checking git status...`)
-  run('git', ['add', '-A'], appDir)
+  const untrackedFiles = getUntrackedFiles(appDir)
+  if (untrackedFiles.length > 0) {
+    console.log(`Ignoring untracked files during ship auto-commit: ${untrackedFiles.join(', ')}`)
+  }
+
+  run('git', ['add', '-u'], appDir)
 
   let hasChanges = false
   try {
@@ -266,62 +261,27 @@ async function shipApp(appTarget: string) {
   if (hasMigrate && pkg) {
     console.log(`\n🗄️ Running remote D1 migrations for ${appTarget}...`)
     const migrateCmd = pkg.scripts['db:migrate'].replaceAll('--local', '--remote')
-    const migrateArgs = parseMigrateCommand(migrateCmd)
+    const migrateArgs = normalizeShipMigrateCommand(parseMigrateCommand(migrateCmd))
     run('doppler', ['run', '--config', SHIP_DOPPLER_CONFIG, '--', ...migrateArgs], appDir)
   }
 
   // 4. Deploy
   console.log(`\n☁️ Deploying ${appTarget} to Edge...`)
   try {
-    run('doppler', ['run', '--config', SHIP_DOPPLER_CONFIG, '--', 'pnpm', 'run', 'deploy'], appDir)
+    run(
+      'doppler',
+      ['run', '--config', SHIP_DOPPLER_CONFIG, '--', 'pnpm', 'run', 'deploy'],
+      appDir,
+      shipEnv,
+    )
   } catch (error) {
     console.error(`\n❌ Deploy failed for ${appTarget}.`)
     process.exit(1)
   }
 
-  // 5. Fleet Registry Sync
-  console.log(`\n📡 Syncing with Control Plane Fleet Registry...`)
-  try {
-    const { appName, controlPlaneUrl, fleetApiKey, siteUrl } = resolveFleetSyncContext(
-      appTarget,
-      appDir,
-    )
-
-    if (!siteUrl) {
-      console.log(
-        `⏭ SITE_URL not set and no production route could be inferred — skipping fleet sync.`,
-      )
-    } else if (!fleetApiKey) {
-      console.log(`⏭ CONTROL_PLANE_API_KEY or AGENT_ADMIN_API_KEY not set — skipping fleet sync.`)
-    } else {
-      const fleetSyncUrl = buildFleetSyncUrl(controlPlaneUrl, appName)
-      if (!fleetSyncUrl) {
-        console.log(
-          `⏭ Could not build fleet sync URL from CONTROL_PLANE_URL=${controlPlaneUrl || '(empty)'} — skipping fleet sync.`,
-        )
-      } else {
-        const response = await fetch(fleetSyncUrl, {
-          method: 'PUT',
-          headers: {
-            Authorization: `Bearer ${fleetApiKey}`,
-            'Content-Type': 'application/json',
-            'x-requested-with': 'XMLHttpRequest',
-          },
-          body: JSON.stringify({ url: siteUrl, isActive: true }),
-          signal: AbortSignal.timeout(15_000),
-        })
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status} ${response.statusText}`)
-        }
-
-        console.log(`✅ Fleet registry synced for ${appName}.`)
-      }
-    }
-  } catch (e) {
-    const message = e instanceof Error ? e.message : String(e)
-    console.log(`⚠️ Fleet sync failed (non-fatal): ${message}`)
-  }
+  console.log(
+    `\n📡 Control-plane fleet metadata is managed centrally; skipping ship-time registry mutation.`,
+  )
 
   console.log(`\n🎉 Successfully shipped ${appTarget}!`)
 }

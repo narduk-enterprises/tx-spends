@@ -1,9 +1,7 @@
 import fs from 'node:fs/promises'
-import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { runCommand } from './command'
-import { parseJsonc } from './parse-jsonc'
 
 /**
  * VALIDATE.TS — Nuxt v4 Template Setup Validation Script
@@ -21,13 +19,10 @@ const ROOT_DIR = path.resolve(__dirname, '..')
 // Construct the template name from parts so string replacement can never corrupt it.
 const TEMPLATE_NAME = ['narduk', 'nuxt', 'template'].join('-')
 
+/** Wrangler KV placeholder shipped in template `apps/web/wrangler.json` (not valid for deploy). */
+const PLACEHOLDER_KV_NAMESPACE_ID = '00000000000000000000000000000000'
+
 // --- Helper Functions ---
-
-function resolveWranglerPath(dir: string): string {
-  const jsoncPath = path.join(dir, 'wrangler.jsonc')
-  return existsSync(jsoncPath) ? jsoncPath : path.join(dir, 'wrangler.json')
-}
-
 function checkCommand(
   command: string,
   args: string[],
@@ -46,9 +41,9 @@ function checkCommand(
 
 async function getPrimaryWebDatabaseName(): Promise<string | null> {
   try {
-    const webWranglerPath = resolveWranglerPath(path.join(ROOT_DIR, 'apps', 'web'))
+    const webWranglerPath = path.join(ROOT_DIR, 'apps', 'web', 'wrangler.json')
     const webWranglerContent = await fs.readFile(webWranglerPath, 'utf-8')
-    const webWrangler = parseJsonc(webWranglerContent) as {
+    const webWrangler = JSON.parse(webWranglerContent) as {
       d1_databases?: Array<{ database_name?: string }>
     }
 
@@ -73,7 +68,7 @@ async function main() {
 
   console.log(`\n🔍 Validating Setup for: ${APP_NAME}`)
 
-  // 1. Check D1 Databases (reads database_name from each app's wrangler.jsonc)
+  // 1. Check D1 Databases (reads database_name from each app's wrangler.json)
   console.log('\nStep 1/6: Validating D1 Databases...')
   try {
     const appsDir = path.join(ROOT_DIR, 'apps')
@@ -82,10 +77,10 @@ async function main() {
     let checkedAny = false
 
     for (const appDir of appDirs) {
-      const wranglerPath = resolveWranglerPath(path.join(appsDir, appDir))
+      const wranglerPath = path.join(appsDir, appDir, 'wrangler.json')
       try {
         const wranglerContent = await fs.readFile(wranglerPath, 'utf-8')
-        const parsedWrangler = parseJsonc(wranglerContent) as Record<string, unknown>
+        const parsedWrangler = JSON.parse(wranglerContent)
         if (parsedWrangler.d1_databases && parsedWrangler.d1_databases.length > 0) {
           const dbName = parsedWrangler.d1_databases[0].database_name
           if (dbName) {
@@ -100,7 +95,7 @@ async function main() {
           }
         }
       } catch {
-        // App doesn't have a wrangler config — skip
+        // App doesn't have a wrangler.json — skip
       }
     }
     if (!checkedAny) {
@@ -111,8 +106,8 @@ async function main() {
     allGood = false
   }
 
-  // 2. Check wrangler config database_id values
-  console.log('\nStep 2/6: Validating wrangler config database IDs...')
+  // 2. Check wrangler.json database_id values
+  console.log('\nStep 2/6: Validating wrangler.json database IDs...')
   try {
     const appsDir = path.join(ROOT_DIR, 'apps')
     const entries = await fs.readdir(appsDir, { withFileTypes: true })
@@ -120,31 +115,51 @@ async function main() {
     let foundAny = false
 
     for (const appDir of appDirs) {
-      const wranglerPath = resolveWranglerPath(path.join(appsDir, appDir))
+      const wranglerPath = path.join(appsDir, appDir, 'wrangler.json')
       try {
         const wranglerContent = await fs.readFile(wranglerPath, 'utf-8')
-        const parsedWrangler = parseJsonc(wranglerContent) as Record<string, unknown>
+        const parsedWrangler = JSON.parse(wranglerContent)
         foundAny = true
 
         if (parsedWrangler.d1_databases && parsedWrangler.d1_databases.length > 0) {
           const dbId = parsedWrangler.d1_databases[0].database_id
           if (dbId && dbId.length > 0 && dbId !== 'REPLACE_VIA_PNPM_SETUP') {
-            console.log(`  ✅ apps/${appDir}/wrangler config — database_id: ${dbId}`)
+            console.log(`  ✅ apps/${appDir}/wrangler.json — database_id: ${dbId}`)
           } else {
-            console.error(
-              `  ❌ apps/${appDir}/wrangler config — database_id missing or placeholder.`,
-            )
+            console.error(`  ❌ apps/${appDir}/wrangler.json — database_id missing or placeholder.`)
             allGood = false
+          }
+        }
+
+        const isTemplateCheckout = APP_NAME.includes(TEMPLATE_NAME)
+        const kvList = parsedWrangler.kv_namespaces
+        if (!isTemplateCheckout && Array.isArray(kvList)) {
+          const kvBinding = kvList.find(
+            (n: { binding?: string }) => n && typeof n === 'object' && n.binding === 'KV',
+          ) as { id?: string; preview_id?: string } | undefined
+          if (kvBinding) {
+            const badKvId = (v: unknown) =>
+              typeof v !== 'string' ||
+              v.length === 0 ||
+              v === PLACEHOLDER_KV_NAMESPACE_ID
+            if (badKvId(kvBinding.id) || badKvId(kvBinding.preview_id)) {
+              console.error(
+                `  ❌ apps/${appDir}/wrangler.json — KV binding "KV" id/preview_id missing or template placeholder (control plane must hydrate).`,
+              )
+              allGood = false
+            } else {
+              console.log(`  ✅ apps/${appDir}/wrangler.json — KV id and preview_id set`)
+            }
           }
         }
         // Apps without d1_databases are valid (e.g. marketing, og-image) — skip silently
       } catch {
-        // App doesn't have a wrangler config — skip
+        // App doesn't have a wrangler.json — skip
       }
     }
 
     if (!foundAny) {
-      console.error('  ❌ No wrangler config files found in apps/*/')
+      console.error('  ❌ No wrangler.json files found in apps/*/')
       allGood = false
     }
   } catch (e: any) {
@@ -348,14 +363,16 @@ async function main() {
     const webPkgContent = await fs.readFile(webPkgPath, 'utf-8')
     const webPkg = JSON.parse(webPkgContent)
 
-    const requiredDeps = ['drizzle-orm', 'zod']
-    const requiredDevDeps = ['@cloudflare/workers-types', '@iconify-json/lucide']
+    const requiredDeps = ['drizzle-orm', 'zod', '@iconify-json/lucide']
+    const requiredDevDeps = ['@cloudflare/workers-types']
 
     for (const dep of requiredDeps) {
       if (webPkg.dependencies?.[dep]) {
         console.log(`  ✅ ${dep} in dependencies`)
       } else {
-        console.error(`  ❌ ${dep} missing from dependencies (typecheck will fail)`)
+        console.error(
+          `  ❌ ${dep} missing from dependencies (typecheck or Nuxt Icon SSR will fail)`,
+        )
         allGood = false
       }
     }
