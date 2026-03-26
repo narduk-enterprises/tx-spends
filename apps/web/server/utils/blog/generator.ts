@@ -28,12 +28,14 @@ export interface GeneratedPost {
   title: string
   excerpt: string
   slug: string
+  author: string
   body: PostBody
   model: string
   promptKey: string
 }
 
 export const BLOG_PROMPT_KEY = 'blog-post-generator'
+export const DEFAULT_BLOG_AUTHOR = 'narduk@mac.com'
 
 export const DEFAULT_BLOG_SYSTEM_PROMPT = `You are a data journalist writing for "Texas State Spending Explorer", a public transparency tool covering Texas state government finances.
 
@@ -117,6 +119,7 @@ export async function generateBlogPost(
     title: postBody.title,
     excerpt: postBody.excerpt,
     slug,
+    author: DEFAULT_BLOG_AUTHOR,
     body: {
       intro: postBody.intro,
       sections: postBody.sections,

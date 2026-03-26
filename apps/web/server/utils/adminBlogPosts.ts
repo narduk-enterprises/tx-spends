@@ -95,6 +95,7 @@ async function fetchPostRecord(event: H3Event, postId: string) {
     .select({
       id: blogPosts.id,
       slug: blogPosts.slug,
+      author: blogPosts.author,
       title: blogPosts.title,
       excerpt: blogPosts.excerpt,
       body: blogPosts.body,
@@ -128,6 +129,7 @@ function mapSummary(
     | {
         id: string
         slug: string
+        author: string
         title: string
         excerpt: string
         status: string
@@ -142,6 +144,7 @@ function mapSummary(
   return {
     id: row.id,
     slug: row.slug,
+    author: row.author,
     title: row.title,
     excerpt: row.excerpt,
     status: row.status,
@@ -194,6 +197,7 @@ export async function listAdminBlogPosts(event: H3Event) {
     .select({
       id: blogPosts.id,
       slug: blogPosts.slug,
+      author: blogPosts.author,
       title: blogPosts.title,
       excerpt: blogPosts.excerpt,
       status: blogPosts.status,
@@ -220,6 +224,7 @@ export async function updateAdminBlogPost(
   input: {
     postId: string
     slug: string
+    author: string
     title: string
     excerpt: string
     body: AdminBlogBody
@@ -234,6 +239,7 @@ export async function updateAdminBlogPost(
     .update(blogPosts)
     .set({
       slug: input.slug,
+      author: input.author.trim(),
       title: input.title.trim(),
       excerpt: input.excerpt.trim(),
       body: serializeBody(input.body) as unknown as Record<string, unknown>,

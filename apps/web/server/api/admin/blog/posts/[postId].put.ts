@@ -11,6 +11,7 @@ const updateBodySchema = z.object({
     .min(1)
     .max(140)
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  author: z.string().trim().min(1).max(160),
   title: z.string().trim().min(1).max(120),
   excerpt: z.string().trim().min(1).max(300),
   body: z.object({
@@ -43,6 +44,7 @@ export default defineAdminMutation(
       data: await updateAdminBlogPost(event, {
         postId,
         slug: body.slug,
+        author: body.author,
         title: body.title,
         excerpt: body.excerpt,
         body: body.body,

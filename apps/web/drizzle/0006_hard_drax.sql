@@ -1,0 +1,1 @@
+ALTER TABLE "blog_posts" ADD COLUMN "author" text DEFAULT 'narduk@mac.com' NOT NULL;

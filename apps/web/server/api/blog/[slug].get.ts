@@ -19,6 +19,7 @@ export default defineEventHandler(async (event) => {
     .select({
       id: blogPosts.id,
       slug: blogPosts.slug,
+      author: blogPosts.author,
       title: blogPosts.title,
       excerpt: blogPosts.excerpt,
       body: blogPosts.body,
@@ -45,6 +46,7 @@ export default defineEventHandler(async (event) => {
     data: {
       id: row.id,
       slug: row.slug,
+      author: row.author,
       title: row.title,
       excerpt: row.excerpt,
       body: row.body, // jsonb — already parsed by Drizzle

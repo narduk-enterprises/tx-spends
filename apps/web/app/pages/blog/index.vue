@@ -55,6 +55,7 @@ const posts = computed(() => data.value?.data ?? [])
         v-for="post in posts"
         :key="post.id"
         :slug="post.slug"
+        :author="post.author ?? 'narduk@mac.com'"
         :title="post.title"
         :excerpt="post.excerpt"
         :angle-name="post.angle_name ?? ''"

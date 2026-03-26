@@ -49,6 +49,9 @@ const formattedDate = computed(() => {
         </div>
 
         <div class="flex items-center gap-3 text-sm text-muted">
+          <UIcon name="i-lucide-user-round" class="size-4 shrink-0" />
+          <span>By {{ post.author || 'narduk@mac.com' }}</span>
+          <USeparator orientation="vertical" class="h-4" />
           <UIcon name="i-lucide-calendar" class="size-4 shrink-0" />
           <span>{{ formattedDate ?? 'Draft preview' }}</span>
           <USeparator orientation="vertical" class="h-4" />

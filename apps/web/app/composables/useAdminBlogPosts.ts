@@ -29,6 +29,7 @@ export interface AdminBlogFindings {
 export interface AdminBlogPostSummary {
   id: string
   slug: string
+  author: string
   title: string
   excerpt: string
   status: AdminBlogStatus
@@ -50,6 +51,7 @@ export interface AdminBlogPostDetail extends AdminBlogPostSummary {
 
 export interface AdminBlogEditorState {
   slug: string
+  author: string
   title: string
   excerpt: string
   intro: string
@@ -60,6 +62,7 @@ export interface AdminBlogEditorState {
 export interface AdminBlogPreviewPost {
   id: string
   slug: string
+  author: string
   title: string
   excerpt: string
   status: AdminBlogStatus
@@ -71,6 +74,7 @@ export interface AdminBlogPreviewPost {
 interface AdminBlogPostSummaryResponse {
   id: string
   slug: string
+  author: string
   title: string
   excerpt: string
   status: AdminBlogStatus
@@ -127,6 +131,7 @@ function emptyBody(): AdminBlogBody {
 function emptyEditorState(): AdminBlogEditorState {
   return {
     slug: '',
+    author: 'narduk@mac.com',
     title: '',
     excerpt: '',
     intro: '',
@@ -154,6 +159,7 @@ function normalizeSummary(post: AdminBlogPostSummaryResponse): AdminBlogPostSumm
   return {
     id: post.id,
     slug: post.slug,
+    author: post.author,
     title: post.title,
     excerpt: post.excerpt,
     status: post.status,
@@ -182,6 +188,7 @@ function toEditorState(post: AdminBlogPostDetail | null): AdminBlogEditorState {
 
   return {
     slug: post.slug,
+    author: post.author,
     title: post.title,
     excerpt: post.excerpt,
     intro: post.body.intro,
@@ -193,6 +200,7 @@ function toEditorState(post: AdminBlogPostDetail | null): AdminBlogEditorState {
 function normalizeEditorState(state: AdminBlogEditorState) {
   return {
     slug: state.slug.trim(),
+    author: state.author.trim(),
     title: state.title.trim(),
     excerpt: state.excerpt.trim(),
     body: {
@@ -298,6 +306,7 @@ export function useAdminBlogPosts() {
     return {
       id: selectedPost.value.id,
       slug: normalized.slug,
+      author: normalized.author,
       title: normalized.title,
       excerpt: normalized.excerpt,
       status: selectedPost.value.status,

@@ -546,6 +546,7 @@ export const blogPosts = pgTable(
   {
     id: uuid('id').defaultRandom().primaryKey(),
     slug: text('slug').notNull().unique(),
+    author: text('author').notNull().default('narduk@mac.com'),
     title: text('title').notNull(),
     excerpt: text('excerpt').notNull(),
     body: jsonb('body').notNull(), // Structured PostBody object

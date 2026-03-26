@@ -21,6 +21,7 @@ export default defineEventHandler(async (event) => {
     .select({
       id: blogPosts.id,
       slug: blogPosts.slug,
+      author: blogPosts.author,
       title: blogPosts.title,
       excerpt: blogPosts.excerpt,
       angleId: blogPosts.angleId,
@@ -39,6 +40,7 @@ export default defineEventHandler(async (event) => {
     data: rows.map((row) => ({
       id: row.id,
       slug: row.slug,
+      author: row.author,
       title: row.title,
       excerpt: row.excerpt,
       angle_id: row.angleId,

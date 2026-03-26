@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const props = defineProps<{
   slug: string
+  author: string
   title: string
   excerpt: string
   angleName: string
@@ -33,9 +34,15 @@ const props = defineProps<{
       </p>
     </div>
 
-    <div v-if="publishedAt" class="flex items-center gap-2 text-xs text-muted">
-      <UIcon name="i-lucide-calendar" class="size-3.5 shrink-0" />
-      <NuxtTime :datetime="publishedAt" year="numeric" month="short" day="numeric" />
+    <div v-if="author || publishedAt" class="flex flex-wrap items-center gap-3 text-xs text-muted">
+      <div v-if="author" class="flex items-center gap-1.5">
+        <UIcon name="i-lucide-user-round" class="size-3.5 shrink-0" />
+        <span>By {{ author }}</span>
+      </div>
+      <div v-if="publishedAt" class="flex items-center gap-1.5">
+        <UIcon name="i-lucide-calendar" class="size-3.5 shrink-0" />
+        <NuxtTime :datetime="publishedAt" year="numeric" month="short" day="numeric" />
+      </div>
     </div>
   </NuxtLink>
 </template>

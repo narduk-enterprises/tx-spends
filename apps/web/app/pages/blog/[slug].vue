@@ -18,6 +18,7 @@ interface PostBody {
 interface BlogPostRecord {
   id: string
   slug: string
+  author: string
   title: string
   excerpt: string
   body: PostBody
@@ -43,6 +44,7 @@ const postTitle = computed(() => post.value?.title ?? 'Spending Spotlight')
 const postExcerpt = computed(
   () => post.value?.excerpt ?? 'A data-backed look at Texas state government spending.',
 )
+const postAuthor = computed(() => post.value?.author?.trim() || 'narduk@mac.com')
 const postPublishedAt = computed(() =>
   post.value?.published_at ? new Date(post.value.published_at).toISOString() : undefined,
 )
@@ -70,7 +72,7 @@ if (post.value) {
       headline: postTitle.value,
       description: postExcerpt.value,
       datePublished: postPublishedAt.value,
-      author: { name: 'Texas State Spending Explorer' },
+      author: { name: postAuthor.value },
       section: postAngleName.value,
     })
   } else {
@@ -132,6 +134,9 @@ const body = computed<PostBody>(() => {
         </div>
 
         <div class="flex items-center gap-3 text-sm text-muted">
+          <UIcon name="i-lucide-user-round" class="size-4 shrink-0" />
+          <span>By {{ postAuthor }}</span>
+          <USeparator orientation="vertical" class="h-4" />
           <UIcon name="i-lucide-calendar" class="size-4 shrink-0" />
           <NuxtTime
             v-if="post.published_at"

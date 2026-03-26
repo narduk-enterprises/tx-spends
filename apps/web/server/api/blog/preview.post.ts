@@ -132,6 +132,7 @@ export default defineAdminMutation(
           .insert(blogPosts)
           .values({
             slug,
+            author: generated.author,
             title: generated.title,
             excerpt: generated.excerpt,
             body: generated.body as unknown as Record<string, unknown>,
@@ -180,6 +181,7 @@ export default defineAdminMutation(
         .insert(blogPosts)
         .values({
           slug,
+          author: generated.author,
           title: generated.title,
           excerpt: generated.excerpt,
           body: generated.body as unknown as Record<string, unknown>,
@@ -223,6 +225,7 @@ export default defineAdminMutation(
       slug,
       status: targetStatus,
       title: generated.title,
+      author: generated.author,
       excerpt: generated.excerpt,
       angle_id: angleId,
       analyzer_run_id: runId,

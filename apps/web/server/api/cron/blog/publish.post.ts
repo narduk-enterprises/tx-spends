@@ -125,6 +125,7 @@ export default defineCronMutation(
         .insert(blogPosts)
         .values({
           slug,
+          author: generated.author,
           title: generated.title,
           excerpt: generated.excerpt,
           body: generated.body as unknown as Record<string, unknown>,
@@ -187,6 +188,7 @@ export default defineCronMutation(
       ok: true,
       post_id: postId,
       slug,
+      author: generated.author,
       title: generated.title,
       angle_id: angleId,
       analyzer_run_id: runId,

@@ -156,13 +156,20 @@ const livePath = computed(() =>
       >
         <template #content="{ item }">
           <div v-if="item.value === 'edit'" class="space-y-6 pt-4">
-            <div class="grid gap-4 md:grid-cols-2">
+            <div class="grid gap-4 md:grid-cols-3">
               <UFormField label="Slug" description="Used in the public `/blog/...` URL.">
                 <UInput v-model="editorState.slug" />
               </UFormField>
 
               <UFormField label="Title" description="Keep headlines concise and evidence-backed.">
                 <UInput v-model="editorState.title" />
+              </UFormField>
+
+              <UFormField
+                label="Byline"
+                description="Shown on the public article page and blog cards."
+              >
+                <UInput v-model="editorState.author" />
               </UFormField>
             </div>
 

@@ -43,6 +43,13 @@
       "when": 1774552653371,
       "tag": "0005_busy_arclight",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1774563845807,
+      "tag": "0006_hard_drax",
+      "breakpoints": true
     }
   ]
 }
