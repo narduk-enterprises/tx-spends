@@ -81,6 +81,8 @@ interface ReviewComment {
   body: string
   path?: string
   user?: { login?: string }
+  /** Present for comments submitted as part of a pull request review */
+  pull_request_review_id?: number | null
 }
 
 interface LoopStateEntry {
@@ -186,6 +188,39 @@ function isActionableCopilotPullReview(review: PullReview): boolean {
   }
   const state = review.state?.toUpperCase()
   return state === 'CHANGES_REQUESTED' || state === 'COMMENTED'
+}
+
+/**
+ * PR conversation comments are not part of GitHub's review state machine.
+ * Copilot often posts post-fix summaries there; their timestamps are newer than
+ * fix commits and would block shouldMerge if counted as feedback.
+ */
+function isActionableCopilotIssueComment(_comment: IssueComment): boolean {
+  return false
+}
+
+function buildPullReviewsById(pullReviews: PullReview[]) {
+  return new Map(pullReviews.map((review) => [review.id, review]))
+}
+
+/**
+ * Inline review comments inherit the parent review's state. Count only threads
+ * from COMMENTED / CHANGES_REQUESTED Copilot reviews so APPROVED (or unknown)
+ * review batches do not block merges or churn the steer signature.
+ */
+function isActionableCopilotReviewComment(
+  comment: ReviewComment,
+  reviewsById: Map<number, PullReview>,
+): boolean {
+  if (!isCopilotActor(comment.user?.login)) {
+    return false
+  }
+  const reviewId = comment.pull_request_review_id
+  if (reviewId == null) {
+    return false
+  }
+  const review = reviewsById.get(reviewId)
+  return review != null && isActionableCopilotPullReview(review)
 }
 
 function getRepo(options: CliOptions) {
@@ -298,16 +333,17 @@ function getLatestCopilotFeedbackAt(
   pullReviews: PullReview[],
   reviewComments: ReviewComment[],
 ) {
+  const reviewsById = buildPullReviewsById(pullReviews)
   const timestamps = [
     ...issueComments
-      .filter((comment) => isCopilotActor(comment.user?.login))
+      .filter(isActionableCopilotIssueComment)
       .map((comment) => comment.created_at),
     ...pullReviews
       .filter(isActionableCopilotPullReview)
       .map((review) => review.submitted_at)
       .filter((value): value is string => Boolean(value)),
     ...reviewComments
-      .filter((comment) => isCopilotActor(comment.user?.login))
+      .filter((comment) => isActionableCopilotReviewComment(comment, reviewsById))
       .map((comment) => comment.created_at),
   ]
 
@@ -325,9 +361,10 @@ function buildCopilotSteerSignature(
   pullReviews: PullReview[],
   reviewComments: ReviewComment[],
 ) {
+  const reviewsById = buildPullReviewsById(pullReviews)
   const bodies = [
     ...issueComments
-      .filter((comment) => isCopilotActor(comment.user?.login))
+      .filter(isActionableCopilotIssueComment)
       .map((comment) => comment.body.trim())
       .filter(Boolean),
     ...pullReviews
@@ -335,7 +372,7 @@ function buildCopilotSteerSignature(
       .map((review) => review.body?.trim() ?? '')
       .filter(Boolean),
     ...reviewComments
-      .filter((comment) => isCopilotActor(comment.user?.login))
+      .filter((comment) => isActionableCopilotReviewComment(comment, reviewsById))
       .map((comment) => comment.body.trim())
       .filter(Boolean),
   ]
