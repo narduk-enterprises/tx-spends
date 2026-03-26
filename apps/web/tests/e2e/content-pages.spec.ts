@@ -44,6 +44,14 @@ test.describe('content pages and navigation', () => {
     await expect(page.getByRole('heading', { name: 'Data Health' })).toBeVisible()
     await capturePage(page, testInfo, 'data-health-page')
 
+    // Basic health check for the underlying data health API endpoint
+    const dataHealthResponse = await page.request.get('/api/v1/data-health')
+    expect(dataHealthResponse.status()).toBe(200)
+    const dataHealthJson = await dataHealthResponse.json()
+    expect(dataHealthJson).toBeTruthy()
+    expect(typeof dataHealthJson).toBe('object')
+    expect(Object.keys(dataHealthJson).length).toBeGreaterThan(0)
+
     await consoleTracker.expectClean()
   })
 

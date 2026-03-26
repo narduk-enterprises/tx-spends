@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, ne, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, sql } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
 import { BACKFILL_THRESHOLD, PAYMENTS_EXPORT_SUMMARY } from '#server/utils/payments-backfill'
 import { ROLLUP_ALL_YEARS } from '#server/utils/payment-rollups'
