@@ -64,6 +64,8 @@ export default defineNuxtConfig({
   runtimeConfig: {
     databaseUrl: process.env.DATABASE_URL || '',
     hyperdriveBinding: process.env.NUXT_HYPERDRIVE_BINDING || 'HYPERDRIVE',
+    controlPlaneHyperdriveBinding:
+      process.env.NUXT_CONTROL_PLANE_HYPERDRIVE_BINDING || 'HYPERDRIVE_CONTROL_PLANE',
     controlPlaneApiKey: process.env.CONTROL_PLANE_API_KEY || process.env.FLEET_API_KEY || '',
     posthogOwnerDistinctId: process.env.POSTHOG_OWNER_DISTINCT_ID || '',
     xaiApiKey: process.env.XAI_API_KEY || '',

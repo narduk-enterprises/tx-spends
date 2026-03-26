@@ -1,6 +1,6 @@
 import type { H3Event } from 'h3'
 import postgres from 'postgres'
-import { useHyperdriveConnectionString } from '#layer/server/utils/hyperdrive'
+import { useControlPlaneHyperdriveConnectionString } from './control-plane-hyperdrive'
 
 type PgQueryParam = string | number | boolean | null
 
@@ -142,7 +142,7 @@ async function withPgClient<T>(
   event: H3Event,
   handler: (sql: ReturnType<typeof postgres>, databaseName: string) => Promise<T>,
 ): Promise<T> {
-  const connectionString = useHyperdriveConnectionString(event)
+  const connectionString = useControlPlaneHyperdriveConnectionString(event)
   const sql = postgres(connectionString, {
     prepare: false,
     max: 1,
