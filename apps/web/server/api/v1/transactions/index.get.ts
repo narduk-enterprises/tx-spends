@@ -1,5 +1,5 @@
 import { getValidatedQuery } from 'h3'
-import { and, asc, desc, eq, gte, like, lte, or, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, gte, inArray, like, lte, or, sql } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
 import {
   formatAgencyDisplayName,
@@ -85,44 +85,115 @@ export default defineEventHandler(async (event) => {
 
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined
   const orderDirection = query.order === 'asc' ? asc : desc
+  const requiresAgencyJoin = Boolean(query.q) || query.sort === 'agency_name'
   const sortCol =
     query.sort === 'payment_date'
       ? statePaymentFacts.paymentDate
       : query.sort === 'agency_name'
         ? agencies.agencyName
         : query.sort === 'payee_name'
-          ? payees.payeeNameRaw
+          ? statePaymentFacts.payeeNameRaw
           : statePaymentFacts.amount
 
-  const list = await db
-    .select({
-      transaction_id: statePaymentFacts.sourceRowHash,
-      payment_date: statePaymentFacts.paymentDate,
-      fiscal_year: statePaymentFacts.fiscalYear,
-      agency_id: statePaymentFacts.agencyId,
-      agency_name: agencies.agencyName,
-      payee_id: statePaymentFacts.payeeId,
-      payee_name: payees.payeeNameRaw,
-      amount: statePaymentFacts.amount,
-      object_category_raw: statePaymentFacts.objectCategoryRaw,
-      object_code: statePaymentFacts.comptrollerObjectCode,
-      object_title: comptrollerObjects.title,
-      appropriated_fund_raw: statePaymentFacts.appropriatedFundRaw,
-      appropriation_number: statePaymentFacts.appropriationNumber,
-      appropriation_year: statePaymentFacts.appropriationYear,
-      is_confidential: statePaymentFacts.isConfidential,
-    })
-    .from(statePaymentFacts)
-    .leftJoin(agencies, eq(statePaymentFacts.agencyId, agencies.id))
-    .leftJoin(payees, eq(statePaymentFacts.payeeId, payees.id))
-    .leftJoin(
-      comptrollerObjects,
-      eq(statePaymentFacts.comptrollerObjectCode, comptrollerObjects.code),
-    )
-    .where(whereClause)
-    .orderBy(orderDirection(sortCol))
-    .limit(query.limit)
-    .offset(query.offset)
+  const list = requiresAgencyJoin
+    ? await db
+        .select({
+          transaction_id: statePaymentFacts.sourceRowHash,
+          payment_date: statePaymentFacts.paymentDate,
+          fiscal_year: statePaymentFacts.fiscalYear,
+          agency_id: statePaymentFacts.agencyId,
+          agency_name: agencies.agencyName,
+          payee_id: statePaymentFacts.payeeId,
+          payee_name: statePaymentFacts.payeeNameRaw,
+          amount: statePaymentFacts.amount,
+          object_category_raw: statePaymentFacts.objectCategoryRaw,
+          object_code: statePaymentFacts.comptrollerObjectCode,
+          object_title: comptrollerObjects.title,
+          appropriated_fund_raw: statePaymentFacts.appropriatedFundRaw,
+          appropriation_number: statePaymentFacts.appropriationNumber,
+          appropriation_year: statePaymentFacts.appropriationYear,
+          is_confidential: statePaymentFacts.isConfidential,
+        })
+        .from(statePaymentFacts)
+        .leftJoin(agencies, eq(statePaymentFacts.agencyId, agencies.id))
+        .leftJoin(
+          comptrollerObjects,
+          eq(statePaymentFacts.comptrollerObjectCode, comptrollerObjects.code),
+        )
+        .where(whereClause)
+        .orderBy(orderDirection(sortCol))
+        .limit(query.limit)
+        .offset(query.offset)
+    : await (async () => {
+        // The common list path sorts on facts-table columns, so avoid joining large lookup tables
+        // until after the page of facts has been selected.
+        const baseRows = await db
+          .select({
+            transaction_id: statePaymentFacts.sourceRowHash,
+            payment_date: statePaymentFacts.paymentDate,
+            fiscal_year: statePaymentFacts.fiscalYear,
+            agency_id: statePaymentFacts.agencyId,
+            payee_id: statePaymentFacts.payeeId,
+            payee_name: statePaymentFacts.payeeNameRaw,
+            amount: statePaymentFacts.amount,
+            object_category_raw: statePaymentFacts.objectCategoryRaw,
+            object_code: statePaymentFacts.comptrollerObjectCode,
+            appropriated_fund_raw: statePaymentFacts.appropriatedFundRaw,
+            appropriation_number: statePaymentFacts.appropriationNumber,
+            appropriation_year: statePaymentFacts.appropriationYear,
+            is_confidential: statePaymentFacts.isConfidential,
+          })
+          .from(statePaymentFacts)
+          .where(whereClause)
+          .orderBy(orderDirection(sortCol))
+          .limit(query.limit)
+          .offset(query.offset)
+
+        const agencyIds = Array.from(new Set(baseRows.map((transaction) => transaction.agency_id)))
+        const objectCodes = Array.from(
+          new Set(
+            baseRows
+              .map((transaction) => transaction.object_code)
+              .filter((objectCode): objectCode is string => Boolean(objectCode)),
+          ),
+        )
+
+        const [agencyRows, objectRows] = await Promise.all([
+          agencyIds.length > 0
+            ? db
+                .select({
+                  agency_id: agencies.id,
+                  agency_name: agencies.agencyName,
+                })
+                .from(agencies)
+                .where(inArray(agencies.id, agencyIds))
+            : Promise.resolve([]),
+          objectCodes.length > 0
+            ? db
+                .select({
+                  object_code: comptrollerObjects.code,
+                  object_title: comptrollerObjects.title,
+                })
+                .from(comptrollerObjects)
+                .where(inArray(comptrollerObjects.code, objectCodes))
+            : Promise.resolve([]),
+        ])
+
+        const agencyNameById = new Map(
+          agencyRows.map((agency) => [agency.agency_id, agency.agency_name] as const),
+        )
+        const objectTitleByCode = new Map(
+          objectRows.map((object) => [object.object_code, object.object_title] as const),
+        )
+
+        return baseRows.map((transaction) => ({
+          ...transaction,
+          agency_name: agencyNameById.get(transaction.agency_id) ?? null,
+          object_title: transaction.object_code
+            ? (objectTitleByCode.get(transaction.object_code) ?? null)
+            : null,
+        }))
+      })()
 
   const isSimpleOverviewCount =
     !query.q &&
@@ -240,14 +311,21 @@ export default defineEventHandler(async (event) => {
                   ),
                 )
                 .limit(1)
-            : await db
-                .select({
-                  total: sql<number>`COUNT(*)`,
-                })
-                .from(statePaymentFacts)
-                .leftJoin(agencies, eq(statePaymentFacts.agencyId, agencies.id))
-                .leftJoin(payees, eq(statePaymentFacts.payeeId, payees.id))
-                .where(whereClause)
+            : query.q
+              ? await db
+                  .select({
+                    total: sql<number>`COUNT(*)`,
+                  })
+                  .from(statePaymentFacts)
+                  .leftJoin(agencies, eq(statePaymentFacts.agencyId, agencies.id))
+                  .leftJoin(payees, eq(statePaymentFacts.payeeId, payees.id))
+                  .where(whereClause)
+              : await db
+                  .select({
+                    total: sql<number>`COUNT(*)`,
+                  })
+                  .from(statePaymentFacts)
+                  .where(whereClause)
 
   return {
     filters_applied: query,

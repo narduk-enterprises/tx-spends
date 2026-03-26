@@ -32,7 +32,9 @@ const hasBreadcrumbs = computed(() => Boolean(props.breadcrumbs?.length))
           </UBadge>
         </div>
         <div class="space-y-2">
-          <h1 class="max-w-4xl text-4xl font-semibold tracking-tight text-default sm:text-5xl">
+          <h1
+            class="max-w-4xl font-sans text-4xl font-semibold tracking-tight text-default sm:text-5xl"
+          >
             {{ title }}
           </h1>
           <p v-if="subtitle" class="max-w-2xl text-base leading-7 text-muted sm:text-lg">

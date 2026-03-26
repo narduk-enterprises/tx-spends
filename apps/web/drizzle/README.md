@@ -6,7 +6,7 @@ Generate new migrations with:
 pnpm run db:generate
 ```
 
-Apply migrations to the Neon database with:
+Apply migrations to the PostgreSQL database with:
 
 ```bash
 pnpm run db:migrate

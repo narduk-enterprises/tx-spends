@@ -207,6 +207,9 @@ export const statePaymentFacts = pgTable(
     index('idx_spf_object').on(table.comptrollerObjectCode),
     index('idx_spf_confidential').on(table.isConfidential),
     index('idx_spf_payment_date_desc').on(table.paymentDate),
+    index('idx_spf_public_payment_date')
+      .on(table.paymentDate)
+      .where(sql`${table.isConfidential} = false`),
     index('idx_spf_amount_desc').on(table.amount),
     index('idx_spf_agency_payment_date').on(table.agencyId, table.paymentDate),
     index('idx_spf_payee_payment_date').on(table.payeeId, table.paymentDate),

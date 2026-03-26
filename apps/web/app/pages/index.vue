@@ -13,6 +13,31 @@ import {
   getNumberQueryValue,
 } from '~/utils/explorer'
 
+const deferredSectionHydration = {
+  rootMargin: '320px 0px',
+} as const
+
+const DeferredTrendChartCard = defineLazyHydrationComponent(
+  'visible',
+  () => import('~/components/TrendChartCard.vue'),
+)
+const DeferredRankedBarCard = defineLazyHydrationComponent(
+  'visible',
+  () => import('~/components/RankedBarCard.vue'),
+)
+const DeferredInsightMoversCard = defineLazyHydrationComponent(
+  'visible',
+  () => import('~/components/InsightMoversCard.vue'),
+)
+const DeferredCountyMapCard = defineLazyHydrationComponent(
+  'visible',
+  () => import('~/components/CountyMapCard.vue'),
+)
+const DeferredDataTableCard = defineLazyHydrationComponent(
+  'visible',
+  () => import('~/components/DataTableCard.vue'),
+)
+
 const route = useRoute()
 const router = useRouter()
 
@@ -265,7 +290,8 @@ const filters = computed({
       </section>
 
       <section class="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(20rem,1fr)]">
-        <TrendChartCard
+        <DeferredTrendChartCard
+          :hydrate-on-visible="deferredSectionHydration"
           title="Spending over time"
           :description="trendDescription"
           :series="overview.timeline || []"
@@ -274,7 +300,8 @@ const filters = computed({
           :value-formatter="formatUsdCompact"
         />
 
-        <RankedBarCard
+        <DeferredRankedBarCard
+          :hydrate-on-visible="deferredSectionHydration"
           title="Top agencies"
           :description="topAgenciesDescription"
           :items="overview.top_agencies || []"
@@ -285,17 +312,22 @@ const filters = computed({
       </section>
 
       <section v-if="yoyMovers">
-        <InsightMoversCard :movers="yoyMovers" />
+        <DeferredInsightMoversCard
+          :hydrate-on-visible="deferredSectionHydration"
+          :movers="yoyMovers"
+        />
       </section>
 
       <section class="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(20rem,1fr)]">
-        <CountyMapCard
+        <DeferredCountyMapCard
+          :hydrate-on-visible="deferredSectionHydration"
           :county-metrics="overview.top_counties || []"
           :fy="fiscalYear || 'All years'"
           @select-county="router.push(`/counties/${$event}`)"
         />
 
-        <RankedBarCard
+        <DeferredRankedBarCard
+          :hydrate-on-visible="deferredSectionHydration"
           title="Top categories"
           :description="topCategoriesDescription"
           :items="overview.top_categories || []"
@@ -306,8 +338,9 @@ const filters = computed({
       </section>
 
       <section class="grid gap-6 xl:grid-cols-2">
-        <RankedBarCard
+        <DeferredRankedBarCard
           v-if="hasPaymentFacts"
+          :hydrate-on-visible="deferredSectionHydration"
           title="Top payees"
           :description="topPayeesDescription"
           :items="overview.top_payees || []"
@@ -404,7 +437,8 @@ const filters = computed({
         </UCard>
       </section>
 
-      <DataTableCard
+      <DeferredDataTableCard
+        :hydrate-on-visible="deferredSectionHydration"
         title="Recent transactions"
         description="Latest public payment rows from the state payment feed."
         :columns="[
@@ -457,7 +491,7 @@ const filters = computed({
         <template #amount-data="{ row }">
           <span class="font-semibold text-default">{{ formatUsd(row.amount, 2) }}</span>
         </template>
-      </DataTableCard>
+      </DeferredDataTableCard>
     </template>
 
     <EmptyState
