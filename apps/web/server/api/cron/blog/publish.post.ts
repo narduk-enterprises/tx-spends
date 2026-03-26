@@ -13,7 +13,7 @@
  *   6. Update angle rotation state
  *   7. Submit URL to IndexNow
  */
-import { eq } from 'drizzle-orm'
+import { eq, and, gte } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
 import { blogAnalyzerRuns, blogPosts } from '#server/database/schema'
 import { pickNextAngle, markAngleUsed } from '#server/utils/blog/angles'
@@ -32,6 +32,34 @@ export default defineCronMutation(
 
     // 1. Pick angle
     const angleId = await pickNextAngle(event)
+
+    // Idempotency guard: if a published post for this angle was already created
+    // today (UTC), skip the rest of the flow.  This prevents duplicate articles
+    // from concurrent or retried cron invocations for the same day/angle.
+    const todayUtc = new Date()
+    todayUtc.setUTCHours(0, 0, 0, 0)
+    const existingToday = await db
+      .select({ id: blogPosts.id, slug: blogPosts.slug })
+      .from(blogPosts)
+      .where(
+        and(
+          eq(blogPosts.angleId, angleId),
+          eq(blogPosts.status, 'published'),
+          gte(blogPosts.publishedAt, todayUtc),
+        ),
+      )
+      .limit(1)
+
+    if (existingToday.length > 0) {
+      return {
+        ok: true,
+        skipped: true,
+        reason: 'A published post for this angle already exists for today.',
+        post_id: existingToday[0]!.id,
+        slug: existingToday[0]!.slug,
+        angle_id: angleId,
+      }
+    }
 
     // 2. Insert analyzer run record (pending)
     const runRows = await db

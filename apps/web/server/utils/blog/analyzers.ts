@@ -9,7 +9,7 @@
  * beyond what the Comptroller records provide.
  */
 import type { H3Event } from 'h3'
-import { desc, eq, sql, and, ne } from 'drizzle-orm'
+import { desc, eq, sql, and, ne, inArray } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
 import {
   formatAgencyDisplayName,
@@ -17,6 +17,7 @@ import {
   formatCountyDisplayName,
 } from '#server/utils/explorer'
 import { getRollupScopeFiscalYear, ROLLUP_ALL_YEARS } from '#server/utils/payment-rollups'
+import { formatUsdBig, signedPct } from '#server/utils/blog/pure'
 import {
   agencies,
   payees,
@@ -25,7 +26,6 @@ import {
   paymentObjectRollups,
   paymentOverviewRollups,
   paymentPayeeRollups,
-  statePaymentFacts,
   countyExpenditureFacts,
   geographiesCounties,
 } from '#server/database/schema'
@@ -43,15 +43,6 @@ export interface SpotlightFindings {
   dataPoints: SpotlightDataPoint[]
   summary: string
   limitations: string[]
-}
-
-function formatUsdBig(value: number): string {
-  const abs = Math.abs(value)
-  const prefix = value < 0 ? '-$' : '$'
-  if (abs >= 1_000_000_000) return `${prefix}${(abs / 1_000_000_000).toFixed(2)}B`
-  if (abs >= 1_000_000) return `${prefix}${(abs / 1_000_000).toFixed(1)}M`
-  if (abs >= 1_000) return `${prefix}${(abs / 1_000).toFixed(0)}K`
-  return `${prefix}${abs.toFixed(2)}`
 }
 
 function pct(part: number, total: number): string {
@@ -135,6 +126,31 @@ async function analyzeAgencySpendLeaders(event: H3Event): Promise<SpotlightFindi
 async function analyzeCategoryTrends(event: H3Event): Promise<SpotlightFindings> {
   const db = useAppDatabase(event)
 
+  // Step 1: find the latest two distinct fiscal years that have category rollup data.
+  // Fetching only these IDs avoids loading all historical rows into memory.
+  const fyRows = await db
+    .selectDistinct({ fy: paymentCategoryRollups.scopeFiscalYear })
+    .from(paymentCategoryRollups)
+    .where(ne(paymentCategoryRollups.scopeFiscalYear, ROLLUP_ALL_YEARS))
+    .orderBy(desc(paymentCategoryRollups.scopeFiscalYear))
+    .limit(2)
+
+  const latestFy = fyRows[0]?.fy ?? null
+  const prevFy = fyRows[1]?.fy ?? null
+
+  if (latestFy === null) {
+    return {
+      angleId: 'category-trends',
+      angleName: 'Expenditure Category Trends',
+      fiscalYear: null,
+      dataPoints: [{ label: 'Insufficient data', value: 'No category rollup data found.' }],
+      summary: 'No category rollup data available.',
+      limitations: ['Category rollup data has not been populated yet.'],
+    }
+  }
+
+  // Step 2: fetch rows only for the identified fiscal years — far cheaper than selecting all.
+  const fyValues: number[] = prevFy !== null ? [latestFy, prevFy] : [latestFy]
   const rows = await db
     .select({
       fy: paymentCategoryRollups.scopeFiscalYear,
@@ -143,13 +159,8 @@ async function analyzeCategoryTrends(event: H3Event): Promise<SpotlightFindings>
       amount: paymentCategoryRollups.totalAmountPublic,
     })
     .from(paymentCategoryRollups)
-    .where(ne(paymentCategoryRollups.scopeFiscalYear, ROLLUP_ALL_YEARS))
-    .orderBy(desc(paymentCategoryRollups.scopeFiscalYear), desc(paymentCategoryRollups.totalAmountPublic))
-
-  // Collect distinct fiscal years (latest 2)
-  const years = [...new Set(rows.map((r) => r.fy))].sort((a, b) => b - a).slice(0, 2)
-  const latestFy = years[0] ?? null
-  const prevFy = years[1] ?? null
+    .where(inArray(paymentCategoryRollups.scopeFiscalYear, fyValues))
+    .orderBy(desc(paymentCategoryRollups.totalAmountPublic))
 
   const latestMap = new Map<string, number>()
   const prevMap = new Map<string, number>()
@@ -283,39 +294,41 @@ async function analyzePayeeConcentration(event: H3Event): Promise<SpotlightFindi
 async function analyzeConfidentialityPatterns(event: H3Event): Promise<SpotlightFindings> {
   const db = useAppDatabase(event)
   const fiscalYear = await getLatestFiscalYear(event)
+  const scopeFy = getRollupScopeFiscalYear(fiscalYear)
 
-  const [allRows, confRows, agencyRows] = await Promise.all([
+  // Derive confidential totals as all - public from rollup tables,
+  // avoiding expensive full-table scans on statePaymentFacts.
+  const [overviewRows, agencyRows] = await Promise.all([
     db
       .select({
-        total: sql<string>`COALESCE(SUM(${statePaymentFacts.amount}), 0)`,
-        count: sql<number>`COUNT(*)`,
+        totalAll: paymentOverviewRollups.totalSpendAll,
+        totalPublic: paymentOverviewRollups.totalSpendPublic,
+        countAll: paymentOverviewRollups.paymentCountAll,
+        countPublic: paymentOverviewRollups.paymentCountPublic,
       })
-      .from(statePaymentFacts)
-      .where(eq(statePaymentFacts.fiscalYear, fiscalYear)),
-    db
-      .select({
-        total: sql<string>`COALESCE(SUM(${statePaymentFacts.amount}), 0)`,
-        count: sql<number>`COUNT(*)`,
-      })
-      .from(statePaymentFacts)
-      .where(and(eq(statePaymentFacts.fiscalYear, fiscalYear), eq(statePaymentFacts.isConfidential, true))),
+      .from(paymentOverviewRollups)
+      .where(eq(paymentOverviewRollups.scopeFiscalYear, scopeFy))
+      .limit(1),
     db
       .select({
         agencyName: agencies.agencyName,
-        confTotal: sql<string>`COALESCE(SUM(${statePaymentFacts.amount}), 0)`,
-        confCount: sql<number>`COUNT(*)`,
+        totalAll: paymentAgencyRollups.totalSpendAll,
+        totalPublic: paymentAgencyRollups.totalSpendPublic,
+        countAll: paymentAgencyRollups.paymentCountAll,
+        countPublic: paymentAgencyRollups.paymentCountPublic,
       })
-      .from(statePaymentFacts)
-      .leftJoin(agencies, eq(statePaymentFacts.agencyId, agencies.id))
-      .where(and(eq(statePaymentFacts.fiscalYear, fiscalYear), eq(statePaymentFacts.isConfidential, true)))
-      .groupBy(agencies.agencyName)
-      .orderBy(desc(sql`COALESCE(SUM(${statePaymentFacts.amount}), 0)`))
+      .from(paymentAgencyRollups)
+      .leftJoin(agencies, eq(paymentAgencyRollups.agencyId, agencies.id))
+      .where(eq(paymentAgencyRollups.scopeFiscalYear, scopeFy))
+      .orderBy(
+        desc(sql`${paymentAgencyRollups.totalSpendAll} - ${paymentAgencyRollups.totalSpendPublic}`),
+      )
       .limit(5),
   ])
 
-  const allTotal = Number(allRows[0]?.total || 0)
-  const confTotal = Number(confRows[0]?.total || 0)
-  const confCount = Number(confRows[0]?.count || 0)
+  const allTotal = Number(overviewRows[0]?.totalAll || 0)
+  const confTotal = allTotal - Number(overviewRows[0]?.totalPublic || 0)
+  const confCount = Number(overviewRows[0]?.countAll || 0) - Number(overviewRows[0]?.countPublic || 0)
 
   const dataPoints: SpotlightDataPoint[] = [
     {
@@ -327,11 +340,17 @@ async function analyzeConfidentialityPatterns(event: H3Event): Promise<Spotlight
       label: 'Confidential payment transactions',
       value: confCount.toLocaleString(),
     },
-    ...agencyRows.map((row, i) => ({
-      label: `#${i + 1} agency (confidential): ${formatAgencyDisplayName(row.agencyName)}`,
-      value: formatUsdBig(Number(row.confTotal || 0)),
-      context: `${Number(row.confCount).toLocaleString()} transactions`,
-    })),
+    ...agencyRows.map((row, i) => {
+      const agConfAmount =
+        Number(row.totalAll || 0) - Number(row.totalPublic || 0)
+      const agConfCount =
+        Number(row.countAll || 0) - Number(row.countPublic || 0)
+      return {
+        label: `#${i + 1} agency (confidential): ${formatAgencyDisplayName(row.agencyName)}`,
+        value: formatUsdBig(agConfAmount),
+        context: `${agConfCount.toLocaleString()} confidential transactions`,
+      }
+    }),
   ]
 
   return {
@@ -343,7 +362,7 @@ async function analyzeConfidentialityPatterns(event: H3Event): Promise<Spotlight
     limitations: [
       'Confidential payments are legally designated under Texas Government Code. The Comptroller does not disclose payee identities for these transactions.',
       'The agency attribution for confidential payments reflects the paying agency, not the ultimate recipient.',
-      'Transaction-level data may differ from rollup totals if the backfill is incomplete.',
+      'Confidential totals are derived as the difference between all-payment and public-payment rollups.',
     ],
   }
 }
@@ -481,7 +500,6 @@ async function analyzeFiscalYearContrast(event: H3Event): Promise<SpotlightFindi
   const currentTotal = Number(current?.total || 0)
   const previousTotal = Number(previous?.total || 0)
   const delta = currentTotal - previousTotal
-  const deltaSign = delta >= 0 ? '+' : ''
 
   const dataPoints: SpotlightDataPoint[] = []
   if (current) {
@@ -500,8 +518,8 @@ async function analyzeFiscalYearContrast(event: H3Event): Promise<SpotlightFindi
   if (current && previous) {
     dataPoints.push({
       label: `Year-over-year change`,
-      value: `${deltaSign}${formatUsdBig(delta)}`,
-      context: `${deltaSign}${pct(Math.abs(delta), previousTotal)} relative to FY${previous.fy}`,
+      value: `${delta >= 0 ? '+' : ''}${formatUsdBig(delta)}`,
+      context: `${signedPct(delta, previousTotal)} relative to FY${previous.fy}`,
     })
   }
 
@@ -512,7 +530,7 @@ async function analyzeFiscalYearContrast(event: H3Event): Promise<SpotlightFindi
     dataPoints,
     summary:
       currentFy && previousFy
-        ? `From FY${previousFy} to FY${currentFy}, Texas public state spending changed by ${deltaSign}${formatUsdBig(delta)} (${deltaSign}${pct(Math.abs(delta), previousTotal)}).`
+        ? `From FY${previousFy} to FY${currentFy}, Texas public state spending changed by ${delta >= 0 ? '+' : ''}${formatUsdBig(delta)} (${signedPct(delta, previousTotal)}).`
         : `Fiscal year overview data available for review.`,
     limitations: [
       'Figures reflect non-confidential payments only and may understate total government activity.',

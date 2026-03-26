@@ -2,22 +2,29 @@
  * POST /api/blog/preview
  *
  * Admin-only route for ad-hoc blog post generation without waiting for
- * the Cloudflare cron schedule. Saves the result as a 'draft'.
+ * the Cloudflare cron schedule. By default saves the result as a draft,
+ * but can also create a published post when requested.
  *
  * Body (optional):
- *   { "angle_id": "agency-spend-leaders" }
+ *   {
+ *     "angle_id"?: "agency-spend-leaders",
+ *     "publish"?: boolean // defaults to false (draft); true creates a published post
+ *   }
  *
  * If angle_id is omitted the rotation strategy selects the next angle.
+ * When publish is true the route mirrors the cron publish side effects:
+ * angle rotation state is updated and IndexNow is submitted.
  */
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { useAppDatabase } from '#server/utils/database'
 import { blogAnalyzerRuns, blogPosts } from '#server/database/schema'
-import { pickNextAngle, seedBlogAngles, BLOG_ANGLE_DEFINITIONS } from '#server/utils/blog/angles'
+import { pickNextAngle, seedBlogAngles, BLOG_ANGLE_DEFINITIONS, markAngleUsed } from '#server/utils/blog/angles'
 import { runAnalyzer } from '#server/utils/blog/analyzers'
 import { generateBlogPost } from '#server/utils/blog/generator'
 import { defineAdminMutation, withOptionalValidatedBody } from '#layer/server/utils/mutation'
 import { RATE_LIMIT_POLICIES } from '#layer/server/utils/rateLimit'
+import { notifyIndexNow } from '#layer/server/utils/indexNow'
 
 const bodySchema = z.object({
   angle_id: z
@@ -112,9 +119,26 @@ export default defineAdminMutation(
       })
       .returning({ id: blogPosts.id })
 
+    const postId = postRows[0]!.id
+
+    // When publishing via this admin route, mirror the cron publish side effects:
+    // update angle rotation state and submit to IndexNow so the post is indexed.
+    if (body.publish) {
+      await markAngleUsed(event, angleId)
+
+      const config = useRuntimeConfig(event)
+      const siteUrl =
+        ((config.public as Record<string, unknown>).appUrl as string | undefined) ?? ''
+      if (siteUrl.startsWith('https://') || siteUrl.startsWith('http://localhost')) {
+        await notifyIndexNow(event, [`${siteUrl}/blog/${slug}`, `${siteUrl}/blog`]).catch(
+          () => undefined,
+        )
+      }
+    }
+
     return {
       ok: true,
-      post_id: postRows[0]!.id,
+      post_id: postId,
       slug,
       status: targetStatus,
       title: generated.title,

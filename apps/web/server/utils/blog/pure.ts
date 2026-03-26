@@ -5,6 +5,29 @@
  * alias resolution or a live database connection.
  */
 
+/**
+ * Format a dollar amount with magnitude abbreviations, preserving sign.
+ * Negative values render as e.g. `-$1.23M` rather than `$-1.23M`.
+ */
+export function formatUsdBig(value: number): string {
+  const abs = Math.abs(value)
+  const prefix = value < 0 ? '-$' : '$'
+  if (abs >= 1_000_000_000) return `${prefix}${(abs / 1_000_000_000).toFixed(2)}B`
+  if (abs >= 1_000_000) return `${prefix}${(abs / 1_000_000).toFixed(1)}M`
+  if (abs >= 1_000) return `${prefix}${(abs / 1_000).toFixed(0)}K`
+  return `${prefix}${abs.toFixed(2)}`
+}
+
+/**
+ * Format a signed percentage string for a delta value relative to a base.
+ * e.g. `+3.5%` for an increase, `-2.1%` for a decrease, `0.0%` for zero.
+ */
+export function signedPct(value: number, total: number): string {
+  if (total === 0) return '0.0%'
+  const sign = value >= 0 ? '+' : '-'
+  return `${sign}${((Math.abs(value) / total) * 100).toFixed(1)}%`
+}
+
 /** Canonical IDs for all supported spotlight angles. */
 export const BLOG_ANGLE_IDS = [
   'agency-spend-leaders',

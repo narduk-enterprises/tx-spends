@@ -8,6 +8,8 @@ import {
   BLOG_ANGLE_IDS,
   buildPostSlug,
   sortAnglesByRotation,
+  formatUsdBig,
+  signedPct,
 } from '../../server/utils/blog/pure'
 
 describe('BLOG_ANGLE_IDS', () => {
@@ -88,5 +90,65 @@ describe('rotation sort logic', () => {
     const rows = [{ id: 'a', lastUsedAt: null, useCount: 0 }]
     const sorted = sortAnglesByRotation(rows)
     expect(sorted[0]!.id).toBe('a')
+  })
+})
+
+describe('formatUsdBig', () => {
+  it('abbreviates billions', () => {
+    expect(formatUsdBig(2_500_000_000)).toBe('$2.50B')
+  })
+
+  it('abbreviates millions', () => {
+    expect(formatUsdBig(1_234_567)).toBe('$1.2M')
+  })
+
+  it('abbreviates thousands', () => {
+    expect(formatUsdBig(45_678)).toBe('$46K')
+  })
+
+  it('formats small amounts without abbreviation', () => {
+    expect(formatUsdBig(99.5)).toBe('$99.50')
+  })
+
+  it('preserves sign for negative millions', () => {
+    expect(formatUsdBig(-1_234_567)).toBe('-$1.2M')
+  })
+
+  it('preserves sign for negative billions', () => {
+    expect(formatUsdBig(-2_500_000_000)).toBe('-$2.50B')
+  })
+
+  it('preserves sign for negative thousands', () => {
+    expect(formatUsdBig(-45_678)).toBe('-$46K')
+  })
+
+  it('formats negative small amounts correctly', () => {
+    expect(formatUsdBig(-99.5)).toBe('-$99.50')
+  })
+
+  it('formats zero', () => {
+    expect(formatUsdBig(0)).toBe('$0.00')
+  })
+})
+
+describe('signedPct', () => {
+  it('returns +N.n% for a positive delta', () => {
+    expect(signedPct(300, 1000)).toBe('+30.0%')
+  })
+
+  it('returns -N.n% for a negative delta', () => {
+    expect(signedPct(-150, 1000)).toBe('-15.0%')
+  })
+
+  it('returns +0.0% for zero delta with non-zero base', () => {
+    expect(signedPct(0, 1000)).toBe('+0.0%')
+  })
+
+  it('returns 0.0% when base is zero', () => {
+    expect(signedPct(100, 0)).toBe('0.0%')
+  })
+
+  it('rounds to one decimal place', () => {
+    expect(signedPct(1, 3)).toBe('+33.3%')
   })
 })

@@ -48,6 +48,20 @@ export default defineNitroPlugin((nitro) => {
       return
     }
 
+    // Fail closed if cronSecret is not configured — sending an empty bearer
+    // token would trigger a 401 from the route and waste the request.
+    if (!cronSecret) {
+      console.error(
+        JSON.stringify({
+          timestamp: new Date().toISOString(),
+          level: 'error',
+          message: 'Blog scheduler: cronSecret is not configured — skipping publish',
+          data: { cron: event.cron, hasAppUrl: Boolean(siteUrl) },
+        }),
+      )
+      return
+    }
+
     try {
       await $fetch(`${siteUrl}/api/cron/blog/publish`, {
         method: 'POST',
