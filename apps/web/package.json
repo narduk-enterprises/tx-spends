@@ -18,6 +18,7 @@
     "lint": "eslint . --max-warnings 0",
     "test:e2e": "playwright test --project=web --config=../../playwright.config.ts",
     "test:e2e:visual": "playwright test tests/e2e/visual-audit.spec.ts --project=web --config=../../playwright.config.ts",
+    "test:unit": "vitest run",
     "format:check": "prettier --check \"**/*.{ts,mts,vue,js,mjs,json,yaml,yml,css,md}\" --ignore-path ../../.gitignore"
   },
   "dependencies": {

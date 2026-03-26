@@ -77,7 +77,7 @@ export default defineCronMutation(
       throw createError({ statusCode: 500, message: `Post generation failed: ${errorText}` })
     }
 
-    // Deduplicate slug — append a short timestamp suffix if needed
+    // 5. Deduplicate slug — append a short timestamp suffix if needed
     let slug = generated.slug
     const existing = await db
       .select({ id: blogPosts.id })
