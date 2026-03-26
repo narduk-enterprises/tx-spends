@@ -6,7 +6,6 @@ const props = defineProps<{
   angleName: string
   publishedAt: string | Date | null
 }>()
-
 </script>
 
 <template>
