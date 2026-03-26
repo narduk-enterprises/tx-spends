@@ -12,6 +12,7 @@ import {
   primaryKey,
   unique,
   serial,
+  jsonb,
 } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 
@@ -493,3 +494,73 @@ export const stgPaymentsToPayeeRaw = pgTable('stg_payments_to_payee_raw', {
   sourceSnapshotDate: text('source_snapshot_date'),
   rowNumber: integer('row_number'),
 })
+
+// ========== BLOG ==========
+
+/**
+ * Spotlight angle rotation table.
+ * Each row represents one editorial angle (e.g. "agency-spend-leaders").
+ * The rotation strategy uses lastUsedAt + useCount to pick the next angle.
+ */
+export const blogAngles = pgTable('blog_angles', {
+  id: text('id').primaryKey(), // e.g. 'agency-spend-leaders'
+  name: text('name').notNull(),
+  description: text('description').notNull(),
+  lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+  useCount: integer('use_count').default(0).notNull(),
+  isActive: boolean('is_active').default(true).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+})
+
+/**
+ * Log of individual analyzer runs — what data was mined and when.
+ * Provides an auditable trail of what evidence was gathered before each post.
+ */
+export const blogAnalyzerRuns = pgTable(
+  'blog_analyzer_runs',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    angleId: text('angle_id')
+      .notNull()
+      .references(() => blogAngles.id),
+    status: text('status').notNull(), // 'pending' | 'completed' | 'failed'
+    findingsJson: jsonb('findings_json'), // SpotlightFindings payload
+    errorText: text('error_text'),
+    dataAsOfFiscalYear: integer('data_as_of_fiscal_year'),
+    startedAt: timestamp('started_at', { withTimezone: true }).defaultNow().notNull(),
+    finishedAt: timestamp('finished_at', { withTimezone: true }),
+  },
+  (table) => [index('idx_blog_analyzer_runs_angle').on(table.angleId, table.startedAt)],
+)
+
+/**
+ * Published and draft blog posts.
+ * Each post is linked to the angle that generated it and the analyzer run
+ * that produced the underlying evidence.
+ */
+export const blogPosts = pgTable(
+  'blog_posts',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    slug: text('slug').notNull().unique(),
+    title: text('title').notNull(),
+    excerpt: text('excerpt').notNull(),
+    body: text('body').notNull(), // Structured JSON (PostBody)
+    angleId: text('angle_id')
+      .notNull()
+      .references(() => blogAngles.id),
+    analyzerRunId: uuid('analyzer_run_id').references(() => blogAnalyzerRuns.id),
+    findingsJson: jsonb('findings_json'), // SpotlightFindings snapshot
+    status: text('status').notNull().default('draft'), // 'draft' | 'published' | 'archived'
+    publishedAt: timestamp('published_at', { withTimezone: true }),
+    generationModel: text('generation_model'),
+    generationPromptKey: text('generation_prompt_key'),
+    indexNowSubmitted: boolean('index_now_submitted').default(false).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index('idx_blog_posts_status_published').on(table.status, table.publishedAt),
+    index('idx_blog_posts_angle').on(table.angleId),
+  ],
+)

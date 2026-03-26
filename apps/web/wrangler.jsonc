@@ -82,5 +82,12 @@
       "pattern": "tx-spends.org",
       "custom_domain": true
     }
-  ]
+  ],
+
+  "triggers": {
+    "crons": [
+      // Daily spotlight blog post at 10:00 UTC (5:00 AM CT)
+      "0 10 * * *"
+    ]
+  }
 }
