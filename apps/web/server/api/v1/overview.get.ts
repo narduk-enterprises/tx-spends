@@ -273,7 +273,7 @@ export default defineEventHandler(async (event) => {
   // fiscal years even when the database contains more than 10 years total.
   // Note: prior-year agencies are fetched after the current-year query because the IN-filter
   // requires currentIds; the two queries are therefore sequential by design.
-  /** Maximum number of agencies to include in each direction's mover list. */
+  /** Maximum number of top agencies to include in the current-year top-agency cohort query. */
   const YOY_AGENCY_POOL_SIZE = 50
   let yoyMovers: {
     current_year: number

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { formatPct, formatUsdCompact } from '~/utils/explorer'
 
-const props = defineProps<{
+defineProps<{
   movers: {
     current_year: number
     prior_year: number
@@ -31,9 +31,8 @@ const props = defineProps<{
         <div class="space-y-1">
           <p class="text-lg font-semibold text-default">Year-over-year standouts</p>
           <p class="text-sm text-muted">
-            FY {{ movers.prior_year }} → FY {{ movers.current_year }} · Among top agencies<template
-              v-if="movers.total_change_pct !== null"
-            >
+            FY {{ movers.prior_year }} → FY {{ movers.current_year }} · Among current-year top
+            agencies<template v-if="movers.total_change_pct !== null">
               · Total spend
               <span
                 :class="
