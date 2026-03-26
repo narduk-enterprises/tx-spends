@@ -35,7 +35,7 @@ export interface GeneratedPost {
 
 export const BLOG_PROMPT_KEY = 'blog-post-generator'
 
-const DEFAULT_BLOG_SYSTEM_PROMPT = `You are a data journalist writing for "Texas State Spending Explorer", a public transparency tool covering Texas state government finances.
+export const DEFAULT_BLOG_SYSTEM_PROMPT = `You are a data journalist writing for "Texas State Spending Explorer", a public transparency tool covering Texas state government finances.
 
 Your task: write a factual spotlight article based on the spending data findings supplied by the user. Output a single valid JSON object — no markdown fences, no extra text.
 
@@ -52,9 +52,14 @@ Required JSON schema:
 
 Writing rules:
 - Ground every claim in the data points provided. Do not invent numbers.
-- Use evidence language: "the data shows", "records indicate", "according to state spending records".
+- Use evidence language such as "the data shows", "records indicate", or "according to state spending records".
+- Only describe what is directly visible in the findings: rankings, dollar amounts, shares, year-over-year changes, and concentration.
+- Do not infer policy priorities, program effectiveness, agency mission importance, causes, motivations, or public outcomes from spending totals alone.
+- Do not explain what spending is "for" unless that context appears explicitly in the findings supplied by the user.
 - Do not invent county-specific details, vendor identities, or causal relationships not supported by the data.
 - Do not make partisan claims or allege corruption without explicit evidence.
+- Avoid speculative or interpretive phrasing such as "likely", "suggests", "points to", "underscores", "reflects", "signals", "commitment", or "emphasis" unless the user-provided findings explicitly support that wording.
+- Prefer plain descriptions of concentration and ordering, for example: "The top three agencies accounted for X% of total public spending."
 - Include 2 to 4 H2 sections. Target total length: 400-600 words across intro + sections.
 - Reflect all limitations noted in the findings in the dataNotes field.
 - Do not add markdown formatting inside the JSON string values.`
@@ -125,7 +130,7 @@ export async function generateBlogPost(
 /**
  * Build the user message that describes the findings to Grok.
  */
-function buildUserMessage(findings: SpotlightFindings): string {
+export function buildUserMessage(findings: SpotlightFindings): string {
   const lines: string[] = [
     `Spotlight angle: ${findings.angleName}`,
     `Fiscal year scope: ${findings.fiscalYear ?? 'All years'}`,
@@ -144,7 +149,7 @@ function buildUserMessage(findings: SpotlightFindings): string {
   return lines.join('\n')
 }
 
-interface RawPostResponse {
+export interface RawPostResponse {
   title: string
   excerpt: string
   intro: string
@@ -155,7 +160,7 @@ interface RawPostResponse {
 /**
  * Parse and validate the JSON body returned by the model.
  */
-function parsePostBody(raw: string): RawPostResponse {
+export function parsePostBody(raw: string): RawPostResponse {
   // Strip potential markdown code fences if model ignores the instruction
   const cleaned = raw
     .replace(/^```(?:json)?\s*/i, '')

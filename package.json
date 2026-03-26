@@ -35,6 +35,8 @@
     "dev:kill": "sh scripts/dev-kill.sh",
     "cleanup:node-leaks": "sh scripts/cleanup-node-leaks.sh",
     "etl:payments": "pnpm exec tsx tools/etl/scraper.ts",
+    "blog:dry-run": "pnpm exec tsx --tsconfig apps/web/.nuxt/tsconfig.server.json tools/blog-dry-run.ts",
+    "blog:bootstrap-admin": "pnpm exec tsx --tsconfig apps/web/.nuxt/tsconfig.server.json tools/blog-admin-bootstrap.ts",
     "test:e2e": "playwright test",
     "test:e2e:web": "pnpm --filter web test:e2e",
     "test:e2e:visual": "playwright test apps/web/tests/e2e/visual-audit.spec.ts --project=web --config=playwright.config.ts",

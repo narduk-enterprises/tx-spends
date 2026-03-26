@@ -63,6 +63,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     databaseUrl: process.env.DATABASE_URL || '',
     hyperdriveBinding: process.env.NUXT_HYPERDRIVE_BINDING || 'HYPERDRIVE',
+    controlPlaneApiKey: process.env.CONTROL_PLANE_API_KEY || process.env.FLEET_API_KEY || '',
     posthogOwnerDistinctId: process.env.POSTHOG_OWNER_DISTINCT_ID || '',
     xaiApiKey: process.env.XAI_API_KEY || '',
     // Server-only (admin API routes)
