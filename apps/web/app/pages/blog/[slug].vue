@@ -32,14 +32,22 @@ useSeo({
   },
 })
 
-// Article schema using resolved values (post is hydrated after await useFetch)
-useArticleSchema({
-  headline: postTitle.value,
-  description: postExcerpt.value,
-  datePublished: postPublishedAt.value ?? new Date().toISOString(),
-  author: { name: 'Texas State Spending Explorer' },
-  section: postAngleName.value,
-})
+// Article schema — only inject when we have a real published date
+if (postPublishedAt.value) {
+  useArticleSchema({
+    headline: postTitle.value,
+    description: postExcerpt.value,
+    datePublished: postPublishedAt.value,
+    author: { name: 'Texas State Spending Explorer' },
+    section: postAngleName.value,
+  })
+} else {
+  useWebPageSchema({
+    name: postTitle.value,
+    description: postExcerpt.value,
+    type: 'ItemPage',
+  })
+}
 
 interface PostSection {
   heading: string
@@ -62,11 +70,8 @@ const body = computed<PostBody>(() => {
 <template>
   <UContainer class="max-w-3xl py-8">
     <template v-if="status === 'pending'">
-      <div class="space-y-6">
-        <USkeleton class="h-10 w-3/4 rounded-xl" />
-        <USkeleton class="h-5 w-full rounded-lg" />
-        <USkeleton class="h-5 w-5/6 rounded-lg" />
-        <USkeleton class="mt-8 h-48 rounded-2xl" />
+      <div class="flex items-center justify-center py-16">
+        <UIcon name="i-lucide-loader-2" class="size-8 animate-spin text-muted" />
       </div>
     </template>
 

@@ -13,9 +13,11 @@ export default defineNitroPlugin((nitro) => {
   // Cloudflare preset but not exposed in the public type declarations.
   nitro.hooks.hook('cloudflare:scheduled', async (event: { cron: string }) => {
     const config = useRuntimeConfig()
-    const cronSecret = (config as Record<string, string>).cronSecret ?? ''
-    const siteUrl =
-      ((config.public as Record<string, unknown>).appUrl as string) ?? 'http://localhost:3000'
+    // cronSecret and appUrl are app/layer runtime config keys; cast required
+    const appConfig = config as Record<string, unknown>
+    const cronSecret = (appConfig.cronSecret as string | undefined) ?? ''
+    const publicConfig = (appConfig.public as Record<string, unknown>) ?? {}
+    const siteUrl = (publicConfig.appUrl as string | undefined) ?? 'http://localhost:3000'
 
     try {
       await $fetch(`${siteUrl}/api/cron/blog/publish`, {

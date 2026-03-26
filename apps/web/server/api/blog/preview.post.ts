@@ -75,7 +75,7 @@ export default defineAdminMutation(
     const targetStatus = body.publish ? 'published' : 'draft'
     const now = body.publish ? new Date() : undefined
 
-    // Deduplicate slug
+    // Deduplicate slug — append a short timestamp suffix if needed
     let slug = generated.slug
     const existing = await db
       .select({ id: blogPosts.id })
@@ -83,7 +83,7 @@ export default defineAdminMutation(
       .where(eq(blogPosts.slug, slug))
       .limit(1)
     if (existing.length > 0) {
-      slug = `${slug}-preview`
+      slug = `${slug}-${Date.now().toString(36)}`
     }
 
     const postRows = await db

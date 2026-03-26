@@ -3,7 +3,7 @@
  * Returns a paginated list of published blog posts.
  */
 import { getValidatedQuery } from 'h3'
-import { desc, eq, and, lt } from 'drizzle-orm'
+import { desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { useAppDatabase } from '#server/utils/database'
 import { blogPosts, blogAngles } from '#server/database/schema'

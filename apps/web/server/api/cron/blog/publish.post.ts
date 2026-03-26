@@ -77,7 +77,7 @@ export default defineCronMutation(
       throw createError({ statusCode: 500, message: `Post generation failed: ${errorText}` })
     }
 
-    // 5. Deduplicate slug (if same angle runs twice in a day, add a suffix)
+    // Deduplicate slug — append a short timestamp suffix if needed
     let slug = generated.slug
     const existing = await db
       .select({ id: blogPosts.id })
@@ -86,7 +86,7 @@ export default defineCronMutation(
       .limit(1)
 
     if (existing.length > 0) {
-      slug = `${slug}-2`
+      slug = `${slug}-${Date.now().toString(36)}`
     }
 
     // 6. Save post as published

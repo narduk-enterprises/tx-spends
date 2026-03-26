@@ -96,7 +96,8 @@ export async function generateBlogPost(
   findings: SpotlightFindings,
 ): Promise<GeneratedPost> {
   const config = useRuntimeConfig(event)
-  const apiKey = (config as Record<string, string>).xaiApiKey
+  // xaiApiKey is an app-specific runtime config key — cast required since layer types don't include it
+  const apiKey = (config as Record<string, string | undefined>).xaiApiKey
   const model = 'grok-3-mini'
 
   if (!apiKey) {

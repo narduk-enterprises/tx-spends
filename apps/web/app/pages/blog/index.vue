@@ -39,8 +39,8 @@ const posts = computed(() => data.value?.data ?? [])
       :breadcrumbs="[{ label: 'Home', to: '/' }, { label: 'Spotlight Blog' }]"
     />
 
-    <div v-if="status === 'pending'" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      <USkeleton v-for="n in 6" :key="n" class="h-52 rounded-2xl" />
+    <div v-if="status === 'pending'" class="flex items-center justify-center py-16">
+      <UIcon name="i-lucide-loader-2" class="size-8 animate-spin text-muted" />
     </div>
 
     <EmptyState
