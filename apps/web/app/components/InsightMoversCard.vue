@@ -83,9 +83,7 @@ const props = defineProps<{
             </div>
           </li>
         </ul>
-        <p v-else class="text-sm text-muted">
-          No significant increases among the top agencies.
-        </p>
+        <p v-else class="text-sm text-muted">No significant increases among the top agencies.</p>
       </div>
 
       <div class="space-y-3">
@@ -114,9 +112,7 @@ const props = defineProps<{
             </div>
           </li>
         </ul>
-        <p v-else class="text-sm text-muted">
-          No significant decreases among the top agencies.
-        </p>
+        <p v-else class="text-sm text-muted">No significant decreases among the top agencies.</p>
       </div>
     </div>
   </UCard>
