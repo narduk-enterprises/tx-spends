@@ -46,10 +46,12 @@ export interface SpotlightFindings {
 }
 
 function formatUsdBig(value: number): string {
-  if (value >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(2)}B`
-  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`
-  if (value >= 1_000) return `$${(value / 1_000).toFixed(0)}K`
-  return `$${value.toFixed(2)}`
+  const abs = Math.abs(value)
+  const prefix = value < 0 ? '-$' : '$'
+  if (abs >= 1_000_000_000) return `${prefix}${(abs / 1_000_000_000).toFixed(2)}B`
+  if (abs >= 1_000_000) return `${prefix}${(abs / 1_000_000).toFixed(1)}M`
+  if (abs >= 1_000) return `${prefix}${(abs / 1_000).toFixed(0)}K`
+  return `${prefix}${abs.toFixed(2)}`
 }
 
 function pct(part: number, total: number): string {

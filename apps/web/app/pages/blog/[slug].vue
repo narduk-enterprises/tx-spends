@@ -23,7 +23,9 @@ const postAngleName = computed(() => post.value?.angle_name ?? 'Texas Spending S
 useSeo({
   title: postTitle,
   description: postExcerpt,
-  type: 'article',
+  // Only emit 'article' type when the post actually loaded; fall back to
+  // 'website' on 404 so error pages don't get incorrect Open Graph metadata.
+  type: post.value ? 'article' : 'website',
   publishedAt: postPublishedAt,
   ogImage: {
     title: postTitle,
@@ -32,21 +34,24 @@ useSeo({
   },
 })
 
-// Article schema — only inject when we have a real published date
-if (postPublishedAt.value) {
-  useArticleSchema({
-    headline: postTitle.value,
-    description: postExcerpt.value,
-    datePublished: postPublishedAt.value,
-    author: { name: 'Texas State Spending Explorer' },
-    section: postAngleName.value,
-  })
-} else {
-  useWebPageSchema({
-    name: postTitle.value,
-    description: postExcerpt.value,
-    type: 'ItemPage',
-  })
+// Schema injection — only when the post is available
+if (post.value) {
+  // Article schema — only inject when we have a real published date
+  if (postPublishedAt.value) {
+    useArticleSchema({
+      headline: postTitle.value,
+      description: postExcerpt.value,
+      datePublished: postPublishedAt.value,
+      author: { name: 'Texas State Spending Explorer' },
+      section: postAngleName.value,
+    })
+  } else {
+    useWebPageSchema({
+      name: postTitle.value,
+      description: postExcerpt.value,
+      type: 'ItemPage',
+    })
+  }
 }
 
 interface PostSection {

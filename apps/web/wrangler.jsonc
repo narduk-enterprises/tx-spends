@@ -86,7 +86,7 @@
 
   "triggers": {
     "crons": [
-      // Daily spotlight blog post at 10:00 UTC (5:00 AM CT)
+      // Daily spotlight blog post at 10:00 UTC (5:00 AM CDT / 4:00 AM CST)
       "0 10 * * *"
     ]
   }

@@ -40,20 +40,13 @@ export default defineEventHandler(async (event) => {
 
   const row = rows[0]!
 
-  let bodyData: unknown = null
-  try {
-    bodyData = JSON.parse(row.body)
-  } catch {
-    bodyData = { intro: row.body, sections: [], dataNotes: '' }
-  }
-
   return {
     data: {
       id: row.id,
       slug: row.slug,
       title: row.title,
       excerpt: row.excerpt,
-      body: bodyData,
+      body: row.body, // jsonb — already parsed by Drizzle
       angle_id: row.angleId,
       angle_name: row.angleName,
       angle_description: row.angleDescription,

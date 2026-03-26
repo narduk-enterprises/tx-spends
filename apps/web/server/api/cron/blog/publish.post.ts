@@ -77,8 +77,11 @@ export default defineCronMutation(
       throw createError({ statusCode: 500, message: `Post generation failed: ${errorText}` })
     }
 
-    // 5. Deduplicate slug — append a short timestamp suffix if needed
-    let slug = generated.slug
+    // 5. Deduplicate slug — if the base slug is already taken (e.g., a retry
+    //    or same-day re-run), use the unique analyzer run ID as a suffix to
+    //    guarantee uniqueness without an unbounded loop.
+    const baseSlug = generated.slug
+    let slug = baseSlug
     const existing = await db
       .select({ id: blogPosts.id })
       .from(blogPosts)
@@ -86,7 +89,7 @@ export default defineCronMutation(
       .limit(1)
 
     if (existing.length > 0) {
-      slug = `${slug}-${Date.now().toString(36)}`
+      slug = `${baseSlug}-${runId.replace(/-/g, '').slice(0, 8)}`
     }
 
     // 6. Save post as published
@@ -97,7 +100,7 @@ export default defineCronMutation(
         slug,
         title: generated.title,
         excerpt: generated.excerpt,
-        body: generated.bodyJson,
+        body: generated.body as unknown as Record<string, unknown>,
         angleId,
         analyzerRunId: runId,
         findingsJson: findings as unknown as Record<string, unknown>,

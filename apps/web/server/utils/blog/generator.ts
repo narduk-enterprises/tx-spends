@@ -11,6 +11,9 @@ import type { H3Event } from 'h3'
 import { grokChat } from '#layer/server/utils/xai'
 import { getSystemPrompt } from '#layer/server/utils/systemPrompts'
 import type { SpotlightFindings } from '#server/utils/blog/analyzers'
+import { buildPostSlug } from '#server/utils/blog/pure'
+
+export { buildPostSlug } from '#server/utils/blog/pure'
 
 export interface PostSection {
   heading: string
@@ -27,7 +30,6 @@ export interface GeneratedPost {
   title: string
   excerpt: string
   slug: string
-  bodyJson: string
   body: PostBody
   model: string
   promptKey: string
@@ -73,19 +75,6 @@ async function getBlogSystemPrompt(event: H3Event): Promise<string> {
 }
 
 /**
- * Build a date-based slug from an angle ID.
- * Format: `{angle-id}-{YYYY-MM-DD}` e.g. `agency-spend-leaders-2026-03-26`
- *
- * If that slug already exists a numeric suffix is appended by the caller.
- */
-export function buildPostSlug(angleId: string, date: Date = new Date()): string {
-  const yyyy = date.getUTCFullYear()
-  const mm = String(date.getUTCMonth() + 1).padStart(2, '0')
-  const dd = String(date.getUTCDate()).padStart(2, '0')
-  return `${angleId}-${yyyy}-${mm}-${dd}`
-}
-
-/**
  * Generate a blog post from structured findings using the xAI Grok model.
  *
  * Returns a GeneratedPost with structured body data and a slug.
@@ -121,11 +110,6 @@ export async function generateBlogPost(
     title: postBody.title,
     excerpt: postBody.excerpt,
     slug,
-    bodyJson: JSON.stringify({
-      intro: postBody.intro,
-      sections: postBody.sections,
-      dataNotes: postBody.dataNotes,
-    }),
     body: {
       intro: postBody.intro,
       sections: postBody.sections,

@@ -25,7 +25,7 @@ CREATE TABLE "blog_posts" (
 	"slug" text NOT NULL,
 	"title" text NOT NULL,
 	"excerpt" text NOT NULL,
-	"body" text NOT NULL,
+	"body" jsonb NOT NULL,
 	"angle_id" text NOT NULL,
 	"analyzer_run_id" uuid,
 	"findings_json" jsonb,

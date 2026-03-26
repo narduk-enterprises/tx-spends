@@ -75,15 +75,24 @@ export default defineAdminMutation(
     const targetStatus = body.publish ? 'published' : 'draft'
     const now = body.publish ? new Date() : undefined
 
-    // Deduplicate slug — append a short timestamp suffix if needed
-    let slug = generated.slug
-    const existing = await db
-      .select({ id: blogPosts.id })
-      .from(blogPosts)
-      .where(eq(blogPosts.slug, slug))
-      .limit(1)
-    if (existing.length > 0) {
-      slug = `${slug}-${Date.now().toString(36)}`
+    // Slug strategy:
+    // - Drafts/previews: always incorporate the run ID for guaranteed uniqueness
+    //   (repeated previews of the same angle/day can't collide)
+    // - Published: keep human-friendly slugs and deduplicate with a timestamp suffix
+    const baseSlug = generated.slug
+    let slug: string
+    if (!body.publish) {
+      slug = `${baseSlug}-${runId.replace(/-/g, '').slice(0, 8)}`
+    } else {
+      slug = baseSlug
+      const existing = await db
+        .select({ id: blogPosts.id })
+        .from(blogPosts)
+        .where(eq(blogPosts.slug, slug))
+        .limit(1)
+      if (existing.length > 0) {
+        slug = `${baseSlug}-${Date.now().toString(36)}`
+      }
     }
 
     const postRows = await db
@@ -92,7 +101,7 @@ export default defineAdminMutation(
         slug,
         title: generated.title,
         excerpt: generated.excerpt,
-        body: generated.bodyJson,
+        body: generated.body as unknown as Record<string, unknown>,
         angleId,
         analyzerRunId: runId,
         findingsJson: findings as unknown as Record<string, unknown>,

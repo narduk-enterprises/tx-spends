@@ -9,6 +9,10 @@ import type { H3Event } from 'h3'
 import { eq, sql } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
 import { blogAngles } from '#server/database/schema'
+import { BLOG_ANGLE_IDS, sortAnglesByRotation } from '#server/utils/blog/pure'
+
+export type { BlogAngleId } from '#server/utils/blog/pure'
+export { BLOG_ANGLE_IDS, buildPostSlug, sortAnglesByRotation } from '#server/utils/blog/pure'
 
 export interface BlogAngleDefinition {
   id: string
@@ -115,22 +119,10 @@ export async function pickNextAngle(event: H3Event): Promise<string> {
     .limit(50)
 
   if (rows.length === 0) {
-    return BLOG_ANGLE_DEFINITIONS[0]!.id
+    return BLOG_ANGLE_IDS[0]
   }
 
-  // Sort: never-used (null) first, then oldest lastUsedAt, then lowest useCount
-  const sorted = [...rows].sort((a, b) => {
-    const aNull = a.lastUsedAt === null
-    const bNull = b.lastUsedAt === null
-    if (aNull && !bNull) return -1
-    if (!aNull && bNull) return 1
-    if (aNull && bNull) return a.useCount - b.useCount
-
-    const timeDiff = (a.lastUsedAt as Date).getTime() - (b.lastUsedAt as Date).getTime()
-    if (timeDiff !== 0) return timeDiff
-    return a.useCount - b.useCount
-  })
-
+  const sorted = sortAnglesByRotation(rows)
   return sorted[0]!.id
 }
 

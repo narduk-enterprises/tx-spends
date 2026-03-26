@@ -545,7 +545,7 @@ export const blogPosts = pgTable(
     slug: text('slug').notNull().unique(),
     title: text('title').notNull(),
     excerpt: text('excerpt').notNull(),
-    body: text('body').notNull(), // Structured JSON (PostBody)
+    body: jsonb('body').notNull(), // Structured PostBody object
     angleId: text('angle_id')
       .notNull()
       .references(() => blogAngles.id),
