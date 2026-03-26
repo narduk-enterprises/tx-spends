@@ -98,7 +98,9 @@ function normalizePgValue(value: unknown): unknown {
 }
 
 function normalizePgRow(row: Record<string, unknown>): Record<string, unknown> {
-  return Object.fromEntries(Object.entries(row).map(([key, value]) => [key, normalizePgValue(value)]))
+  return Object.fromEntries(
+    Object.entries(row).map(([key, value]) => [key, normalizePgValue(value)]),
+  )
 }
 
 function buildPgMeta(result: Record<string, unknown>): Record<string, unknown> {

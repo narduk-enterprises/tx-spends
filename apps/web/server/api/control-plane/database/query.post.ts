@@ -1,8 +1,5 @@
 import { z } from 'zod'
-import {
-  definePublicMutation,
-  readValidatedMutationBody,
-} from '#layer/server/utils/mutation'
+import { definePublicMutation, readValidatedMutationBody } from '#layer/server/utils/mutation'
 import { executeControlPlanePostgresSql } from '#server/utils/control-plane-database'
 import { requireControlPlaneApiKey } from '#server/utils/control-plane-auth'
 
@@ -10,7 +7,10 @@ const MAX_SQL_CHARS = 500_000
 
 const bodySchema = z.object({
   sql: z.string().min(1).max(MAX_SQL_CHARS),
-  params: z.array(z.union([z.string(), z.number(), z.boolean(), z.null()])).max(100).optional(),
+  params: z
+    .array(z.union([z.string(), z.number(), z.boolean(), z.null()]))
+    .max(100)
+    .optional(),
 })
 
 export default definePublicMutation(

@@ -44,6 +44,9 @@ export default defineEventHandler(async (event) => {
     tables,
     catalogTableCount: tables.length,
     internalTableCount: 0,
-    hint: tables.length === 0 ? `No tables or views were found in schema "${query.schemaName}".` : undefined,
+    hint:
+      tables.length === 0
+        ? `No tables or views were found in schema "${query.schemaName}".`
+        : undefined,
   }
 })
