@@ -144,8 +144,8 @@ describe('signedPct', () => {
     expect(signedPct(0, 1000)).toBe('+0.0%')
   })
 
-  it('returns 0.0% when base is zero', () => {
-    expect(signedPct(100, 0)).toBe('0.0%')
+  it('returns N/A when base is zero', () => {
+    expect(signedPct(100, 0)).toBe('N/A')
   })
 
   it('rounds to one decimal place', () => {

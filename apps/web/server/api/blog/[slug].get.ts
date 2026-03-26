@@ -2,6 +2,7 @@
  * GET /api/blog/[slug]
  * Returns a single published blog post by slug.
  */
+import { getRouterParam } from 'h3'
 import { eq, and } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
 import { blogPosts, blogAngles } from '#server/database/schema'

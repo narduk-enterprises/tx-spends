@@ -20,10 +20,11 @@ export function formatUsdBig(value: number): string {
 
 /**
  * Format a signed percentage string for a delta value relative to a base.
- * e.g. `+3.5%` for an increase, `-2.1%` for a decrease, `0.0%` for zero.
+ * e.g. `+3.5%` for an increase, `-2.1%` for a decrease, `+0.0%` for zero delta.
+ * Returns `'N/A'` when the base (`total`) is zero to avoid misleading output.
  */
 export function signedPct(value: number, total: number): string {
-  if (total === 0) return '0.0%'
+  if (total === 0) return 'N/A'
   const sign = value >= 0 ? '+' : '-'
   return `${sign}${((Math.abs(value) / total) * 100).toFixed(1)}%`
 }
