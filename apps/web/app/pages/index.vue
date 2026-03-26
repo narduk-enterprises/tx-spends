@@ -59,6 +59,17 @@ const pageDescription = computed(() =>
     : 'Explore Texas state spending totals, top agencies, payees, categories, recent transactions, and county-level distribution.',
 )
 
+const yoyMovers = computed(() => overview.value?.yoy_movers ?? null)
+
+const headlineSpendDelta = computed(() => {
+  const pct = yoyMovers.value?.total_change_pct
+  if (pct == null) return undefined
+  return {
+    value: Math.abs(pct),
+    direction: pct > 0 ? ('up' as const) : pct < 0 ? ('down' as const) : ('neutral' as const),
+  }
+})
+
 const headlineSpendValue = computed(() =>
   overview.value
     ? overview.value.total_spend > 0
@@ -224,6 +235,7 @@ const filters = computed({
           label="Total state spend"
           :value="formatUsdCompact(headlineSpendValue)"
           :helper="headlineSpendHelper"
+          :delta="headlineSpendDelta"
           icon="i-lucide-wallet"
         />
         <KpiCard
@@ -270,6 +282,10 @@ const filters = computed({
           value-key="amount"
           :value-formatter="formatUsdCompact"
         />
+      </section>
+
+      <section v-if="yoyMovers">
+        <InsightMoversCard :movers="yoyMovers" />
       </section>
 
       <section class="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(20rem,1fr)]">
