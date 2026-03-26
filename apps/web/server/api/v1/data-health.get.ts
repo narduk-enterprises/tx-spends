@@ -69,7 +69,9 @@ export default defineEventHandler(async (event) => {
 
     db
       .select({ count: sql<number>`count(distinct ${payeeVendorMatches.payeeId})` })
-      .from(payeeVendorMatches),
+      .from(payeeVendorMatches)
+      .innerJoin(payees, eq(payeeVendorMatches.payeeId, payees.id))
+      .where(eq(payees.isConfidential, false)),
 
     db
       .select({

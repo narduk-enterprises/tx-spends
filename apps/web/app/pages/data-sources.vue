@@ -206,7 +206,7 @@ useWebPageSchema({
 
     <section class="space-y-4">
       <div class="space-y-1">
-        <h2 class="text-2xl font-semibold tracking-tight text-default">Data health</h2>
+        <h2 class="text-2xl font-semibold tracking-tight text-default">Data Health</h2>
         <p class="max-w-3xl text-sm leading-7 text-muted">
           See live row counts, fiscal year coverage, vendor match rates, and recent ingestion run
           status for every layer described above.

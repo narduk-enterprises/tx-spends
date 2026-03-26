@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { formatCount } from '~/utils/explorer'
+
 const title = 'Data Health'
 const description =
   'Live coverage and freshness metrics for Texas State Spending Explorer — payment rows, county facts, vendor match rates, and recent data loads.'
@@ -24,11 +26,6 @@ const { data, status } = await useFetch('/api/v1/data-health', {
 
 const health = computed(() => data.value)
 
-function formatCount(n: number | null | undefined): string {
-  if (n == null) return '—'
-  return n.toLocaleString('en-US')
-}
-
 function formatPct(n: number | null | undefined): string {
   if (n == null) return '—'
   return `${n.toFixed(1)}%`
@@ -37,7 +34,7 @@ function formatPct(n: number | null | undefined): string {
 function formatTs(ts: Date | string | null | undefined): string {
   if (!ts) return '—'
   const d = ts instanceof Date ? ts : new Date(ts)
-  return d.toLocaleDateString('en-US', {
+  return d.toLocaleString('en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
