@@ -80,6 +80,11 @@ function normalizeString(value: unknown) {
   return ''
 }
 
+export function formatPct(value: number) {
+  const sign = value > 0 ? '+' : ''
+  return `${sign}${value.toFixed(1)}%`
+}
+
 export function formatUsd(value: unknown, maximumFractionDigits = 0) {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',

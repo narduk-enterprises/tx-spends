@@ -22,6 +22,10 @@ const currentPage = computed(() => getNumberQueryValue(route.query.page) || 1)
 const fiscalYear = computed(() => getNumberQueryValue(route.query.fy))
 const searchQuery = computed(() => getStringQueryValue(route.query.q))
 const matchedVendorOnly = computed(() => getBooleanQueryValue(route.query.matchedVendorOnly))
+const hubOnly = computed(() => getBooleanQueryValue(route.query.hubOnly))
+const smallBusinessOnly = computed(() => getBooleanQueryValue(route.query.smallBusinessOnly))
+const sdvOnly = computed(() => getBooleanQueryValue(route.query.sdvOnly))
+const inStateOnly = computed(() => getBooleanQueryValue(route.query.inStateOnly))
 const sort = computed(() => getStringQueryValue(route.query.sort) || 'amount')
 const order = computed(() => (getStringQueryValue(route.query.order) === 'asc' ? 'asc' : 'desc'))
 
@@ -30,6 +34,10 @@ const requestQuery = computed(() =>
     fiscal_year: fiscalYear.value,
     q: searchQuery.value,
     matched_vendor_only: matchedVendorOnly.value ? 'true' : undefined,
+    hub_only: hubOnly.value ? 'true' : undefined,
+    small_business_only: smallBusinessOnly.value ? 'true' : undefined,
+    sdv_only: sdvOnly.value ? 'true' : undefined,
+    in_state_only: inStateOnly.value ? 'true' : undefined,
     limit: DEFAULT_PAGE_SIZE,
     offset: pageToOffset(currentPage.value, DEFAULT_PAGE_SIZE),
     sort: sort.value,
@@ -103,11 +111,19 @@ const filters = computed({
     fiscal_year: fiscalYear.value ? String(fiscalYear.value) : null,
     q: searchQuery.value || null,
     matched_vendor_only: matchedVendorOnly.value,
+    hub_only: hubOnly.value,
+    small_business_only: smallBusinessOnly.value,
+    sdv_only: sdvOnly.value,
+    in_state_only: inStateOnly.value,
   }),
   set: (value: {
     fiscal_year: string | null
     q: string | null
     matched_vendor_only: boolean | null
+    hub_only: boolean | null
+    small_business_only: boolean | null
+    sdv_only: boolean | null
+    in_state_only: boolean | null
   }) => {
     router.replace({
       query: cleanQueryObject({
@@ -117,6 +133,10 @@ const filters = computed({
           value.fiscal_year && value.fiscal_year !== 'all' ? String(value.fiscal_year) : undefined,
         q: value.q || undefined,
         matchedVendorOnly: value.matched_vendor_only ? 'true' : undefined,
+        hubOnly: value.hub_only ? 'true' : undefined,
+        smallBusinessOnly: value.small_business_only ? 'true' : undefined,
+        sdvOnly: value.sdv_only ? 'true' : undefined,
+        inStateOnly: value.in_state_only ? 'true' : undefined,
       }),
     })
   },
@@ -139,6 +159,13 @@ function updateSort(value: { column: string; direction: 'asc' | 'desc' }) {
       order: value.direction === 'desc' ? undefined : value.direction,
     }),
   })
+}
+
+type PayeeRow = { hub_status?: string | null; small_business_flag?: boolean | null; sdv_flag?: boolean | null; matched_vendor?: boolean }
+
+/** Returns true when the row already shows a specific vendor-attribute badge. */
+function hasSpecificVendorBadge(row: PayeeRow): boolean {
+  return Boolean(row.hub_status || row.small_business_flag || row.sdv_flag)
 }
 </script>
 
@@ -187,6 +214,10 @@ function updateSort(value: { column: string; direction: 'asc' | 'desc' }) {
           placeholder: 'Hospital, district, vendor…',
         },
         { key: 'matched_vendor_only', label: 'Matched vendor only', type: 'boolean' },
+        { key: 'hub_only', label: 'HUB certified only', type: 'boolean' },
+        { key: 'small_business_only', label: 'Small business only', type: 'boolean' },
+        { key: 'sdv_only', label: 'Service-disabled veteran only', type: 'boolean' },
+        { key: 'in_state_only', label: 'Texas vendor only', type: 'boolean' },
       ]"
     />
 
@@ -237,7 +268,17 @@ function updateSort(value: { column: string; direction: 'asc' | 'desc' }) {
           >
             {{ row.payee_name }}
           </UButton>
-          <UBadge v-if="row.matched_vendor" color="primary" variant="soft">Matched vendor</UBadge>
+          <UBadge v-if="row.hub_status" color="primary" variant="soft">HUB</UBadge>
+          <UBadge v-if="row.small_business_flag" color="primary" variant="soft"
+            >Small biz</UBadge
+          >
+          <UBadge v-if="row.sdv_flag" color="error" variant="soft">SDV</UBadge>
+          <UBadge
+            v-if="row.matched_vendor && !hasSpecificVendorBadge(row)"
+            color="neutral"
+            variant="soft"
+            >Matched vendor</UBadge
+          >
           <UBadge v-if="row.is_confidential" color="warning" variant="soft">Confidential</UBadge>
         </div>
       </template>

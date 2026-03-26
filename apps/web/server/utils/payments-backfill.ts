@@ -4,14 +4,17 @@ import { statePaymentFacts } from '#server/database/schema'
 
 type AppDatabase = ReturnType<typeof useAppDatabase>
 
-const PAYMENTS_EXPORT_SUMMARY = {
+export const PAYMENTS_EXPORT_SUMMARY = {
   source_file_count: 116,
   source_row_count: 27_602_538,
   fiscal_years: [2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026],
 } as const
 
+export const BACKFILL_THRESHOLD = 0.995
+
 export type PaymentsBackfillStatus = {
   active: boolean
+  row_count: number
   source_file_count: number
   source_row_count: number
   fiscal_years: number[]
@@ -27,11 +30,13 @@ export async function getPaymentsBackfillStatus(db: AppDatabase): Promise<Paymen
 
   const estimatedRowCount = Number(estimate?.estimated_row_count || 0)
   const active =
-    estimatedRowCount > 0 && estimatedRowCount < PAYMENTS_EXPORT_SUMMARY.source_row_count * 0.995
+    estimatedRowCount > 0 &&
+    estimatedRowCount < PAYMENTS_EXPORT_SUMMARY.source_row_count * BACKFILL_THRESHOLD
 
   return {
     ...PAYMENTS_EXPORT_SUMMARY,
     fiscal_years: [...PAYMENTS_EXPORT_SUMMARY.fiscal_years],
+    row_count: estimatedRowCount,
     active,
     // Retained for API backward compatibility; runtime tracking was removed
     // along with the pg_stat_activity dependency.

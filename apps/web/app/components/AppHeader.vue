@@ -109,6 +109,15 @@ const navItems = [
 
           <div class="flex flex-wrap gap-2">
             <UButton
+              to="/data-health"
+              :prefetch="false"
+              color="neutral"
+              variant="soft"
+              @click="isMobileNavOpen = false"
+            >
+              Data Health
+            </UButton>
+            <UButton
               to="/methodology"
               :prefetch="false"
               color="neutral"
