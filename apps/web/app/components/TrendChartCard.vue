@@ -71,11 +71,7 @@ function formatValue(value: number) {
         <USkeleton class="h-64 w-full rounded-xl" />
       </div>
       <div class="grid gap-3 sm:grid-cols-4">
-        <div
-          v-for="i in 4"
-          :key="i"
-          class="rounded-2xl border border-default bg-default px-4 py-3"
-        >
+        <div v-for="i in 4" :key="i" class="rounded-2xl border border-default bg-default px-4 py-3">
           <USkeleton class="h-3 w-12 rounded-md" />
           <USkeleton class="mt-3 h-5 w-24 rounded-md" />
         </div>

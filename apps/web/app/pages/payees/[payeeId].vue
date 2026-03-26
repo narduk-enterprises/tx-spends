@@ -80,7 +80,7 @@ watch(
 )
 
 /** Keeps header + shell visible while fiscal/confidential filters refetch (avoids full-page spinner). */
-const displayPayee = shallowRef<(NonNullable<(typeof detail)['value']>['data']) | null>(null)
+const displayPayee = shallowRef<NonNullable<(typeof detail)['value']>['data'] | null>(null)
 
 watch(
   payeeId,
@@ -239,9 +239,7 @@ const matchMethodLabel = computed(() => {
       >
         <template #actions>
           <UButton
-            :to="
-              `/transactions?payee_id=${displayPayee.payee_id}${fiscalYear ? `&fy=${fiscalYear}` : ''}${includeConfidential ? '&includeConfidential=true' : ''}`
-            "
+            :to="`/transactions?payee_id=${displayPayee.payee_id}${fiscalYear ? `&fy=${fiscalYear}` : ''}${includeConfidential ? '&includeConfidential=true' : ''}`"
             color="primary"
             variant="soft"
             icon="i-lucide-arrow-right"

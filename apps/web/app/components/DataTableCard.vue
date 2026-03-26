@@ -48,10 +48,7 @@ type TableMeta = NonNullable<typeof props.meta>
 
 function isAmountColumnKey(key: string) {
   return (
-    key === 'amount' ||
-    key === 'total_spend' ||
-    key.endsWith('_amount') ||
-    key.endsWith('_spend')
+    key === 'amount' || key === 'total_spend' || key.endsWith('_amount') || key.endsWith('_spend')
   )
 }
 
