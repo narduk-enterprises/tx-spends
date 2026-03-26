@@ -97,10 +97,14 @@ export async function generateBlogPost(
 
   const userMessage = buildUserMessage(findings)
 
-  const rawResponse = await grokChat(apiKey, [
-    { role: 'system', content: systemPrompt },
-    { role: 'user', content: userMessage },
-  ], model)
+  const rawResponse = await grokChat(
+    apiKey,
+    [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userMessage },
+    ],
+    model,
+  )
 
   const postBody = parsePostBody(rawResponse)
 
@@ -155,7 +159,10 @@ interface RawPostResponse {
  */
 function parsePostBody(raw: string): RawPostResponse {
   // Strip potential markdown code fences if model ignores the instruction
-  const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim()
+  const cleaned = raw
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```\s*$/, '')
+    .trim()
 
   let parsed: unknown
   try {
@@ -168,7 +175,10 @@ function parsePostBody(raw: string): RawPostResponse {
   }
 
   if (typeof parsed !== 'object' || parsed === null) {
-    throw createError({ statusCode: 500, message: 'Blog generator returned a non-object response.' })
+    throw createError({
+      statusCode: 500,
+      message: 'Blog generator returned a non-object response.',
+    })
   }
 
   const obj = parsed as Record<string, unknown>

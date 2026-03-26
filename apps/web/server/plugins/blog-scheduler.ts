@@ -16,10 +16,7 @@ export default defineNitroPlugin((nitro) => {
   // `cloudflare:scheduled` hook exists in Nitro's Cloudflare preset but is
   // not yet part of the public type declarations.
   const hooks = nitro.hooks as typeof nitro.hooks & {
-    hook(
-      name: 'cloudflare:scheduled',
-      fn: (event: { cron: string }) => void | Promise<void>,
-    ): void
+    hook(name: 'cloudflare:scheduled', fn: (event: { cron: string }) => void | Promise<void>): void
   }
 
   hooks.hook('cloudflare:scheduled', async (event) => {

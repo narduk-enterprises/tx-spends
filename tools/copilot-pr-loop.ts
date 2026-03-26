@@ -335,9 +335,7 @@ function getLatestCopilotFeedbackAt(
 ) {
   const reviewsById = buildPullReviewsById(pullReviews)
   const timestamps = [
-    ...issueComments
-      .filter(isActionableCopilotIssueComment)
-      .map((comment) => comment.created_at),
+    ...issueComments.filter(isActionableCopilotIssueComment).map((comment) => comment.created_at),
     ...pullReviews
       .filter(isActionableCopilotPullReview)
       .map((review) => review.submitted_at)

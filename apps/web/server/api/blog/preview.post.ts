@@ -30,10 +30,9 @@ const bodySchema = z.object({
   angle_id: z
     .string()
     .optional()
-    .refine(
-      (v) => v === undefined || BLOG_ANGLE_DEFINITIONS.some((a) => a.id === v),
-      { message: 'Unknown angle_id. See BLOG_ANGLE_DEFINITIONS for valid values.' },
-    ),
+    .refine((v) => v === undefined || BLOG_ANGLE_DEFINITIONS.some((a) => a.id === v), {
+      message: 'Unknown angle_id. See BLOG_ANGLE_DEFINITIONS for valid values.',
+    }),
   publish: z.boolean().optional().default(false),
 })
 
@@ -116,7 +115,9 @@ export default defineAdminMutation(
         const existingToday = await tx
           .select({ id: blogPosts.id, slug: blogPosts.slug })
           .from(blogPosts)
-          .where(and(eq(blogPosts.status, 'published'), gte(blogPosts.publishedAt, publicationDayUtc)))
+          .where(
+            and(eq(blogPosts.status, 'published'), gte(blogPosts.publishedAt, publicationDayUtc)),
+          )
           .limit(1)
 
         if (existingToday.length > 0) {
@@ -202,9 +203,10 @@ export default defineAdminMutation(
       const siteUrl =
         ((config.public as Record<string, unknown>).appUrl as string | undefined) ?? ''
       if (siteUrl.startsWith('https://') || siteUrl.startsWith('http://localhost')) {
-        const indexNowResult = await notifyIndexNow(event, [`${siteUrl}/blog/${slug}`, `${siteUrl}/blog`]).catch(
-          () => ({ success: false, submitted: 0 as const }),
-        )
+        const indexNowResult = await notifyIndexNow(event, [
+          `${siteUrl}/blog/${slug}`,
+          `${siteUrl}/blog`,
+        ]).catch(() => ({ success: false, submitted: 0 as const }))
 
         if (indexNowResult.success) {
           await db

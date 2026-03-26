@@ -37,7 +37,8 @@ const activeTab = shallowRef('blog')
       :ui="{
         container: 'flex flex-col items-center !py-6 sm:!py-8 !gap-4 !pb-4 sm:!pb-5',
         footer: '!mt-3',
-        title: 'text-3xl sm:text-4xl lg:text-5xl text-pretty tracking-tight font-bold text-highlighted',
+        title:
+          'text-3xl sm:text-4xl lg:text-5xl text-pretty tracking-tight font-bold text-highlighted',
         description: 'text-base sm:text-lg/8 text-muted',
       }"
     >

@@ -106,7 +106,9 @@ export default defineCronMutation(
       const existingToday = await tx
         .select({ id: blogPosts.id, slug: blogPosts.slug })
         .from(blogPosts)
-        .where(and(eq(blogPosts.status, 'published'), gte(blogPosts.publishedAt, publicationDayUtc)))
+        .where(
+          and(eq(blogPosts.status, 'published'), gte(blogPosts.publishedAt, publicationDayUtc)),
+        )
         .limit(1)
 
       if (existingToday.length > 0) {
@@ -177,10 +179,7 @@ export default defineCronMutation(
       indexNowResult = await notifyIndexNow(event, [postUrl, blogUrl])
 
       if (indexNowResult.success) {
-        await db
-          .update(blogPosts)
-          .set({ indexNowSubmitted: true })
-          .where(eq(blogPosts.id, postId))
+        await db.update(blogPosts).set({ indexNowSubmitted: true }).where(eq(blogPosts.id, postId))
       }
     }
 

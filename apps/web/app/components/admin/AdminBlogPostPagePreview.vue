@@ -19,7 +19,10 @@ const formattedDate = computed(() => {
 </script>
 
 <template>
-  <div v-if="post" class="max-h-[72vh] overflow-y-auto rounded-xl border border-default bg-default p-5">
+  <div
+    v-if="post"
+    class="max-h-[72vh] overflow-y-auto rounded-xl border border-default bg-default p-5"
+  >
     <article class="space-y-8">
       <header class="space-y-4">
         <div class="flex flex-wrap items-center gap-2">
@@ -68,7 +71,10 @@ const formattedDate = computed(() => {
             {{ section.heading || `Section ${index + 1}` }}
           </h2>
 
-          <template v-for="(paragraph, paragraphIndex) in section.content.split('\n\n')" :key="paragraphIndex">
+          <template
+            v-for="(paragraph, paragraphIndex) in section.content.split('\n\n')"
+            :key="paragraphIndex"
+          >
             <p v-if="paragraph.trim()" class="leading-relaxed text-default/90">
               {{ paragraph }}
             </p>

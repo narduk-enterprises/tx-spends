@@ -134,7 +134,13 @@ const body = computed<PostBody>(() => {
         <div class="flex items-center gap-3 text-sm text-muted">
           <UIcon name="i-lucide-calendar" class="size-4 shrink-0" />
           <time v-if="post.published_at" :datetime="new Date(post.published_at).toISOString()">
-            {{ new Date(post.published_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) }}
+            {{
+              new Date(post.published_at).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              })
+            }}
           </time>
           <USeparator orientation="vertical" class="h-4" />
           <UIcon name="i-lucide-database" class="size-4 shrink-0" />
@@ -164,7 +170,10 @@ const body = computed<PostBody>(() => {
         </template>
 
         <!-- Data Notes -->
-        <aside v-if="body.dataNotes" class="rounded-2xl border border-default bg-muted/30 p-4 text-sm text-muted">
+        <aside
+          v-if="body.dataNotes"
+          class="rounded-2xl border border-default bg-muted/30 p-4 text-sm text-muted"
+        >
           <p class="mb-1 font-semibold text-default">Data Notes</p>
           <p>{{ body.dataNotes }}</p>
         </aside>

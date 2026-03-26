@@ -222,12 +222,16 @@ export function useAdminBlogPosts() {
     data: posts,
     status: postsStatus,
     refresh: refreshPosts,
-  } = useAsyncData('admin-blog-posts', async () => {
-    const response = await appFetch<AdminBlogListApiResponse>('/api/admin/blog/posts')
-    return response.data.map(normalizeSummary)
-  }, {
-    default: () => [],
-  })
+  } = useAsyncData(
+    'admin-blog-posts',
+    async () => {
+      const response = await appFetch<AdminBlogListApiResponse>('/api/admin/blog/posts')
+      return response.data.map(normalizeSummary)
+    },
+    {
+      default: () => [],
+    },
+  )
 
   watch(
     posts,
@@ -273,14 +277,13 @@ export function useAdminBlogPosts() {
   )
 
   const isDirty = computed(() => {
-    return JSON.stringify(normalizeEditorState(editorState.value)) !== JSON.stringify(
-      normalizeEditorState(toEditorState(selectedPost.value)),
+    return (
+      JSON.stringify(normalizeEditorState(editorState.value)) !==
+      JSON.stringify(normalizeEditorState(toEditorState(selectedPost.value)))
     )
   })
 
-  const draftCount = computed(
-    () => posts.value.filter((post) => post.status === 'draft').length,
-  )
+  const draftCount = computed(() => posts.value.filter((post) => post.status === 'draft').length)
   const publishedCount = computed(
     () => posts.value.filter((post) => post.status === 'published').length,
   )

@@ -202,9 +202,7 @@ async function analyzeCategoryTrends(event: H3Event): Promise<SpotlightFindings>
     }
   } else {
     // No prior year — just show top categories
-    const top = [...latestMap.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
+    const top = [...latestMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5)
     for (const [code, amount] of top) {
       dataPoints.push({
         label: formatCategoryDisplayName(titles.get(code) ?? code),
@@ -240,7 +238,10 @@ async function analyzePayeeConcentration(event: H3Event): Promise<SpotlightFindi
 
   const [overviewRows, payeeRows] = await Promise.all([
     db
-      .select({ total: paymentOverviewRollups.totalSpendPublic, payeeCount: paymentOverviewRollups.payeeCountPublic })
+      .select({
+        total: paymentOverviewRollups.totalSpendPublic,
+        payeeCount: paymentOverviewRollups.payeeCountPublic,
+      })
       .from(paymentOverviewRollups)
       .where(eq(paymentOverviewRollups.scopeFiscalYear, scopeFy))
       .limit(1),
@@ -328,7 +329,8 @@ async function analyzeConfidentialityPatterns(event: H3Event): Promise<Spotlight
 
   const allTotal = Number(overviewRows[0]?.totalAll || 0)
   const confTotal = allTotal - Number(overviewRows[0]?.totalPublic || 0)
-  const confCount = Number(overviewRows[0]?.countAll || 0) - Number(overviewRows[0]?.countPublic || 0)
+  const confCount =
+    Number(overviewRows[0]?.countAll || 0) - Number(overviewRows[0]?.countPublic || 0)
 
   const dataPoints: SpotlightDataPoint[] = [
     {
@@ -341,10 +343,8 @@ async function analyzeConfidentialityPatterns(event: H3Event): Promise<Spotlight
       value: confCount.toLocaleString(),
     },
     ...agencyRows.map((row, i) => {
-      const agConfAmount =
-        Number(row.totalAll || 0) - Number(row.totalPublic || 0)
-      const agConfCount =
-        Number(row.countAll || 0) - Number(row.countPublic || 0)
+      const agConfAmount = Number(row.totalAll || 0) - Number(row.totalPublic || 0)
+      const agConfCount = Number(row.countAll || 0) - Number(row.countPublic || 0)
       return {
         label: `#${i + 1} agency (confidential): ${formatAgencyDisplayName(row.agencyName)}`,
         value: formatUsdBig(agConfAmount),
@@ -459,7 +459,8 @@ async function analyzeObjectCodeBreakdown(event: H3Event): Promise<SpotlightFind
   const dataPoints: SpotlightDataPoint[] = objectRows.map((row, i) => ({
     label: `#${i + 1}: ${row.title} (${row.code})`,
     value: formatUsdBig(Number(row.amount || 0)),
-    context: total > 0 ? pct(Number(row.amount || 0), total) + ' of total' : row.group ?? undefined,
+    context:
+      total > 0 ? pct(Number(row.amount || 0), total) + ' of total' : (row.group ?? undefined),
   }))
 
   return {
@@ -467,7 +468,10 @@ async function analyzeObjectCodeBreakdown(event: H3Event): Promise<SpotlightFind
     angleName: 'Comptroller Object Code Breakdown',
     fiscalYear,
     dataPoints,
-    summary: `In FY ${fiscalYear}, the top 10 comptroller object codes accounted for ${pct(objectRows.reduce((s, r) => s + Number(r.amount || 0), 0), total)} of all public state spending.`,
+    summary: `In FY ${fiscalYear}, the top 10 comptroller object codes accounted for ${pct(
+      objectRows.reduce((s, r) => s + Number(r.amount || 0), 0),
+      total,
+    )} of all public state spending.`,
     limitations: [
       'Object codes are assigned by the Texas Comptroller and represent accounting classification, not economic purpose.',
       'Figures reflect public payments only.',
@@ -560,7 +564,9 @@ async function analyzeAgencyGrowthMovers(event: H3Event): Promise<SpotlightFindi
       angleId: 'agency-growth-movers',
       angleName: 'Biggest Agency Spending Movers',
       fiscalYear: fyRows[0]?.fy ?? null,
-      dataPoints: [{ label: 'Insufficient data', value: 'Need at least 2 fiscal years of rollup data.' }],
+      dataPoints: [
+        { label: 'Insufficient data', value: 'Need at least 2 fiscal years of rollup data.' },
+      ],
       summary: 'Not enough fiscal year rollup data to compute year-over-year agency changes.',
       limitations: ['Year-over-year analysis requires rollup data for at least two fiscal years.'],
     }

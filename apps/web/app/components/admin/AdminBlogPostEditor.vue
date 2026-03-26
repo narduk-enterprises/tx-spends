@@ -197,7 +197,10 @@ const livePath = computed(() =>
                 </UButton>
               </div>
 
-              <div v-if="editorState.sections.length === 0" class="rounded-lg border border-dashed border-default p-4">
+              <div
+                v-if="editorState.sections.length === 0"
+                class="rounded-lg border border-dashed border-default p-4"
+              >
                 <p class="text-sm text-muted">No sections yet. Add one to build the body.</p>
               </div>
 

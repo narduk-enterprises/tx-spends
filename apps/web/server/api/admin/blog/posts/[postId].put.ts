@@ -5,7 +5,12 @@ import { RATE_LIMIT_POLICIES } from '#layer/server/utils/rateLimit'
 import { updateAdminBlogPost } from '#server/utils/adminBlogPosts'
 
 const updateBodySchema = z.object({
-  slug: z.string().trim().min(1).max(140).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  slug: z
+    .string()
+    .trim()
+    .min(1)
+    .max(140)
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
   title: z.string().trim().min(1).max(120),
   excerpt: z.string().trim().min(1).max(300),
   body: z.object({

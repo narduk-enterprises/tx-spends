@@ -122,19 +122,23 @@ async function fetchPostRecord(event: H3Event, postId: string) {
   return rows[0]!
 }
 
-function mapSummary(row: Awaited<ReturnType<typeof fetchPostRecord>> | {
-  id: string
-  slug: string
-  title: string
-  excerpt: string
-  status: string
-  angleId: string
-  angleName: string | null
-  publishedAt: Date | null
-  indexNowSubmitted: boolean
-  createdAt: Date
-  updatedAt: Date
-}) {
+function mapSummary(
+  row:
+    | Awaited<ReturnType<typeof fetchPostRecord>>
+    | {
+        id: string
+        slug: string
+        title: string
+        excerpt: string
+        status: string
+        angleId: string
+        angleName: string | null
+        publishedAt: Date | null
+        indexNowSubmitted: boolean
+        createdAt: Date
+        updatedAt: Date
+      },
+) {
   return {
     id: row.id,
     slug: row.slug,
