@@ -40,9 +40,11 @@ const hasMoverData = computed(
               · Total spend
               <span
                 :class="
-                  movers.total_change_pct >= 0
+                  movers.total_change_pct > 0
                     ? 'font-medium text-success'
-                    : 'font-medium text-error'
+                    : movers.total_change_pct < 0
+                      ? 'font-medium text-error'
+                      : 'font-medium text-muted'
                 "
                 >{{ formatPct(movers.total_change_pct) }}</span
               >

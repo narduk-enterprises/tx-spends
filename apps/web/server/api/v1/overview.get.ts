@@ -1,5 +1,5 @@
 import { getValidatedQuery } from 'h3'
-import { and, desc, eq, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, sql } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
 import {
   countyCategoryCodeSql,
@@ -299,26 +299,37 @@ export default defineEventHandler(async (event) => {
       Number(sortedTimeline[1].totalSpend || 0),
     )
 
-    const [currentYearAgencies, priorYearAgencies] = await Promise.all([
-      db
-        .select({
-          agencyId: paymentAgencyRollups.agencyId,
-          agencyName: agencies.agencyName,
-          totalSpend: agencyAmountColumn,
-        })
-        .from(paymentAgencyRollups)
-        .leftJoin(agencies, eq(paymentAgencyRollups.agencyId, agencies.id))
-        .where(eq(paymentAgencyRollups.scopeFiscalYear, currentYear))
-        .orderBy(desc(agencyAmountColumn))
-        .limit(50),
-      db
-        .select({
-          agencyId: paymentAgencyRollups.agencyId,
-          totalSpend: agencyAmountColumn,
-        })
-        .from(paymentAgencyRollups)
-        .where(eq(paymentAgencyRollups.scopeFiscalYear, priorYear)),
-    ])
+    const currentYearAgencies = await db
+      .select({
+        agencyId: paymentAgencyRollups.agencyId,
+        agencyName: agencies.agencyName,
+        totalSpend: agencyAmountColumn,
+      })
+      .from(paymentAgencyRollups)
+      .leftJoin(agencies, eq(paymentAgencyRollups.agencyId, agencies.id))
+      .where(eq(paymentAgencyRollups.scopeFiscalYear, currentYear))
+      .orderBy(desc(agencyAmountColumn))
+      .limit(50)
+
+    const currentIds = currentYearAgencies
+      .map((row) => row.agencyId)
+      .filter((id): id is string => Boolean(id))
+
+    const priorYearAgencies =
+      currentIds.length > 0
+        ? await db
+            .select({
+              agencyId: paymentAgencyRollups.agencyId,
+              totalSpend: agencyAmountColumn,
+            })
+            .from(paymentAgencyRollups)
+            .where(
+              and(
+                eq(paymentAgencyRollups.scopeFiscalYear, priorYear),
+                inArray(paymentAgencyRollups.agencyId, currentIds),
+              ),
+            )
+        : []
 
     const movers = computeYoyMovers(
       currentYearAgencies.map((row) => ({

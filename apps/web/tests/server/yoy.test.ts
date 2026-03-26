@@ -95,4 +95,23 @@ describe('computeYoyMovers', () => {
     expect(increases).toHaveLength(0)
     expect(decreases).toHaveLength(0)
   })
+
+  it('handles a zero limit by returning empty arrays', () => {
+    const { increases, decreases } = computeYoyMovers(currentRows, priorRows, 0)
+    expect(increases).toHaveLength(0)
+    expect(decreases).toHaveLength(0)
+  })
+
+  it('handles a negative limit by returning empty arrays', () => {
+    const { increases, decreases } = computeYoyMovers(currentRows, priorRows, -5)
+    expect(increases).toHaveLength(0)
+    expect(decreases).toHaveLength(0)
+  })
+
+  it('handles a non-integer limit by flooring it', () => {
+    const { increases } = computeYoyMovers(currentRows, priorRows, 1.9)
+    // floor(1.9) = 1 → only the top increase
+    expect(increases).toHaveLength(1)
+    expect(increases[0].id).toBe('a')
+  })
 })

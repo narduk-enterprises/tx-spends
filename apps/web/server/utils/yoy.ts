@@ -28,6 +28,7 @@ export function computeYoyMovers(
   priorRows: Array<{ id: string | null; amount: number }>,
   limit = 5,
 ): { increases: YoyMoverRow[]; decreases: YoyMoverRow[] } {
+  const safeLimit = Math.max(0, Math.floor(limit))
   const priorMap = new Map<string, number>()
   for (const row of priorRows) {
     if (row.id) {
@@ -54,12 +55,12 @@ export function computeYoyMovers(
   const increases = movers
     .filter((m) => m.pct_change > 0)
     .sort((a, b) => b.pct_change - a.pct_change)
-    .slice(0, limit)
+    .slice(0, safeLimit)
 
   const decreases = movers
     .filter((m) => m.pct_change < 0)
     .sort((a, b) => a.pct_change - b.pct_change)
-    .slice(0, limit)
+    .slice(0, safeLimit)
 
   return { increases, decreases }
 }

@@ -81,7 +81,7 @@ function normalizeString(value: unknown) {
 }
 
 export function formatPct(value: number) {
-  const sign = value >= 0 ? '+' : ''
+  const sign = value > 0 ? '+' : ''
   return `${sign}${value.toFixed(1)}%`
 }
 
