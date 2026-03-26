@@ -10,6 +10,7 @@ type CountyMetric = {
 const props = defineProps<{
   countyMetrics: CountyMetric[]
   fy?: number | string
+  loading?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -57,8 +58,12 @@ const fyLabel = computed(() => {
       </div>
     </template>
 
+    <div v-if="props.loading" class="flex min-h-[23rem] items-center justify-center py-12">
+      <UIcon name="i-lucide-loader-circle" class="size-10 animate-spin text-primary" />
+    </div>
+
     <div
-      v-if="leaderboard.length"
+      v-else-if="leaderboard.length"
       class="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(18rem,0.9fr)]"
     >
       <div

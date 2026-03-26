@@ -33,7 +33,7 @@ const requestQuery = computed(() =>
 
 const requestKey = computed(() => buildFetchKey('objects-list', requestQuery.value))
 
-const { data, status } = await useFetch('/api/v1/objects', {
+const { data, status } = await useLazyFetch('/api/v1/objects', {
   key: requestKey,
   query: requestQuery,
 })

@@ -35,17 +35,17 @@ const transactionsKey = computed(() =>
 )
 
 const [detailState, transactionsState] = await Promise.all([
-  useFetch(() => `/api/v1/objects/${objectCode.value}`, {
+  useLazyFetch(() => `/api/v1/objects/${objectCode.value}`, {
     key: detailKey,
     query: requestQuery,
   }),
-  useFetch('/api/v1/transactions', {
+  useLazyFetch('/api/v1/transactions', {
     key: transactionsKey,
     query: transactionsQuery,
   }),
 ])
 const { data: detail, status } = detailState
-const { data: transactions } = transactionsState
+const { data: transactions, status: transactionsStatus } = transactionsState
 
 const objectDetail = computed(() => detail.value?.data)
 
@@ -156,6 +156,7 @@ const filters = computed({
           { key: 'amount', label: 'Amount', sortable: true },
         ]"
         :rows="transactions?.data || []"
+        :loading="transactionsStatus === 'pending'"
       >
         <template #agency_name-data="{ row }">
           <UButton

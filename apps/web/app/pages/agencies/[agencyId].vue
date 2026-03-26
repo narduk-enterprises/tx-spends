@@ -39,22 +39,22 @@ const objectsKey = computed(() =>
 )
 
 const [detailState, trendsState, countiesState] = await Promise.all([
-  useFetch(() => `/api/v1/agencies/${agencyId.value}`, {
+  useLazyFetch(() => `/api/v1/agencies/${agencyId.value}`, {
     key: detailKey,
     query: detailQuery,
   }),
-  useFetch(() => `/api/v1/agencies/${agencyId.value}/trends`, {
+  useLazyFetch(() => `/api/v1/agencies/${agencyId.value}/trends`, {
     key: trendsKey,
     query: detailQuery,
   }),
-  useFetch(() => `/api/v1/agencies/${agencyId.value}/counties`, {
+  useLazyFetch(() => `/api/v1/agencies/${agencyId.value}/counties`, {
     key: countiesKey,
     query: detailQuery,
   }),
 ])
 const { data: detail, error, status } = detailState
-const { data: trends } = trendsState
-const { data: counties } = countiesState
+const { data: trends, status: trendsStatus } = trendsState
+const { data: counties, status: countiesStatus } = countiesState
 const { data: payees, status: payeesStatus } = useFetch(
   () => `/api/v1/agencies/${agencyId.value}/payees`,
   {
@@ -130,7 +130,10 @@ const tabs = [
 
 <template>
   <UContainer class="space-y-8 py-8">
-    <div v-if="status === 'pending'" class="flex min-h-64 items-center justify-center">
+    <div
+      v-if="status === 'pending' || trendsStatus === 'pending' || countiesStatus === 'pending'"
+      class="flex min-h-64 items-center justify-center"
+    >
       <UIcon name="i-lucide-loader-circle" class="size-10 animate-spin text-primary" />
     </div>
 

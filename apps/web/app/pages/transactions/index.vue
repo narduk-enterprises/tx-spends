@@ -48,7 +48,7 @@ const requestQuery = computed(() =>
 
 const requestKey = computed(() => buildFetchKey('transactions-list', requestQuery.value))
 
-const { data, status } = await useFetch('/api/v1/transactions', {
+const { data, status } = await useLazyFetch('/api/v1/transactions', {
   key: requestKey,
   query: requestQuery,
 })

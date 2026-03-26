@@ -28,7 +28,7 @@ const overviewQuery = computed(() =>
 
 const overviewKey = computed(() => buildFetchKey('overview', overviewQuery.value))
 
-const { data, status } = await useFetch('/api/v1/overview', {
+const { data, status } = await useLazyFetch('/api/v1/overview', {
   key: overviewKey,
   query: overviewQuery,
 })

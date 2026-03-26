@@ -47,7 +47,7 @@ const requestQuery = computed(() =>
 
 const requestKey = computed(() => buildFetchKey('payees-list', requestQuery.value))
 
-const { data, status } = await useFetch('/api/v1/payees', {
+const { data, status } = await useLazyFetch('/api/v1/payees', {
   key: requestKey,
   query: requestQuery,
 })

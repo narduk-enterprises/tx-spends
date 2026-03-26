@@ -20,7 +20,7 @@ useWebPageSchema({
   description,
 })
 
-const { data, status } = await useFetch('/api/v1/data-health', {
+const { data, status } = await useLazyFetch('/api/v1/data-health', {
   key: 'data-health',
 })
 

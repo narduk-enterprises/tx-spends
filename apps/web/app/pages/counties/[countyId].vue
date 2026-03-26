@@ -37,22 +37,22 @@ const trendsKey = computed(() =>
 )
 
 const [detailState, agenciesState, trendsState] = await Promise.all([
-  useFetch(() => `/api/v1/counties/${countyId.value}`, {
+  useLazyFetch(() => `/api/v1/counties/${countyId.value}`, {
     key: detailKey,
     query: requestQuery,
   }),
-  useFetch(() => `/api/v1/counties/${countyId.value}/agencies`, {
+  useLazyFetch(() => `/api/v1/counties/${countyId.value}/agencies`, {
     key: agenciesKey,
     query: requestQuery,
   }),
-  useFetch(() => `/api/v1/counties/${countyId.value}/trends`, {
+  useLazyFetch(() => `/api/v1/counties/${countyId.value}/trends`, {
     key: trendsKey,
     query: requestQuery,
   }),
 ])
 const { data: detail, status } = detailState
-const { data: agencies } = agenciesState
-const { data: trends } = trendsState
+const { data: agencies, status: agenciesStatus } = agenciesState
+const { data: trends, status: trendsStatus } = trendsState
 const {
   data: expenditureTypes,
   status: expenditureTypesStatus,
@@ -133,7 +133,10 @@ const tabs = [
 
 <template>
   <UContainer class="space-y-8 py-8">
-    <div v-if="status === 'pending'" class="flex min-h-64 items-center justify-center">
+    <div
+      v-if="status === 'pending' || agenciesStatus === 'pending' || trendsStatus === 'pending'"
+      class="flex min-h-64 items-center justify-center"
+    >
       <UIcon name="i-lucide-loader-circle" class="size-10 animate-spin text-primary" />
     </div>
 

@@ -38,22 +38,22 @@ const categoriesKey = computed(() =>
 const trendsKey = computed(() => buildFetchKey(`payee-trends:${payeeId.value}`, requestQuery.value))
 
 const [detailState, agenciesState, trendsState] = await Promise.all([
-  useFetch(() => `/api/v1/payees/${payeeId.value}`, {
+  useLazyFetch(() => `/api/v1/payees/${payeeId.value}`, {
     key: detailKey,
     query: requestQuery,
   }),
-  useFetch(() => `/api/v1/payees/${payeeId.value}/agencies`, {
+  useLazyFetch(() => `/api/v1/payees/${payeeId.value}/agencies`, {
     key: agenciesKey,
     query: requestQuery,
   }),
-  useFetch(() => `/api/v1/payees/${payeeId.value}/trends`, {
+  useLazyFetch(() => `/api/v1/payees/${payeeId.value}/trends`, {
     key: trendsKey,
     query: requestQuery,
   }),
 ])
 const { data: detail, status } = detailState
-const { data: agencies } = agenciesState
-const { data: trends } = trendsState
+const { data: agencies, status: agenciesStatus } = agenciesState
+const { data: trends, status: trendsStatus } = trendsState
 const {
   data: categories,
   status: categoriesStatus,
@@ -173,7 +173,10 @@ const matchMethodLabel = computed(() => {
 
 <template>
   <UContainer class="space-y-8 py-8">
-    <div v-if="status === 'pending'" class="flex min-h-64 items-center justify-center">
+    <div
+      v-if="status === 'pending' || agenciesStatus === 'pending' || trendsStatus === 'pending'"
+      class="flex min-h-64 items-center justify-center"
+    >
       <UIcon name="i-lucide-loader-circle" class="size-10 animate-spin text-primary" />
     </div>
 

@@ -45,17 +45,17 @@ const countyListKey = computed(() => buildFetchKey('counties-list', requestQuery
 const countyMapKey = computed(() => buildFetchKey('counties-map', statewideMapQuery.value))
 
 const [countiesState, mapState] = await Promise.all([
-  useFetch('/api/v1/counties', {
+  useLazyFetch('/api/v1/counties', {
     key: countyListKey,
     query: requestQuery,
   }),
-  useFetch('/api/v1/county-map', {
+  useLazyFetch('/api/v1/county-map', {
     key: countyMapKey,
     query: statewideMapQuery,
   }),
 ])
 const { data, status } = countiesState
-const { data: mapData } = mapState
+const { data: mapData, status: mapStatus } = mapState
 
 const counties = computed(() => data.value?.data || [])
 const countyMapMetrics = computed(() => mapData.value?.data || [])
@@ -168,6 +168,7 @@ function updateSort(value: { column: string; direction: 'asc' | 'desc' }) {
     <CountyMapCard
       :county-metrics="countyMapMetrics"
       :fy="fiscalYear || 'All years'"
+      :loading="mapStatus === 'pending'"
       @select-county="router.push(`/counties/${$event}`)"
     />
 

@@ -12,7 +12,7 @@ const searchRequestQuery = computed(() =>
 )
 const searchResultsKey = computed(() => buildFetchKey('search-results', searchRequestQuery.value))
 
-const { data, status } = await useFetch('/api/v1/search', {
+const { data, status } = await useLazyFetch('/api/v1/search', {
   key: searchResultsKey,
   query: searchRequestQuery,
 })
