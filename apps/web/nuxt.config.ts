@@ -38,6 +38,7 @@ const cachedRouteRules = {
   '/api/v1/transactions/**': { swr: 15 * 60 },
   '/api/v1/search': { swr: 5 * 60 },
   '/api/blog': { swr: 15 * 60 },
+  '/api/blog/preview': { swr: false },
   '/api/blog/**': { swr: 60 * 60 },
   '/api/v1/data-health': { swr: 5 * 60 },
 }
