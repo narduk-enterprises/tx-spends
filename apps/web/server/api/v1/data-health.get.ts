@@ -1,6 +1,6 @@
 import { and, desc, eq, inArray, sql } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
-import { getPaymentsBackfillStatus } from '#server/utils/payments-backfill'
+import { PAYMENTS_EXPORT_SUMMARY } from '#server/utils/payments-backfill'
 import {
   countyExpenditureFacts,
   ingestionRuns,
@@ -13,48 +13,28 @@ export default defineEventHandler(async (event) => {
   const db = useAppDatabase(event)
 
   const [
-    backfillStatus,
-    paymentFiscalYearsRows,
-    paymentConfidentialRows,
-    paymentLatestLoadRows,
-    countyCountRows,
-    countyFiscalYearsRows,
-    countyLatestLoadRows,
+    paymentAggRows,
+    countyAggRows,
     payeeTotalRows,
     payeeMatchedRows,
     latestIngestionRows,
   ] = await Promise.all([
-    getPaymentsBackfillStatus(db),
-
-    db
-      .select({ fiscalYear: statePaymentFacts.fiscalYear })
-      .from(statePaymentFacts)
-      .groupBy(statePaymentFacts.fiscalYear)
-      .orderBy(statePaymentFacts.fiscalYear),
-
     db
       .select({
+        totalCount: sql<number>`count(*)`,
         publicCount: sql<number>`count(*) filter (where ${statePaymentFacts.isConfidential} = false)`,
         confidentialCount: sql<number>`count(*) filter (where ${statePaymentFacts.isConfidential} = true)`,
+        latestLoad: sql<string | null>`MAX(${statePaymentFacts.sourceLoadedAt})`,
+        fiscalYears: sql<number[]>`array_agg(DISTINCT ${statePaymentFacts.fiscalYear} ORDER BY ${statePaymentFacts.fiscalYear})`,
       })
       .from(statePaymentFacts),
 
     db
-      .select({ latestLoad: sql<string | null>`MAX(${statePaymentFacts.sourceLoadedAt})` })
-      .from(statePaymentFacts),
-
-    db
-      .select({ count: sql<number>`count(*)` })
-      .from(countyExpenditureFacts),
-
-    db
-      .select({ fiscalYear: countyExpenditureFacts.fiscalYear })
-      .from(countyExpenditureFacts)
-      .groupBy(countyExpenditureFacts.fiscalYear)
-      .orderBy(countyExpenditureFacts.fiscalYear),
-
-    db
-      .select({ latestLoad: sql<string | null>`MAX(${countyExpenditureFacts.sourceLoadedAt})` })
+      .select({
+        totalCount: sql<number>`count(*)`,
+        latestLoad: sql<string | null>`MAX(${countyExpenditureFacts.sourceLoadedAt})`,
+        fiscalYears: sql<number[]>`array_agg(DISTINCT ${countyExpenditureFacts.fiscalYear} ORDER BY ${countyExpenditureFacts.fiscalYear})`,
+      })
       .from(countyExpenditureFacts),
 
     db
@@ -63,7 +43,7 @@ export default defineEventHandler(async (event) => {
       .where(eq(payees.isConfidential, false)),
 
     db
-      .select({ count: sql<number>`count(distinct ${payeeVendorMatches.payeeId})` })
+      .select({ count: sql<number>`count(*)` })
       .from(payeeVendorMatches)
       .innerJoin(payees, eq(payeeVendorMatches.payeeId, payees.id))
       .where(
@@ -87,15 +67,19 @@ export default defineEventHandler(async (event) => {
       .limit(5),
   ])
 
-  const paymentCount = backfillStatus.row_count
-  const paymentFiscalYears = paymentFiscalYearsRows.map((r) => r.fiscalYear)
-  const publicCount = Number(paymentConfidentialRows[0]?.publicCount ?? 0)
-  const confidentialCount = Number(paymentConfidentialRows[0]?.confidentialCount ?? 0)
-  const paymentLatestLoad = paymentLatestLoadRows[0]?.latestLoad ?? null
+  const paymentAgg = paymentAggRows[0]
+  const paymentCount = Number(paymentAgg?.totalCount ?? 0)
+  const publicCount = Number(paymentAgg?.publicCount ?? 0)
+  const confidentialCount = Number(paymentAgg?.confidentialCount ?? 0)
+  const paymentLatestLoad = paymentAgg?.latestLoad ?? null
+  const paymentFiscalYears: number[] = paymentAgg?.fiscalYears ?? []
+  const backfillActive =
+    paymentCount > 0 && paymentCount < PAYMENTS_EXPORT_SUMMARY.source_row_count * 0.995
 
-  const countyCount = Number(countyCountRows[0]?.count ?? 0)
-  const countyFiscalYears = countyFiscalYearsRows.map((r) => r.fiscalYear)
-  const countyLatestLoad = countyLatestLoadRows[0]?.latestLoad ?? null
+  const countyAgg = countyAggRows[0]
+  const countyCount = Number(countyAgg?.totalCount ?? 0)
+  const countyLatestLoad = countyAgg?.latestLoad ?? null
+  const countyFiscalYears: number[] = countyAgg?.fiscalYears ?? []
 
   const payeeTotal = Number(payeeTotalRows[0]?.count ?? 0)
   const payeeMatched = Number(payeeMatchedRows[0]?.count ?? 0)
@@ -106,8 +90,8 @@ export default defineEventHandler(async (event) => {
     generated_at: new Date().toISOString(),
     payments: {
       row_count: paymentCount,
-      backfill_active: backfillStatus.active,
-      source_row_count: backfillStatus.source_row_count,
+      backfill_active: backfillActive,
+      source_row_count: PAYMENTS_EXPORT_SUMMARY.source_row_count,
       fiscal_years: paymentFiscalYears,
       public_count: publicCount,
       confidential_count: confidentialCount,

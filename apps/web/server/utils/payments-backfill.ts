@@ -4,7 +4,7 @@ import { statePaymentFacts } from '#server/database/schema'
 
 type AppDatabase = ReturnType<typeof useAppDatabase>
 
-const PAYMENTS_EXPORT_SUMMARY = {
+export const PAYMENTS_EXPORT_SUMMARY = {
   source_file_count: 116,
   source_row_count: 27_602_538,
   fiscal_years: [2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026],
