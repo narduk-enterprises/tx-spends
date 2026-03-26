@@ -34,14 +34,15 @@ function formatPct(n: number | null | undefined): string {
 function formatTs(ts: Date | string | null | undefined): string {
   if (!ts) return '—'
   const d = ts instanceof Date ? ts : new Date(ts)
-  return d.toLocaleString('en-US', {
+  return new Intl.DateTimeFormat('en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
     timeZoneName: 'short',
-  })
+    timeZone: 'UTC',
+  }).format(d)
 }
 
 function statusColor(

@@ -1,4 +1,4 @@
-import { desc, eq, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, sql } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
 import { getPaymentsBackfillStatus } from '#server/utils/payments-backfill'
 import {
@@ -66,7 +66,12 @@ export default defineEventHandler(async (event) => {
       .select({ count: sql<number>`count(distinct ${payeeVendorMatches.payeeId})` })
       .from(payeeVendorMatches)
       .innerJoin(payees, eq(payeeVendorMatches.payeeId, payees.id))
-      .where(eq(payees.isConfidential, false)),
+      .where(
+        and(
+          eq(payees.isConfidential, false),
+          inArray(payeeVendorMatches.reviewStatus, ['approved', 'auto-accepted']),
+        ),
+      ),
 
     db
       .select({
