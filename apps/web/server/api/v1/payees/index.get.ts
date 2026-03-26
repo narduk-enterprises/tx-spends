@@ -1,7 +1,12 @@
 import { getValidatedQuery } from 'h3'
-import { and, asc, desc, eq, like, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, isNotNull, like, sql } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
-import { payeeVendorMatches, payees, paymentPayeeRollups } from '#server/database/schema'
+import {
+  payeeVendorMatches,
+  payees,
+  paymentPayeeRollups,
+  vendorEnrichment,
+} from '#server/database/schema'
 import { getPaymentsBackfillStatus } from '#server/utils/payments-backfill'
 import { getRollupScopeFiscalYear } from '#server/utils/payment-rollups'
 import { normalizeSearchTerm } from '#server/utils/explorer'
@@ -35,11 +40,7 @@ export default defineEventHandler(async (event) => {
   const agencyCountColumn = query.include_confidential
     ? paymentPayeeRollups.agencyCountAll
     : paymentPayeeRollups.agencyCountPublic
-  const matchedVendorExists = sql<boolean>`EXISTS (
-    SELECT 1
-    FROM ${payeeVendorMatches}
-    WHERE ${payeeVendorMatches.payeeId} = ${paymentPayeeRollups.payeeId}
-  )`
+
   const conditions = [eq(paymentPayeeRollups.scopeFiscalYear, scopeFiscalYear)]
 
   if (query.q) {
@@ -48,8 +49,21 @@ export default defineEventHandler(async (event) => {
   if (!query.include_confidential) {
     conditions.push(eq(payees.isConfidential, false))
   }
+  // Vendor-match and vendor-attribute filters — all rely on the LEFT JOINs below
   if (query.matched_vendor_only) {
-    conditions.push(matchedVendorExists)
+    conditions.push(isNotNull(payeeVendorMatches.payeeId))
+  }
+  if (query.hub_only) {
+    conditions.push(isNotNull(vendorEnrichment.hubStatus))
+  }
+  if (query.small_business_only) {
+    conditions.push(eq(vendorEnrichment.smallBusinessFlag, true))
+  }
+  if (query.sdv_only) {
+    conditions.push(eq(vendorEnrichment.sdvFlag, true))
+  }
+  if (query.in_state_only) {
+    conditions.push(eq(vendorEnrichment.state, 'TX'))
   }
 
   const whereClause = and(...conditions)
@@ -61,6 +75,15 @@ export default defineEventHandler(async (event) => {
         : amountColumn
   const orderDirection = query.order === 'asc' ? asc : desc
 
+  // LEFT JOIN vendor tables (only approved/auto-accepted matches per §8.4 public API rule).
+  // A 1:1 unique constraint on payee_vendor_matches.payee_id keeps this join cheap.
+  // Rows with tentative/unreviewed status fail the ON predicate and naturally produce
+  // NULL right-side columns — no isNull guard needed for unmatched rows.
+  const vendorJoinCondition = and(
+    eq(payeeVendorMatches.payeeId, paymentPayeeRollups.payeeId),
+    inArray(payeeVendorMatches.reviewStatus, ['auto-accepted', 'approved']),
+  )
+
   const list = await db
     .select({
       payee_id: payees.id,
@@ -68,22 +91,33 @@ export default defineEventHandler(async (event) => {
       is_confidential: payees.isConfidential,
       amount: amountColumn,
       agency_count: agencyCountColumn,
-      matched_vendor: matchedVendorExists,
+      matched_vendor: sql<boolean>`${payeeVendorMatches.payeeId} IS NOT NULL`,
+      hub_status: vendorEnrichment.hubStatus,
+      small_business_flag: vendorEnrichment.smallBusinessFlag,
+      sdv_flag: vendorEnrichment.sdvFlag,
     })
     .from(paymentPayeeRollups)
     .innerJoin(payees, eq(payees.id, paymentPayeeRollups.payeeId))
+    .leftJoin(payeeVendorMatches, vendorJoinCondition)
+    .leftJoin(vendorEnrichment, eq(payeeVendorMatches.vendorEnrichmentId, vendorEnrichment.id))
     .where(whereClause)
     .orderBy(orderDirection(sortColumn), asc(payees.payeeNameRaw))
     .limit(query.limit)
     .offset(query.offset)
 
-  const [summary] = await db
-    .select({
-      total: sql<number>`COUNT(*)`,
-    })
+  // Only add vendor LEFT JOINs to the count query when at least one vendor filter is
+  // active — the WHERE clause won't reference vendor columns otherwise.
+  const needsVendorJoin = query.matched_vendor_only || query.hub_only || query.small_business_only || query.sdv_only || query.in_state_only
+  const countBase = db
+    .select({ total: sql<number>`COUNT(*)` })
     .from(paymentPayeeRollups)
     .innerJoin(payees, eq(payees.id, paymentPayeeRollups.payeeId))
-    .where(whereClause)
+  const [summary] = await (needsVendorJoin
+    ? countBase
+        .leftJoin(payeeVendorMatches, vendorJoinCondition)
+        .leftJoin(vendorEnrichment, eq(payeeVendorMatches.vendorEnrichmentId, vendorEnrichment.id))
+        .where(whereClause)
+    : countBase.where(whereClause))
 
   return {
     filters_applied: query,

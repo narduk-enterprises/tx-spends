@@ -1,5 +1,5 @@
 import { getRouterParam, getValidatedQuery } from 'h3'
-import { and, desc, eq, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, sql } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
 import {
   agencies,
@@ -31,14 +31,28 @@ export default defineEventHandler(async (event) => {
       vendor_id: vendorEnrichment.id,
       vendor_name: vendorEnrichment.vendorNameRaw,
       hub_status: vendorEnrichment.hubStatus,
+      small_business_flag: vendorEnrichment.smallBusinessFlag,
+      sdv_flag: vendorEnrichment.sdvFlag,
       city: vendorEnrichment.city,
+      county: vendorEnrichment.county,
       state: vendorEnrichment.state,
       zip: vendorEnrichment.zip,
       match_confidence: payeeVendorMatches.matchConfidence,
       match_method: payeeVendorMatches.matchMethod,
+      is_manual_override: payeeVendorMatches.isManualOverride,
+      review_status: payeeVendorMatches.reviewStatus,
     })
     .from(payees)
-    .leftJoin(payeeVendorMatches, eq(payees.id, payeeVendorMatches.payeeId))
+    // Only expose approved/auto-accepted matches per §8.4 public API rule.
+    // Rows with tentative/unreviewed status fail the ON predicate and naturally
+    // produce NULL right-side columns via the LEFT JOIN — same as having no match.
+    .leftJoin(
+      payeeVendorMatches,
+      and(
+        eq(payees.id, payeeVendorMatches.payeeId),
+        inArray(payeeVendorMatches.reviewStatus, ['auto-accepted', 'approved']),
+      ),
+    )
     .leftJoin(vendorEnrichment, eq(payeeVendorMatches.vendorEnrichmentId, vendorEnrichment.id))
     .where(eq(payees.id, payeeId))
     .limit(1)

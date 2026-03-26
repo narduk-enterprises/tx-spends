@@ -142,10 +142,32 @@ const enrichment = computed(() => {
   return {
     vendor_name: payee.value.vendor_name,
     hub_status: payee.value.hub_status,
+    small_business_flag: payee.value.small_business_flag,
+    sdv_flag: payee.value.sdv_flag,
     city: payee.value.city,
+    county: payee.value.county,
     state: payee.value.state,
     zip: payee.value.zip,
+    is_manual_override: payee.value.is_manual_override,
+    review_status: payee.value.review_status,
   }
+})
+
+const matchMethodLabel = computed(() => {
+  const method = payee.value?.match_method
+
+  if (method === 'exact_normalized') return 'Exact normalized name match'
+  if (method === 'trigram_similarity') return 'Approximate name match'
+
+  // For unknown methods, humanize the raw string when a vendor match exists
+  if (payee.value?.vendor_id && typeof method === 'string' && method.length > 0) {
+    return method
+      .split('_')
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ')
+  }
+
+  return null
 })
 </script>
 
@@ -202,6 +224,7 @@ const enrichment = computed(() => {
         v-if="enrichment"
         :enrichment="enrichment"
         :match-confidence="Number(payee.match_confidence || 0)"
+        :match-method="payee.match_method"
       />
 
       <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -230,7 +253,7 @@ const enrichment = computed(() => {
         <KpiCard
           label="Vendor match"
           :value="payee.vendor_id ? 'Available' : 'Not matched'"
-          :helper="payee.match_method || 'No procurement enrichment attached'"
+          :helper="matchMethodLabel || 'No procurement enrichment attached'"
           icon="i-lucide-scan-search"
         />
       </section>
