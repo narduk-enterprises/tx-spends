@@ -22,10 +22,6 @@ const props = defineProps<{
     }>
   }
 }>()
-
-const hasMoverData = computed(
-  () => props.movers.top_increases.length > 0 || props.movers.top_decreases.length > 0,
-)
 </script>
 
 <template>
@@ -60,7 +56,7 @@ const hasMoverData = computed(
       </div>
     </template>
 
-    <div v-if="hasMoverData" class="grid gap-6 sm:grid-cols-2">
+    <div class="grid gap-6 sm:grid-cols-2">
       <div class="space-y-3">
         <p class="text-xs font-semibold uppercase tracking-[0.16em] text-success">
           Largest increases
@@ -123,12 +119,5 @@ const hasMoverData = computed(
         </p>
       </div>
     </div>
-
-    <EmptyState
-      v-else
-      title="Not enough history"
-      description="Year-over-year comparison requires at least two fiscal years of payment data."
-      icon="i-lucide-calendar-x"
-    />
   </UCard>
 </template>
