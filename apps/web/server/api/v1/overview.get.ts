@@ -11,7 +11,7 @@ import {
 import { getPaymentsBackfillStatus } from '#server/utils/payments-backfill'
 import { getRollupScopeFiscalYear, ROLLUP_ALL_YEARS } from '#server/utils/payment-rollups'
 import { globalQuerySchema } from '#server/utils/query'
-import { computePctChange, computeYoyMovers } from '#server/utils/yoy'
+import { computePctChange, computeYoyMovers, type YoyMoverRow } from '#server/utils/yoy'
 import {
   agencies,
   countyExpenditureFacts,
@@ -271,24 +271,16 @@ export default defineEventHandler(async (event) => {
   // Year-over-year movers: only when payment facts are available and no single-year filter is
   // active. Years are queried directly (desc limit 2) so we always use the two most-recent
   // fiscal years even when the database contains more than 10 years total.
+  // Note: prior-year agencies are fetched after the current-year query because the IN-filter
+  // requires currentIds; the two queries are therefore sequential by design.
+  /** Maximum number of agencies to include in each direction's mover list. */
+  const YOY_AGENCY_POOL_SIZE = 50
   let yoyMovers: {
     current_year: number
     prior_year: number
     total_change_pct: number | null
-    top_increases: Array<{
-      id: string | null
-      name: string
-      current_amount: number
-      prior_amount: number
-      pct_change: number
-    }>
-    top_decreases: Array<{
-      id: string | null
-      name: string
-      current_amount: number
-      prior_amount: number
-      pct_change: number
-    }>
+    top_increases: YoyMoverRow[]
+    top_decreases: YoyMoverRow[]
   } | null = null
 
   if (hasPaymentFacts && !query.fiscal_year) {
@@ -333,7 +325,7 @@ export default defineEventHandler(async (event) => {
         .leftJoin(agencies, eq(paymentAgencyRollups.agencyId, agencies.id))
         .where(eq(paymentAgencyRollups.scopeFiscalYear, currentYear))
         .orderBy(desc(agencyAmountColumn))
-        .limit(50)
+        .limit(YOY_AGENCY_POOL_SIZE)
 
       const currentIds = currentYearAgencies
         .map((row) => row.agencyId)

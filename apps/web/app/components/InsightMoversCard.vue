@@ -7,14 +7,14 @@ const props = defineProps<{
     prior_year: number
     total_change_pct: number | null
     top_increases: Array<{
-      id: string | null
+      id: string
       name: string
       current_amount: number
       prior_amount: number
       pct_change: number
     }>
     top_decreases: Array<{
-      id: string | null
+      id: string
       name: string
       current_amount: number
       prior_amount: number
@@ -68,11 +68,11 @@ const hasMoverData = computed(
         <ul v-if="movers.top_increases.length > 0" class="space-y-2">
           <li
             v-for="item in movers.top_increases"
-            :key="item.id || item.name"
+            :key="item.id"
             class="flex items-center justify-between gap-2"
           >
             <UButton
-              :to="item.id ? `/agencies/${item.id}` : undefined"
+              :to="`/agencies/${item.id}`"
               color="neutral"
               variant="link"
               class="min-w-0 flex-1 truncate px-0 text-left text-sm font-medium text-default"
@@ -99,11 +99,11 @@ const hasMoverData = computed(
         <ul v-if="movers.top_decreases.length > 0" class="space-y-2">
           <li
             v-for="item in movers.top_decreases"
-            :key="item.id || item.name"
+            :key="item.id"
             class="flex items-center justify-between gap-2"
           >
             <UButton
-              :to="item.id ? `/agencies/${item.id}` : undefined"
+              :to="`/agencies/${item.id}`"
               color="neutral"
               variant="link"
               class="min-w-0 flex-1 truncate px-0 text-left text-sm font-medium text-default"

@@ -11,7 +11,7 @@ export function computePctChange(current: number, prior: number): number | null 
 }
 
 export interface YoyMoverRow {
-  id: string | null
+  id: string
   name: string
   current_amount: number
   prior_amount: number
