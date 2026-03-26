@@ -21,6 +21,8 @@ const cachedRouteRules = {
   '/counties/**': { swr: 60 * 60 * 24 },
   '/transactions': { swr: 15 * 60 },
   '/search': { swr: 5 * 60 },
+  '/blog': { swr: 15 * 60 },
+  '/blog/**': { swr: 60 * 60 },
   '/api/v1/overview': { swr: 60 * 60 },
   '/api/v1/agencies': { swr: 60 * 60 },
   '/api/v1/agencies/**': { swr: 60 * 60 },
@@ -35,6 +37,8 @@ const cachedRouteRules = {
   '/api/v1/transactions': { swr: 15 * 60 },
   '/api/v1/transactions/**': { swr: 15 * 60 },
   '/api/v1/search': { swr: 5 * 60 },
+  '/api/blog': { swr: 15 * 60 },
+  '/api/blog/**': { swr: 60 * 60 },
   '/api/v1/data-health': { swr: 5 * 60 },
 }
 
@@ -60,6 +64,7 @@ export default defineNuxtConfig({
     databaseUrl: process.env.DATABASE_URL || '',
     hyperdriveBinding: process.env.NUXT_HYPERDRIVE_BINDING || 'HYPERDRIVE',
     posthogOwnerDistinctId: process.env.POSTHOG_OWNER_DISTINCT_ID || '',
+    xaiApiKey: process.env.XAI_API_KEY || '',
     // Server-only (admin API routes)
     googleServiceAccountKey: process.env.GSC_SERVICE_ACCOUNT_JSON || '',
     posthogApiKey: process.env.POSTHOG_PERSONAL_API_KEY || '',

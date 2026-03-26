@@ -9,6 +9,7 @@ const navItems = [
   { label: 'Categories', to: '/categories' },
   { label: 'Counties', to: '/counties' },
   { label: 'Transactions', to: '/transactions' },
+  { label: 'Blog', to: '/blog' },
 ]
 </script>
 
