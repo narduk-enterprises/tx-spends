@@ -14,7 +14,6 @@ export default defineEventHandler(async (event) => {
 
   const [
     backfillStatus,
-    paymentCountRows,
     paymentFiscalYearsRows,
     paymentConfidentialRows,
     paymentLatestLoadRows,
@@ -26,10 +25,6 @@ export default defineEventHandler(async (event) => {
     latestIngestionRows,
   ] = await Promise.all([
     getPaymentsBackfillStatus(db),
-
-    db
-      .select({ count: sql<number>`count(*)` })
-      .from(statePaymentFacts),
 
     db
       .select({ fiscalYear: statePaymentFacts.fiscalYear })
@@ -87,7 +82,7 @@ export default defineEventHandler(async (event) => {
       .limit(5),
   ])
 
-  const paymentCount = Number(paymentCountRows[0]?.count ?? 0)
+  const paymentCount = backfillStatus.row_count
   const paymentFiscalYears = paymentFiscalYearsRows.map((r) => r.fiscalYear)
   const publicCount = Number(paymentConfidentialRows[0]?.publicCount ?? 0)
   const confidentialCount = Number(paymentConfidentialRows[0]?.confidentialCount ?? 0)

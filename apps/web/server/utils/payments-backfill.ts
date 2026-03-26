@@ -12,6 +12,7 @@ const PAYMENTS_EXPORT_SUMMARY = {
 
 export type PaymentsBackfillStatus = {
   active: boolean
+  row_count: number
   source_file_count: number
   source_row_count: number
   fiscal_years: number[]
@@ -32,6 +33,7 @@ export async function getPaymentsBackfillStatus(db: AppDatabase): Promise<Paymen
   return {
     ...PAYMENTS_EXPORT_SUMMARY,
     fiscal_years: [...PAYMENTS_EXPORT_SUMMARY.fiscal_years],
+    row_count: estimatedRowCount,
     active,
     // Retained for API backward compatibility; runtime tracking was removed
     // along with the pg_stat_activity dependency.
