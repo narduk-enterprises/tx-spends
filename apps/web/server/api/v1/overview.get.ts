@@ -11,6 +11,7 @@ import {
 import { getPaymentsBackfillStatus } from '#server/utils/payments-backfill'
 import { getRollupScopeFiscalYear, ROLLUP_ALL_YEARS } from '#server/utils/payment-rollups'
 import { globalQuerySchema } from '#server/utils/query'
+import { computePctChange, computeYoyMovers } from '#server/utils/yoy'
 import {
   agencies,
   countyExpenditureFacts,
@@ -267,6 +268,79 @@ export default defineEventHandler(async (event) => {
 
   const hasPaymentFacts = !paymentsBackfillActive && Number(paymentOverview?.totalSpend || 0) > 0
 
+  // Year-over-year movers: only when payment facts are available, no single-year filter,
+  // and we have at least two distinct years in the timeline.
+  let yoyMovers: {
+    current_year: number
+    prior_year: number
+    total_change_pct: number | null
+    top_increases: Array<{
+      id: string | null
+      name: string
+      current_amount: number
+      prior_amount: number
+      pct_change: number
+    }>
+    top_decreases: Array<{
+      id: string | null
+      name: string
+      current_amount: number
+      prior_amount: number
+      pct_change: number
+    }>
+  } | null = null
+
+  if (hasPaymentFacts && !query.fiscal_year && timeline.length >= 2) {
+    const sortedTimeline = [...timeline].sort((a, b) => b.fiscalYear - a.fiscalYear)
+    const currentYear = sortedTimeline[0].fiscalYear
+    const priorYear = sortedTimeline[1].fiscalYear
+    const totalChangePct = computePctChange(
+      Number(sortedTimeline[0].totalSpend || 0),
+      Number(sortedTimeline[1].totalSpend || 0),
+    )
+
+    const [currentYearAgencies, priorYearAgencies] = await Promise.all([
+      db
+        .select({
+          agencyId: paymentAgencyRollups.agencyId,
+          agencyName: agencies.agencyName,
+          totalSpend: agencyAmountColumn,
+        })
+        .from(paymentAgencyRollups)
+        .leftJoin(agencies, eq(paymentAgencyRollups.agencyId, agencies.id))
+        .where(eq(paymentAgencyRollups.scopeFiscalYear, currentYear))
+        .orderBy(desc(agencyAmountColumn))
+        .limit(50),
+      db
+        .select({
+          agencyId: paymentAgencyRollups.agencyId,
+          totalSpend: agencyAmountColumn,
+        })
+        .from(paymentAgencyRollups)
+        .where(eq(paymentAgencyRollups.scopeFiscalYear, priorYear)),
+    ])
+
+    const movers = computeYoyMovers(
+      currentYearAgencies.map((row) => ({
+        id: row.agencyId,
+        name: formatAgencyDisplayName(row.agencyName),
+        amount: Number(row.totalSpend || 0),
+      })),
+      priorYearAgencies.map((row) => ({
+        id: row.agencyId,
+        amount: Number(row.totalSpend || 0),
+      })),
+    )
+
+    yoyMovers = {
+      current_year: currentYear,
+      prior_year: priorYear,
+      total_change_pct: totalChangePct,
+      top_increases: movers.increases,
+      top_decreases: movers.decreases,
+    }
+  }
+
   const agencyRankings = hasPaymentFacts
     ? topAgencies.map((agency) => ({
         agency_id: agency.agencyId,
@@ -350,6 +424,7 @@ export default defineEventHandler(async (event) => {
           : transaction.payee_name,
         amount: Number(transaction.amount || 0),
       })),
+      yoy_movers: yoyMovers,
     },
     meta: {
       currency: 'USD',
