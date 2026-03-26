@@ -91,7 +91,7 @@ export default defineEventHandler(async (event) => {
       is_confidential: payees.isConfidential,
       amount: amountColumn,
       agency_count: agencyCountColumn,
-      matched_vendor: sql<boolean>`${payeeVendorMatches.payeeId} IS NOT NULL`,
+      matched_vendor: isNotNull(payeeVendorMatches.payeeId),
       hub_status: vendorEnrichment.hubStatus,
       small_business_flag: vendorEnrichment.smallBusinessFlag,
       sdv_flag: vendorEnrichment.sdvFlag,

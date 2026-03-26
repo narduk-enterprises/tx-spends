@@ -86,8 +86,8 @@
 
   "triggers": {
     "crons": [
-      // Daily spotlight blog post at 10:00 UTC (5:00 AM CDT / 4:00 AM CST)
-      "0 10 * * *"
+      // Weekday spotlight blog post at 10:00 UTC (5:00 AM CDT / 4:00 AM CST), Monday-Friday only
+      "0 10 * * 1-5"
     ]
   }
 }

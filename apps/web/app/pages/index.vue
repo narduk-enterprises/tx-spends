@@ -63,7 +63,7 @@ const yoyMovers = computed(() => overview.value?.yoy_movers ?? null)
 
 const headlineSpendDelta = computed(() => {
   const pct = yoyMovers.value?.total_change_pct
-  if (pct == null) return undefined
+  if (pct == null) return
   return {
     value: Math.abs(pct),
     direction: pct > 0 ? ('up' as const) : pct < 0 ? ('down' as const) : ('neutral' as const),

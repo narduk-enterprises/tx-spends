@@ -4,12 +4,40 @@ import { buildFetchKey } from '~/utils/explorer'
 const route = useRoute('/blog/[slug]')
 const slug = computed(() => String(route.params.slug))
 
+interface PostSection {
+  heading: string
+  content: string
+}
+
+interface PostBody {
+  intro?: string
+  sections?: PostSection[]
+  dataNotes?: string
+}
+
+interface BlogPostRecord {
+  id: string
+  slug: string
+  title: string
+  excerpt: string
+  body: PostBody
+  angle_id: string
+  angle_name: string | null
+  angle_description: string | null
+  published_at: string | null
+  updated_at: string | null
+}
+
+interface BlogPostResponse {
+  data: BlogPostRecord
+}
+
 const fetchKey = computed(() => buildFetchKey(`blog-post:${slug.value}`, {}))
-const { data, error, status } = await useFetch(() => `/api/blog/${slug.value}`, {
+const { data, error, status } = await useFetch<BlogPostResponse>(() => `/api/blog/${slug.value}`, {
   key: fetchKey,
 })
 
-const post = computed(() => data.value?.data)
+const post = computed<BlogPostRecord | null>(() => data.value?.data ?? null)
 
 const postTitle = computed(() => post.value?.title ?? 'Spending Spotlight')
 const postExcerpt = computed(
@@ -52,17 +80,6 @@ if (post.value) {
       type: 'ItemPage',
     })
   }
-}
-
-interface PostSection {
-  heading: string
-  content: string
-}
-
-interface PostBody {
-  intro?: string
-  sections?: PostSection[]
-  dataNotes?: string
 }
 
 const body = computed<PostBody>(() => {

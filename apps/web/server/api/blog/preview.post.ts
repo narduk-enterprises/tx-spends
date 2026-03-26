@@ -15,11 +15,11 @@
  * When publish is true the route mirrors the cron publish side effects:
  * angle rotation state is updated and IndexNow is submitted.
  */
-import { eq } from 'drizzle-orm'
+import { and, eq, gte, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import { useAppDatabase } from '#server/utils/database'
-import { blogAnalyzerRuns, blogPosts } from '#server/database/schema'
-import { pickNextAngle, seedBlogAngles, BLOG_ANGLE_DEFINITIONS, markAngleUsed } from '#server/utils/blog/angles'
+import { blogAnalyzerRuns, blogAngles, blogPosts } from '#server/database/schema'
+import { pickNextAngle, seedBlogAngles, BLOG_ANGLE_DEFINITIONS } from '#server/utils/blog/angles'
 import { runAnalyzer } from '#server/utils/blog/analyzers'
 import { generateBlogPost } from '#server/utils/blog/generator'
 import { defineAdminMutation, withOptionalValidatedBody } from '#layer/server/utils/mutation'
@@ -44,6 +44,10 @@ export default defineAdminMutation(
   },
   async ({ event, body }) => {
     const db = useAppDatabase(event)
+    const publicationDayUtc = new Date()
+    publicationDayUtc.setUTCHours(0, 0, 0, 0)
+    const publicationDayKey = Math.trunc(publicationDayUtc.getTime() / 86_400_000)
+    const BLOG_PUBLICATION_LOCK_NAMESPACE = 5405
 
     await seedBlogAngles(event)
 
@@ -89,7 +93,7 @@ export default defineAdminMutation(
     const baseSlug = generated.slug
     let slug: string
     if (!body.publish) {
-      slug = `${baseSlug}-${runId.replace(/-/g, '').slice(0, 8)}`
+      slug = `${baseSlug}-${runId.replaceAll('-', '').slice(0, 8)}`
     } else {
       slug = baseSlug
       const existing = await db
@@ -102,37 +106,112 @@ export default defineAdminMutation(
       }
     }
 
-    const postRows = await db
-      .insert(blogPosts)
-      .values({
-        slug,
-        title: generated.title,
-        excerpt: generated.excerpt,
-        body: generated.body as unknown as Record<string, unknown>,
-        angleId,
-        analyzerRunId: runId,
-        findingsJson: findings as unknown as Record<string, unknown>,
-        status: targetStatus,
-        publishedAt: now,
-        generationModel: generated.model,
-        generationPromptKey: generated.promptKey,
-      })
-      .returning({ id: blogPosts.id })
+    let postId: string
+    if (body.publish) {
+      const publishResult = await db.transaction(async (tx) => {
+        await tx.execute(
+          sql`SELECT pg_advisory_xact_lock(${BLOG_PUBLICATION_LOCK_NAMESPACE}, ${publicationDayKey})`,
+        )
 
-    const postId = postRows[0]!.id
+        const existingToday = await tx
+          .select({ id: blogPosts.id, slug: blogPosts.slug })
+          .from(blogPosts)
+          .where(and(eq(blogPosts.status, 'published'), gte(blogPosts.publishedAt, publicationDayUtc)))
+          .limit(1)
+
+        if (existingToday.length > 0) {
+          return {
+            skipped: true as const,
+            postId: existingToday[0]!.id,
+            slug: existingToday[0]!.slug,
+          }
+        }
+
+        const postRows = await tx
+          .insert(blogPosts)
+          .values({
+            slug,
+            title: generated.title,
+            excerpt: generated.excerpt,
+            body: generated.body as unknown as Record<string, unknown>,
+            angleId,
+            analyzerRunId: runId,
+            findingsJson: findings as unknown as Record<string, unknown>,
+            status: targetStatus,
+            publishedAt: now,
+            generationModel: generated.model,
+            generationPromptKey: generated.promptKey,
+          })
+          .returning({ id: blogPosts.id })
+
+        await tx
+          .update(blogAngles)
+          .set({
+            lastUsedAt: now ?? new Date(),
+            useCount: sql`${blogAngles.useCount} + 1`,
+          })
+          .where(eq(blogAngles.id, angleId))
+
+        return {
+          skipped: false as const,
+          postId: postRows[0]!.id,
+          slug,
+        }
+      })
+
+      if (publishResult.skipped) {
+        return {
+          ok: true,
+          skipped: true,
+          reason: 'A daily spotlight post already exists for today.',
+          post_id: publishResult.postId,
+          slug: publishResult.slug,
+          status: 'published',
+          angle_id: angleId,
+          analyzer_run_id: runId,
+        }
+      }
+
+      postId = publishResult.postId
+      slug = publishResult.slug
+    } else {
+      const postRows = await db
+        .insert(blogPosts)
+        .values({
+          slug,
+          title: generated.title,
+          excerpt: generated.excerpt,
+          body: generated.body as unknown as Record<string, unknown>,
+          angleId,
+          analyzerRunId: runId,
+          findingsJson: findings as unknown as Record<string, unknown>,
+          status: targetStatus,
+          publishedAt: now,
+          generationModel: generated.model,
+          generationPromptKey: generated.promptKey,
+        })
+        .returning({ id: blogPosts.id })
+
+      postId = postRows[0]!.id
+    }
 
     // When publishing via this admin route, mirror the cron publish side effects:
     // update angle rotation state and submit to IndexNow so the post is indexed.
     if (body.publish) {
-      await markAngleUsed(event, angleId)
-
       const config = useRuntimeConfig(event)
       const siteUrl =
         ((config.public as Record<string, unknown>).appUrl as string | undefined) ?? ''
       if (siteUrl.startsWith('https://') || siteUrl.startsWith('http://localhost')) {
-        await notifyIndexNow(event, [`${siteUrl}/blog/${slug}`, `${siteUrl}/blog`]).catch(
-          () => undefined,
+        const indexNowResult = await notifyIndexNow(event, [`${siteUrl}/blog/${slug}`, `${siteUrl}/blog`]).catch(
+          () => ({ success: false, submitted: 0 as const }),
         )
+
+        if (indexNowResult.success) {
+          await db
+            .update(blogPosts)
+            .set({ indexNowSubmitted: true })
+            .where(eq(blogPosts.id, postId))
+        }
       }
     }
 

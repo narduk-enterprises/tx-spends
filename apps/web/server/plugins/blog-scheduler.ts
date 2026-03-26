@@ -1,7 +1,7 @@
 /**
- * Cloudflare scheduled event handler — daily blog spotlight.
+ * Cloudflare scheduled event handler — weekday blog spotlight.
  *
- * When Cloudflare fires the "0 10 * * *" cron trigger, this plugin
+ * When Cloudflare fires the "0 10 * * 1-5" cron trigger, this plugin
  * intercepts the `cloudflare:scheduled` hook and calls the cron publish
  * route via an internal HTTP request.
  *
@@ -9,7 +9,7 @@
  * guard still validates correctly even for internal calls.
  */
 
-const BLOG_CRON_PATTERN = '0 10 * * *'
+const BLOG_CRON_PATTERN = '0 10 * * 1-5'
 
 export default defineNitroPlugin((nitro) => {
   // Type augmentation to avoid @ts-expect-error suppression — the

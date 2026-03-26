@@ -294,8 +294,8 @@ export default defineEventHandler(async (event) => {
       .limit(2)
 
     if (latestFiscalYears.length >= 2) {
-      const currentYear = latestFiscalYears[0].fiscalYear
-      const priorYear = latestFiscalYears[1].fiscalYear
+      const currentYear = latestFiscalYears[0]!.fiscalYear
+      const priorYear = latestFiscalYears[1]!.fiscalYear
 
       // Run the overview totals and top-agency queries in parallel — both depend only on
       // currentYear/priorYear, not on each other.
