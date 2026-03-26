@@ -142,7 +142,8 @@ export function useSeo(options: SeoOptions) {
 
   // Dynamic OG: nuxt-og-image only applies on SSR; the client stub warns in dev if called.
   if (ogImage && import.meta.server) {
-    const componentName = toValue(ogImage.component) || (resolvedType.value === 'article' ? 'Article' : 'Default')
+    const componentName =
+      toValue(ogImage.component) || (resolvedType.value === 'article' ? 'Article' : 'Default')
     // OgImage component names are registered at the consuming-app level;
     // the layer can't enumerate them at type-check time.
     defineOgImage(componentName as never, {

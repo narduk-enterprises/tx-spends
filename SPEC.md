@@ -1,7 +1,7 @@
 # Texas State Spending Explorer — Implementation Specification (v1)
 
 **Audience:** coding agents, implementers, reviewers.  
-**Stack assumption:** Neon PostgreSQL accessed from deployed Cloudflare Workers
+**Stack assumption:** PostgreSQL accessed from deployed Cloudflare Workers
 through Hyperdrive, read-only JSON API (`/api/v1`), Nuxt 4.3+ inside
 `apps/web/`, shared Nuxt layer in `layers/narduk-nuxt-layer/`, `@nuxt/ui` v4,
 `@nuxtjs/seo`, and optional ETL in Node/TypeScript.  
@@ -1079,8 +1079,8 @@ transactions/[transactionId].get.ts
   `apps/web/server/utils/query.ts`.
 - Use `createError(...)` for `400`, `404`, and unsupported filter combinations.
 - Read DB access through `useAppDatabase(event)` from
-  `apps/web/server/utils/database.ts`; this is the Hyperdrive-backed Neon entry
-  point for deployed app requests.
+  `apps/web/server/utils/database.ts`; this is the Hyperdrive-backed PostgreSQL
+  entry point for deployed app requests.
 - Use `#server/database/schema` and `#server/utils/*` imports only.
 - Future mutation routes must use the layer mutation wrappers
   (`withValidatedBody`, `withOptionalValidatedBody`, `define*Mutation`), but v1
@@ -1824,33 +1824,33 @@ true payee diversity and rankings.
 ### 25.1 Runtime topology (locked)
 
 Use a **single Nuxt 4** app with **SSR** pages and **server routes** under
-`/api/v1`, deployed to **Cloudflare Workers**. **Neon PostgreSQL** is the system
-of record. The deployed app reaches Neon through a **Cloudflare Hyperdrive
+`/api/v1`, deployed to **Cloudflare Workers**. **PostgreSQL** is the system of
+record. The deployed app reaches PostgreSQL through a **Cloudflare Hyperdrive
 binding** (default binding name: `HYPERDRIVE`) and `useAppDatabase(event)` in
 `apps/web/server/utils/database.ts`. This app does **not** use D1.
 
 **ETL** runs as a **separate Node/TypeScript worker** on a schedule, not inside
 HTTP request handlers. **Playwright** and heavy download jobs run **only** in
-the ETL worker. ETL and migrations may connect directly to Neon using
-`DATABASE_URL`. App/API reads should be read-only at the Neon role level even
-when tunneled through Hyperdrive. Raw download artifacts land in object storage
-or a mounted `ETL_ARTIFACT_DIR` before staging load.
+the ETL worker. ETL and migrations may connect directly to PostgreSQL using
+`DATABASE_URL`. App/API reads should be read-only at the database role level
+even when tunneled through Hyperdrive. Raw download artifacts land in object
+storage or a mounted `ETL_ARTIFACT_DIR` before staging load.
 
 ### 25.2 Environment variables (names locked)
 
-| Variable                                      | Use                                                           |
-| --------------------------------------------- | ------------------------------------------------------------- |
-| `NUXT_DATABASE_BACKEND=postgres`              | Force Postgres path in the shared layer                       |
-| `NUXT_HYPERDRIVE_BINDING`                     | Hyperdrive binding name if not `HYPERDRIVE`                   |
-| `DATABASE_URL`                                | Direct Neon connection for ETL, local tools, and migrations   |
-| `PLAYWRIGHT_DOWNLOAD_DIR`                     | Browser export downloads                                      |
-| `ETL_ARTIFACT_DIR`                            | Local artifact root                                           |
-| `ETL_RETENTION_DAYS`                          | Housekeeping hint                                             |
-| `R2_BUCKET` or `S3_BUCKET`                    | Optional object storage for raw ETL artifacts                 |
-| `S3_REGION`                                   | If S3 is used                                                 |
-| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | S3 credentials, or equivalent R2 credentials if required      |
-| `SITE_URL`                                    | Canonical public site URL used by `site.url` and image config |
-| `APP_NAME`                                    | Public product name used by `site.name` and runtime UI config |
+| Variable                                      | Use                                                               |
+| --------------------------------------------- | ----------------------------------------------------------------- |
+| `NUXT_DATABASE_BACKEND=postgres`              | Force Postgres path in the shared layer                           |
+| `NUXT_HYPERDRIVE_BINDING`                     | Hyperdrive binding name if not `HYPERDRIVE`                       |
+| `DATABASE_URL`                                | Direct PostgreSQL connection for ETL, local tools, and migrations |
+| `PLAYWRIGHT_DOWNLOAD_DIR`                     | Browser export downloads                                          |
+| `ETL_ARTIFACT_DIR`                            | Local artifact root                                               |
+| `ETL_RETENTION_DAYS`                          | Housekeeping hint                                                 |
+| `R2_BUCKET` or `S3_BUCKET`                    | Optional object storage for raw ETL artifacts                     |
+| `S3_REGION`                                   | If S3 is used                                                     |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | S3 credentials, or equivalent R2 credentials if required          |
+| `SITE_URL`                                    | Canonical public site URL used by `site.url` and image config     |
+| `APP_NAME`                                    | Public product name used by `site.name` and runtime UI config     |
 
 **Secrets policy:** Doppler is the source of truth. Do not add `.env` files to
 this repo.
