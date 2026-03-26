@@ -32,13 +32,17 @@ const emit = defineEmits<{
 
 const MAP_WIDTH = 700
 const MAP_HEIGHT = 460
+/** Slate + five spending tiers (darkest = top quintile among counties with data). */
 const legendStops = [
   'rgb(226 232 240)',
   'rgb(253 230 138)',
   'rgb(251 191 36)',
   'rgb(245 158 11)',
   'rgb(217 119 6)',
+  'rgb(180 83 9)',
 ]
+
+const DATA_FILL_STOPS = legendStops.slice(1) as readonly string[]
 
 const texasCounties = texasCountyCollection as {
   type: 'FeatureCollection'
@@ -54,9 +58,35 @@ const texasProjection = geoMercator().fitExtent(
 )
 const texasPath = geoPath(texasProjection)
 
-const peakAmount = computed(() =>
-  Math.max(...props.countyMetrics.map((county) => Number(county.amount || 0)), 0),
-)
+/**
+ * Quantile thresholds for 5 equal-count tiers (skewed totals otherwise collapse into one pale shade
+ * when scaled linearly to the statewide max).
+ */
+const choroplethThresholds = computed(() => {
+  const amounts = props.countyMetrics
+    .map((county) => Number(county.amount || 0))
+    .filter((amount) => amount > 0)
+    .sort((a, b) => a - b)
+
+  const binCount = DATA_FILL_STOPS.length
+  if (amounts.length === 0) {
+    return [] as number[]
+  }
+
+  const thresholds: number[] = []
+  for (let i = 1; i < binCount; i++) {
+    const position = (i / binCount) * (amounts.length - 1)
+    const lo = Math.floor(position)
+    const hi = Math.ceil(position)
+    const t =
+      lo === hi
+        ? amounts[lo]!
+        : amounts[lo]! + (amounts[hi]! - amounts[lo]!) * (position - lo)
+    thresholds.push(t)
+  }
+
+  return thresholds
+})
 const metricByCountyKey = computed(() => {
   return new Map(
     props.countyMetrics.map((county) => [normalizeCountyKey(county.county_name), county] as const),
@@ -87,40 +117,42 @@ const featuredCounty = computed(() => {
   return mapFeatures.value.find((feature) => feature.metric) || mapFeatures.value[0] || null
 })
 
+function spendingTierIndex(amount: number): number | null {
+  const thresholds = choroplethThresholds.value
+  if (amount <= 0 || thresholds.length === 0) {
+    return null
+  }
+
+  let index = 0
+  for (const t of thresholds) {
+    if (amount > t) {
+      index += 1
+    } else {
+      break
+    }
+  }
+
+  return Math.min(index, DATA_FILL_STOPS.length - 1)
+}
+
 function countyFill(amount: number | null | undefined) {
   const numericAmount = Number(amount || 0)
-  if (!numericAmount || !peakAmount.value) {
-    return 'rgb(226 232 240)'
+  const tier = spendingTierIndex(numericAmount)
+  if (tier === null) {
+    return legendStops[0]!
   }
 
-  const ratio = numericAmount / peakAmount.value
-
-  if (ratio >= 0.82) {
-    return 'rgb(180 83 9)'
-  }
-
-  if (ratio >= 0.58) {
-    return 'rgb(217 119 6)'
-  }
-
-  if (ratio >= 0.32) {
-    return 'rgb(245 158 11)'
-  }
-
-  if (ratio > 0) {
-    return 'rgb(253 230 138)'
-  }
-
-  return 'rgb(226 232 240)'
+  return DATA_FILL_STOPS[tier]!
 }
 
 function countyOpacity(amount: number | null | undefined) {
   const numericAmount = Number(amount || 0)
-  if (!numericAmount || !peakAmount.value) {
+  const tier = spendingTierIndex(numericAmount)
+  if (tier === null) {
     return 0.8
   }
 
-  return 0.72 + (numericAmount / peakAmount.value) * 0.28
+  return 0.72 + (tier / (DATA_FILL_STOPS.length - 1)) * 0.28
 }
 
 function focusCounty(countyKey: string) {
@@ -216,7 +248,7 @@ function openCounty(metric: CountyMetric | null) {
           <span>Lower</span>
           <span>Higher</span>
         </div>
-        <div class="mt-3 grid grid-cols-5 gap-1">
+        <div class="mt-3 grid grid-cols-6 gap-1">
           <span
             v-for="color in legendStops"
             :key="color"
@@ -224,7 +256,10 @@ function openCounty(metric: CountyMetric | null) {
             :style="{ backgroundColor: color }"
           />
         </div>
-        <p class="mt-3 text-xs text-muted">Counties without a matched annual total remain slate.</p>
+        <p class="mt-3 text-xs text-muted">
+          Colors use equal-count spending tiers among counties with totals (not linear to the largest
+          county). Slate means no matched annual total.
+        </p>
       </div>
 
       <div class="rounded-[1.25rem] border border-default bg-default/88 p-4 shadow-card">
