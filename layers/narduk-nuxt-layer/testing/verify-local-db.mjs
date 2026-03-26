@@ -1,7 +1,6 @@
 import { execFileSync } from 'node:child_process'
-import { existsSync, readFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
-import { parse } from 'jsonc-parser'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -30,16 +29,8 @@ function readLayerSchemaTables() {
   return [...new Set([...matches].map((match) => match[1]))].sort()
 }
 
-const wranglerJsonc = join(appDir, 'wrangler.jsonc')
-const wranglerJson = join(appDir, 'wrangler.json')
-const wranglerPath = existsSync(wranglerJsonc) ? wranglerJsonc : wranglerJson
-const parseErrors = []
-const wrangler = parse(readFileSync(wranglerPath, 'utf-8'), parseErrors, {
-  allowTrailingComma: true,
-})
-if (parseErrors.length > 0) {
-  throw new SyntaxError(`Invalid wrangler config ${wranglerPath}`)
-}
+const wranglerPath = join(appDir, 'wrangler.json')
+const wrangler = JSON.parse(readFileSync(wranglerPath, 'utf-8'))
 
 const databaseName = wrangler.d1_databases?.[0]?.database_name
 if (!databaseName) {

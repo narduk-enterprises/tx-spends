@@ -1,16 +1,3 @@
-import type { MaybeRefOrGetter } from 'vue'
-import { toValue } from 'vue'
-
-type SeoValue<T> = MaybeRefOrGetter<T>
-
-function readSeoValue<T>(value: SeoValue<T>) {
-  return toValue(value)
-}
-
-function readOptionalSeoValue<T>(value?: SeoValue<T>) {
-  return value === undefined ? undefined : readSeoValue(value)
-}
-
 /**
  * useSeo — One-call composable for complete per-page SEO.
  *
@@ -44,37 +31,43 @@ function readOptionalSeoValue<T>(value?: SeoValue<T>) {
  * ```
  */
 
+import { computed, toValue, type MaybeRefOrGetter } from 'vue'
+
+type SeoTextValue = MaybeRefOrGetter<string | undefined>
+type SeoTypeValue = MaybeRefOrGetter<'website' | 'article' | 'profile' | undefined>
+type SeoKeywordsValue = MaybeRefOrGetter<string[] | undefined>
+
 interface SeoOptions {
   /** Page title (used in <title>, og:title, twitter:title) */
-  title: SeoValue<string>
+  title: SeoTextValue
   /** Page description (used in <meta name="description">, og:description, twitter:description) */
-  description: SeoValue<string>
+  description: SeoTextValue
   /** Static image URL for og:image / twitter:image. Overridden by `ogImage` if set. */
-  image?: SeoValue<string | undefined>
+  image?: SeoTextValue
   /** Open Graph type — defaults to 'website'. Use 'article' for blog posts. */
-  type?: SeoValue<'website' | 'article' | 'profile'>
+  type?: SeoTypeValue
   /** ISO 8601 date string — for articles */
-  publishedAt?: SeoValue<string | undefined>
+  publishedAt?: SeoTextValue
   /** ISO 8601 date string — for articles */
-  modifiedAt?: SeoValue<string | undefined>
+  modifiedAt?: SeoTextValue
   /** Author name — for articles */
-  author?: SeoValue<string | undefined>
+  author?: SeoTextValue
   /** Override canonical URL (defaults to current page URL via @nuxtjs/seo) */
-  canonicalUrl?: SeoValue<string | undefined>
+  canonicalUrl?: SeoTextValue
   /** Keywords for meta keywords tag */
-  keywords?: SeoValue<string[] | undefined>
+  keywords?: SeoKeywordsValue
   /** Dynamic OG image options — renders via OG image templates at the edge */
   ogImage?: {
-    title?: SeoValue<string | undefined>
-    description?: SeoValue<string | undefined>
-    icon?: SeoValue<string | undefined>
+    title?: SeoTextValue
+    description?: SeoTextValue
+    icon?: SeoTextValue
     /** OG image component name suffix — defaults to 'Default', auto-selects 'Article' for article type */
-    component?: SeoValue<string | undefined>
+    component?: SeoTextValue
     /** Category badge text — used by the Article template */
-    category?: SeoValue<string | undefined>
+    category?: SeoTextValue
   }
   /** Additional robots directives — e.g., 'noindex', 'nofollow' */
-  robots?: SeoValue<string | undefined>
+  robots?: SeoTextValue
 }
 
 export function useSeo(options: SeoOptions) {
@@ -92,62 +85,71 @@ export function useSeo(options: SeoOptions) {
     robots,
   } = options
 
-  const getTitle = () => readSeoValue(title)
-  const getDescription = () => readSeoValue(description)
-  const getType = () => readOptionalSeoValue(type) ?? 'website'
-  const getImage = () => readOptionalSeoValue(image)
-  const getPublishedAt = () => readOptionalSeoValue(publishedAt)
-  const getModifiedAt = () => readOptionalSeoValue(modifiedAt)
-  const getAuthor = () => readOptionalSeoValue(author)
-  const getCanonicalUrl = () => readOptionalSeoValue(canonicalUrl)
-  const getKeywords = () => readOptionalSeoValue(keywords)
-  const getRobots = () => readOptionalSeoValue(robots)
+  const resolvedTitle = computed(() => toValue(title) ?? '')
+  const resolvedDescription = computed(() => toValue(description) ?? '')
+  const resolvedType = computed(() => toValue(type) ?? 'website')
+  const resolvedImage = image ? computed(() => toValue(image)) : undefined
+  const resolvedPublishedAt = publishedAt
+    ? computed(() => (resolvedType.value === 'article' ? toValue(publishedAt) : undefined))
+    : undefined
+  const resolvedModifiedAt = modifiedAt
+    ? computed(() => (resolvedType.value === 'article' ? toValue(modifiedAt) : undefined))
+    : undefined
+  const resolvedAuthor = author ? computed(() => toValue(author)) : undefined
+  const resolvedArticleAuthor = resolvedAuthor
+    ? computed(() => {
+        const authorValue = resolvedAuthor.value
+        return resolvedType.value === 'article' && authorValue ? [authorValue] : undefined
+      })
+    : undefined
+  const resolvedKeywords = keywords
+    ? computed(() => {
+        const keywordValues = toValue(keywords)
+        return keywordValues?.length ? keywordValues.join(', ') : undefined
+      })
+    : undefined
+  const resolvedRobots = robots ? computed(() => toValue(robots)) : undefined
 
   // --- Core meta tags (no intermediate Record<string, any>) ---
   useSeoMeta({
-    title: getTitle,
-    description: getDescription,
-    ogTitle: getTitle,
-    ogDescription: getDescription,
+    title: resolvedTitle,
+    description: resolvedDescription,
+    ogTitle: resolvedTitle,
+    ogDescription: resolvedDescription,
     // ogType accepts 'website' | 'article' | 'profile' etc.
-    ogType: getType,
+    ogType: resolvedType,
     twitterCard: 'summary_large_image',
-    twitterTitle: getTitle,
-    twitterDescription: getDescription,
-    ogImage: getImage,
-    twitterImage: getImage,
+    twitterTitle: resolvedTitle,
+    twitterDescription: resolvedDescription,
+    // Static image fallback
+    ...(resolvedImage && { ogImage: resolvedImage, twitterImage: resolvedImage }),
     // Article-specific
-    articlePublishedTime: () => (getType() === 'article' ? getPublishedAt() : undefined),
-    articleModifiedTime: () => (getType() === 'article' ? getModifiedAt() : undefined),
-    articleAuthor: () => {
-      const resolvedAuthor = getAuthor()
-      return getType() === 'article' && resolvedAuthor ? [resolvedAuthor] : undefined
-    },
+    ...(resolvedPublishedAt && { articlePublishedTime: resolvedPublishedAt }),
+    ...(resolvedModifiedAt && { articleModifiedTime: resolvedModifiedAt }),
+    ...(resolvedArticleAuthor && { articleAuthor: resolvedArticleAuthor }),
     // Keywords
-    keywords: () => getKeywords()?.join(', ') || undefined,
+    ...(resolvedKeywords && { keywords: resolvedKeywords }),
     // Robots
-    robots: getRobots,
+    ...(resolvedRobots && { robots: resolvedRobots }),
   })
 
   // --- Head extras ---
-  useHead({
-    link: () => {
-      const resolvedCanonicalUrl = getCanonicalUrl()
-      return resolvedCanonicalUrl ? [{ rel: 'canonical', href: resolvedCanonicalUrl }] : []
-    },
-  })
+  if (canonicalUrl !== undefined) {
+    useHead({
+      link: [{ rel: 'canonical', href: computed(() => toValue(canonicalUrl) ?? '') }],
+    })
+  }
 
   // Dynamic OG: nuxt-og-image only applies on SSR; the client stub warns in dev if called.
   if (ogImage && import.meta.server) {
-    const componentName =
-      readOptionalSeoValue(ogImage.component) || (getType() === 'article' ? 'Article' : 'Default')
+    const componentName = toValue(ogImage.component) || (resolvedType.value === 'article' ? 'Article' : 'Default')
     // OgImage component names are registered at the consuming-app level;
     // the layer can't enumerate them at type-check time.
     defineOgImage(componentName as never, {
-      title: () => readOptionalSeoValue(ogImage.title) || getTitle(),
-      description: () => readOptionalSeoValue(ogImage.description) || getDescription(),
-      icon: () => readOptionalSeoValue(ogImage.icon) || '✨',
-      category: () => readOptionalSeoValue(ogImage.category),
+      title: toValue(ogImage.title) || resolvedTitle.value,
+      description: toValue(ogImage.description) || resolvedDescription.value,
+      icon: toValue(ogImage.icon) || '✨',
+      ...(toValue(ogImage.category) && { category: toValue(ogImage.category) }),
     })
   }
 }

@@ -45,12 +45,17 @@ const buildVersion =
   appVersion
 const buildTime = process.env.BUILD_TIME || new Date().toISOString()
 const colorModePreference = process.env.NUXT_COLOR_MODE_PREFERENCE || 'system'
-const localNuxtPort = Number(process.env.NUXT_PORT || 3000)
-const localSiteUrl = `http://127.0.0.1:${Number.isFinite(localNuxtPort) ? localNuxtPort : 3000}`
+const layerRoot = fileURLToPath(new URL('./', import.meta.url))
+const ormTablesEntry =
+  process.env.NUXT_DATABASE_BACKEND === 'postgres'
+    ? './server/database/pg-schema.ts'
+    : './server/database/schema.ts'
 
 export default defineNuxtConfig({
   alias: {
-    '#layer': fileURLToPath(new URL('./', import.meta.url)),
+    '#layer': layerRoot,
+    /** Build-time: `postgres` → pg-core tables for Hyperdrive; default → SQLite/D1 tables. */
+    '#layer/orm-tables': fileURLToPath(new URL(ormTablesEntry, import.meta.url)),
   },
 
   modules: [
@@ -89,10 +94,10 @@ export default defineNuxtConfig({
   runtimeConfig: {
     /**
      * `d1` — default; `useDatabase()` uses the D1 `DB` binding.
-     * `postgres` — opt into Postgres via Hyperdrive + a Postgres Drizzle schema (see `useHyperdriveConnectionString`).
+     * `postgres` — Hyperdrive + `postgres.js` + Drizzle (`drizzle-orm/postgres-js`); build with `NUXT_DATABASE_BACKEND=postgres`.
      */
     databaseBackend: process.env.NUXT_DATABASE_BACKEND === 'postgres' ? 'postgres' : 'd1',
-    /** Must match `hyperdrive[].binding` in wrangler (default `HYPERDRIVE`). */
+    /** Wrangler Hyperdrive binding name (default `HYPERDRIVE`). */
     hyperdriveBinding: process.env.NUXT_HYPERDRIVE_BINDING || 'HYPERDRIVE',
     /** Optional: secret for cron routes (e.g. cache warming). Set CRON_SECRET in Doppler; provisioning sets it. */
     cronSecret: process.env.CRON_SECRET || '',
@@ -128,7 +133,6 @@ export default defineNuxtConfig({
   },
 
   site: {
-    url: process.env.SITE_URL || localSiteUrl,
     name: process.env.APP_NAME || 'Nuxt 4 App',
     description: 'A Nuxt 4 application deployed on Cloudflare Workers.',
   },
@@ -181,6 +185,7 @@ export default defineNuxtConfig({
   },
 
   ogImage: {
+    enabled: true,
     runtimeCacheStorage: {
       driver: 'memory',
     },
@@ -208,7 +213,7 @@ export default defineNuxtConfig({
       },
     },
     externals: {
-      inline: ['drizzle-orm', '@neondatabase/serverless'],
+      inline: ['drizzle-orm', 'postgres'],
     },
   },
 

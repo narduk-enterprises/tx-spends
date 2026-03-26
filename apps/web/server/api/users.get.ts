@@ -2,7 +2,7 @@ import { sql } from 'drizzle-orm'
 import { z } from 'zod'
 import { requireAdmin } from '#layer/server/utils/auth'
 import { useDatabase } from '#layer/server/utils/database'
-import { users } from '#layer/server/database/schema'
+import { users } from '#layer/orm-tables'
 
 const querySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),

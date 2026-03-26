@@ -123,9 +123,9 @@ importers:
 
   layers/narduk-nuxt-layer:
     dependencies:
-      '@neondatabase/serverless':
-        specifier: ^1.0.0
-        version: 1.0.2
+      '@iconify-json/lucide':
+        specifier: ^1.2.94
+        version: 1.2.98
       '@nuxt/eslint':
         specifier: ^1.15.2
         version: 1.15.2(@typescript-eslint/utils@8.57.2(eslint@9.39.4(jiti@2.6.1))(typescript@5.9.3))(@vue/compiler-sfc@3.5.30)(eslint@9.39.4(jiti@2.6.1))(magicast@0.5.2)(typescript@5.9.3)(vite@7.3.1(@types/node@22.19.15)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3))
@@ -159,6 +159,9 @@ importers:
       postcss:
         specifier: ^8.5.6
         version: 8.5.8
+      postgres:
+        specifier: ^3.4.7
+        version: 3.4.8
       posthog-js:
         specifier: ^1.363.1
         version: 1.363.4
@@ -175,9 +178,6 @@ importers:
       '@cloudflare/workers-types':
         specifier: 4.20260307.1
         version: 4.20260307.1
-      '@iconify-json/lucide':
-        specifier: ^1.2.94
-        version: 1.2.98
       '@narduk-enterprises/eslint-config':
         specifier: ^1.0.17
         version: 1.0.17(eslint@9.39.4(jiti@2.6.1))(typescript@5.9.3)(vitest@4.1.1(@opentelemetry/api@1.9.0)(@types/node@22.19.15)(happy-dom@20.8.8)(vite@7.3.1(@types/node@22.19.15)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3)))(vue-eslint-parser@10.4.0(eslint@9.39.4(jiti@2.6.1)))
