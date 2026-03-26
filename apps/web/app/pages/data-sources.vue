@@ -203,5 +203,36 @@ useWebPageSchema({
         </UCard>
       </div>
     </section>
+
+    <section class="space-y-4">
+      <div class="space-y-1">
+        <h2 class="text-2xl font-semibold tracking-tight text-default">Data health</h2>
+        <p class="max-w-3xl text-sm leading-7 text-muted">
+          See live row counts, fiscal year coverage, vendor match rates, and recent ingestion run
+          status for every layer described above.
+        </p>
+      </div>
+
+      <UCard class="card-base overflow-hidden">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div class="space-y-1">
+            <p class="text-sm font-semibold text-default">Live coverage and freshness report</p>
+            <p class="text-sm text-muted">
+              Payment rows loaded, county fiscal years available, approximate vendor match
+              coverage, and the timestamps of the most recent data loads.
+            </p>
+          </div>
+          <UButton
+            to="/data-health"
+            color="primary"
+            variant="soft"
+            class="shrink-0 rounded-2xl px-4 py-3"
+            trailing-icon="i-lucide-activity"
+          >
+            View Data Health
+          </UButton>
+        </div>
+      </UCard>
+    </section>
   </UContainer>
 </template>

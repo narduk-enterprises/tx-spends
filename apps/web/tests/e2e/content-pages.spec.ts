@@ -40,6 +40,10 @@ test.describe('content pages and navigation', () => {
     await expect(page.getByText('Scope disclaimer', { exact: true })).toBeVisible()
     await capturePage(page, testInfo, 'disclaimers-page')
 
+    await gotoAndHydrate(page, '/data-health')
+    await expect(page.getByRole('heading', { name: 'Data Health' })).toBeVisible()
+    await capturePage(page, testInfo, 'data-health-page')
+
     await consoleTracker.expectClean()
   })
 

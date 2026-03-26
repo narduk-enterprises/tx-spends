@@ -35,6 +35,8 @@ const cachedRouteRules = {
   '/api/v1/transactions': { swr: 15 * 60 },
   '/api/v1/transactions/**': { swr: 15 * 60 },
   '/api/v1/search': { swr: 5 * 60 },
+  '/data-health': { swr: 5 * 60 },
+  '/api/v1/data-health': { swr: 5 * 60 },
 }
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
