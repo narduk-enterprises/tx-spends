@@ -1,5 +1,5 @@
 import { getRouterParam, getValidatedQuery } from 'h3'
-import { and, desc, eq, isNull, ne, or, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, isNull, or, sql } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
 import {
   agencies,
@@ -43,14 +43,14 @@ export default defineEventHandler(async (event) => {
       review_status: payeeVendorMatches.reviewStatus,
     })
     .from(payees)
-    // Exclude tentative matches from the public API per §8 public API rule.
+    // Only expose approved/auto-accepted matches per §8.4 public API rule.
     // The or(isNull(...)) guard ensures unmatched payees (NULL from LEFT JOIN) pass
-    // through without being excluded by the ne() condition in three-valued SQL logic.
+    // through without being excluded by the inArray() condition in three-valued SQL logic.
     .leftJoin(
       payeeVendorMatches,
       and(
         eq(payees.id, payeeVendorMatches.payeeId),
-        or(isNull(payeeVendorMatches.reviewStatus), ne(payeeVendorMatches.reviewStatus, 'tentative')),
+        or(isNull(payeeVendorMatches.reviewStatus), inArray(payeeVendorMatches.reviewStatus, ['auto-accepted', 'approved'])),
       ),
     )
     .leftJoin(vendorEnrichment, eq(payeeVendorMatches.vendorEnrichmentId, vendorEnrichment.id))

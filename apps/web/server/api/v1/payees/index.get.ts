@@ -1,5 +1,5 @@
 import { getValidatedQuery } from 'h3'
-import { and, asc, desc, eq, isNotNull, isNull, like, ne, or, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, isNotNull, isNull, like, or, sql } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
 import {
   payeeVendorMatches,
@@ -75,13 +75,13 @@ export default defineEventHandler(async (event) => {
         : amountColumn
   const orderDirection = query.order === 'asc' ? asc : desc
 
-  // LEFT JOIN vendor tables (excluding tentative matches per §8 public API rule).
+  // LEFT JOIN vendor tables (only approved/auto-accepted matches per §8.4 public API rule).
   // A 1:1 unique constraint on payee_vendor_matches.payee_id keeps this join cheap.
   // The or(isNull(...)) guard ensures unmatched payees (NULL from LEFT JOIN) are not
-  // accidentally excluded by the ne() condition in three-valued SQL logic.
+  // accidentally excluded by the inArray() condition in three-valued SQL logic.
   const vendorJoinCondition = and(
     eq(payeeVendorMatches.payeeId, paymentPayeeRollups.payeeId),
-    or(isNull(payeeVendorMatches.reviewStatus), ne(payeeVendorMatches.reviewStatus, 'tentative')),
+    or(isNull(payeeVendorMatches.reviewStatus), inArray(payeeVendorMatches.reviewStatus, ['auto-accepted', 'approved'])),
   )
 
   const list = await db

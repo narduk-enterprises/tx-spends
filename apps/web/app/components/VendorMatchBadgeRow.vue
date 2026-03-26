@@ -1,7 +1,4 @@
 <script setup lang="ts">
-/** Confidence score at or above which a match is considered exact. */
-const EXACT_MATCH_CONFIDENCE_THRESHOLD = 0.98
-
 type VendorEnrichment = {
   vendor_name?: string | null
   hub_status?: string | null
@@ -23,11 +20,7 @@ const props = defineProps<{
 
 const confidencePercent = computed(() => Math.round(Number(props.matchConfidence) * 100))
 
-const isExactMatch = computed(
-  () =>
-    props.matchMethod === 'exact_normalized' ||
-    Number(props.matchConfidence) >= EXACT_MATCH_CONFIDENCE_THRESHOLD,
-)
+const isExactMatch = computed(() => props.matchMethod === 'exact_normalized')
 
 const matchLabel = computed(() => {
   if (isExactMatch.value) return 'Exact match'
@@ -67,7 +60,7 @@ const locationLabel = computed(() => {
         <div class="flex flex-wrap gap-2">
           <UBadge :color="matchColor" variant="soft">{{ matchLabel }}</UBadge>
           <UBadge v-if="enrichment.is_manual_override" color="info" variant="soft">
-            Manually reviewed
+            Manual override
           </UBadge>
           <UBadge v-if="enrichment.hub_status" color="primary" variant="soft">
             HUB — {{ enrichment.hub_status }}
