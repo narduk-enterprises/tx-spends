@@ -11,9 +11,6 @@ import { useAppDatabase } from '#server/utils/database'
 import { blogAngles } from '#server/database/schema'
 import { BLOG_ANGLE_IDS, sortAnglesByRotation } from '#server/utils/blog/pure'
 
-export type { BlogAngleId } from '#server/utils/blog/pure'
-export { BLOG_ANGLE_IDS, buildPostSlug, sortAnglesByRotation } from '#server/utils/blog/pure'
-
 export interface BlogAngleDefinition {
   id: string
   name: string

@@ -13,8 +13,6 @@ import { getSystemPrompt } from '#layer/server/utils/systemPrompts'
 import type { SpotlightFindings } from '#server/utils/blog/analyzers'
 import { buildPostSlug } from '#server/utils/blog/pure'
 
-export { buildPostSlug } from '#server/utils/blog/pure'
-
 export interface PostSection {
   heading: string
   content: string
