@@ -35,8 +35,9 @@ const hasMoverData = computed(
         <div class="space-y-1">
           <p class="text-lg font-semibold text-default">Year-over-year standouts</p>
           <p class="text-sm text-muted">
-            FY {{ movers.prior_year }} → FY {{ movers.current_year
-            }}<template v-if="movers.total_change_pct !== null">
+            FY {{ movers.prior_year }} → FY {{ movers.current_year }} · Among top agencies<template
+              v-if="movers.total_change_pct !== null"
+            >
               · Total spend
               <span
                 :class="
@@ -64,7 +65,7 @@ const hasMoverData = computed(
         <p class="text-xs font-semibold uppercase tracking-[0.16em] text-success">
           Largest increases
         </p>
-        <ul class="space-y-2">
+        <ul v-if="movers.top_increases.length > 0" class="space-y-2">
           <li
             v-for="item in movers.top_increases"
             :key="item.id || item.name"
@@ -86,6 +87,9 @@ const hasMoverData = computed(
             </div>
           </li>
         </ul>
+        <p v-else class="text-sm text-muted">
+          No significant increases among the top agencies.
+        </p>
       </div>
 
       <div class="space-y-3">
