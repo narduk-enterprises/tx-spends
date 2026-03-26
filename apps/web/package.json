@@ -5,10 +5,12 @@
   "version": "1.17.2",
   "scripts": {
     "build": "nuxt build",
-    "dev": "doppler run --config dev -- sh -c 'CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE=\"$DATABASE_URL\" nuxt dev'",
+    "predev": "pnpm run db:ready",
+    "dev": "doppler run --config dev -- sh -c 'NUXT_DATABASE_BACKEND=postgres CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE=\"$DATABASE_URL\" nuxt dev'",
     "quality": "echo 'Turbo dependsOn handles lint + typecheck + format:check'",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "doppler run --config dev -- drizzle-kit migrate",
+    "db:ready": "pnpm run db:migrate",
     "db:studio": "doppler run --config dev -- drizzle-kit studio",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
