@@ -44,7 +44,10 @@ export function resolveControlPlaneHyperdriveConnectionString(options: {
     return controlPlaneConnectionString
   }
 
-  if (options.defaultConnectionString && (options.isDev || controlPlaneBindingName === defaultBindingName)) {
+  if (
+    options.defaultConnectionString &&
+    (options.isDev || controlPlaneBindingName === defaultBindingName)
+  ) {
     return options.defaultConnectionString
   }
 
