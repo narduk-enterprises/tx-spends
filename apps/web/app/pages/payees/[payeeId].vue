@@ -238,15 +238,26 @@ const matchMethodLabel = computed(() => {
         :badge="fiscalYear ? `FY ${fiscalYear}` : 'All fiscal years'"
       >
         <template #actions>
-          <UButton
-            :to="`/transactions?payee_id=${displayPayee.payee_id}${fiscalYear ? `&fy=${fiscalYear}` : ''}${includeConfidential ? '&includeConfidential=true' : ''}`"
-            color="primary"
-            variant="soft"
-            icon="i-lucide-arrow-right"
-            class="rounded-full"
-          >
-            View transactions
-          </UButton>
+          <div class="flex flex-wrap gap-3">
+            <UButton
+              :to="`/analysis?mode=relationships&dataset=payments&subject=payee&payee_id=${displayPayee.payee_id}${fiscalYear ? `&fy=${fiscalYear}` : ''}${includeConfidential ? '&includeConfidential=true' : ''}`"
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-chart-column-big"
+              class="rounded-full"
+            >
+              Open analysis
+            </UButton>
+            <UButton
+              :to="`/transactions?payee_id=${displayPayee.payee_id}${fiscalYear ? `&fy=${fiscalYear}` : ''}${includeConfidential ? '&includeConfidential=true' : ''}`"
+              color="primary"
+              variant="soft"
+              icon="i-lucide-arrow-right"
+              class="rounded-full"
+            >
+              View transactions
+            </UButton>
+          </div>
         </template>
       </PageHeader>
 

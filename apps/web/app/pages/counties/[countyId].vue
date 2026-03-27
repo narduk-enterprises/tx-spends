@@ -155,7 +155,19 @@ const tabs = [
           { label: countyLabel },
         ]"
         :badge="fiscalYear ? `FY ${fiscalYear}` : 'All fiscal years'"
-      />
+      >
+        <template #actions>
+          <UButton
+            :to="`/analysis?mode=outliers&dataset=counties&subject=county&county_id=${county.county_id}${fiscalYear ? `&fy=${fiscalYear}` : ''}`"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-chart-column-big"
+            class="rounded-full"
+          >
+            Open analysis
+          </UButton>
+        </template>
+      </PageHeader>
 
       <DisclaimerStrip variant="county" />
 

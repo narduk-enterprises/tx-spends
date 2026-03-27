@@ -568,3 +568,50 @@ export const blogPosts = pgTable(
     index('idx_blog_posts_angle').on(table.angleId),
   ],
 )
+
+// ========== INVESTIGATIONS ==========
+
+/**
+ * Admin-only investigative research backlog.
+ * Stores structured dossiers for manual newsroom follow-up.
+ */
+export const investigationTopics = pgTable(
+  'investigation_topics',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    slug: text('slug').notNull().unique(),
+    title: text('title').notNull(),
+    priorityRank: integer('priority_rank').notNull(),
+    status: text('status').notNull().default('backlog'),
+    lane: text('lane').notNull(),
+    flaggedPattern: text('flagged_pattern').notNull(),
+    impact: text('impact').notNull(),
+    difficulty: text('difficulty').notNull(),
+    summary: text('summary').notNull(),
+    investigativeQuestion: text('investigative_question').notNull(),
+    publicImpact: text('public_impact').notNull(),
+    notes: text('notes').notNull().default(''),
+    sourceReferences: jsonb('source_references')
+      .$type<Array<{ label: string; note: string; url: string | null }>>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    recordsToObtain: jsonb('records_to_obtain')
+      .$type<string[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    reportingSteps: jsonb('reporting_steps')
+      .$type<string[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    visualIdeas: jsonb('visual_ideas')
+      .$type<string[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index('idx_investigation_topics_status').on(table.status),
+    index('idx_investigation_topics_priority_updated').on(table.priorityRank, table.updatedAt),
+  ],
+)

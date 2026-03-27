@@ -154,15 +154,26 @@ const tabs = [
         :badge="fiscalYear ? `FY ${fiscalYear}` : 'All fiscal years'"
       >
         <template #actions>
-          <UButton
-            :to="`/transactions?agency_id=${agency.agency_id}${fiscalYear ? `&fy=${fiscalYear}` : ''}`"
-            color="primary"
-            variant="soft"
-            icon="i-lucide-arrow-right"
-            class="rounded-full"
-          >
-            View transactions
-          </UButton>
+          <div class="flex flex-wrap gap-3">
+            <UButton
+              :to="`/analysis?mode=concentration&dataset=payments&subject=agency&agency_id=${agency.agency_id}${fiscalYear ? `&fy=${fiscalYear}` : ''}`"
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-chart-column-big"
+              class="rounded-full"
+            >
+              Open analysis
+            </UButton>
+            <UButton
+              :to="`/transactions?agency_id=${agency.agency_id}${fiscalYear ? `&fy=${fiscalYear}` : ''}`"
+              color="primary"
+              variant="soft"
+              icon="i-lucide-arrow-right"
+              class="rounded-full"
+            >
+              View transactions
+            </UButton>
+          </div>
         </template>
       </PageHeader>
 

@@ -21,6 +21,12 @@ const { user } = useAuth()
 
 const adminTabs = [
   { label: 'Spotlight', value: 'blog', icon: 'i-lucide-newspaper', slot: 'blog' },
+  {
+    label: 'Investigations',
+    value: 'investigations',
+    icon: 'i-lucide-search-code',
+    slot: 'investigations',
+  },
   { label: 'AI', value: 'ai', icon: 'i-lucide-bot', slot: 'ai' },
   { label: 'Users', value: 'users', icon: 'i-lucide-users', slot: 'users' },
   { label: 'OG Images', value: 'og', icon: 'i-lucide-image', slot: 'og' },
@@ -62,6 +68,10 @@ const activeTab = shallowRef('blog')
       >
         <template #blog>
           <AdminBlogPostsTab />
+        </template>
+
+        <template #investigations>
+          <AdminInvestigationsTab />
         </template>
 
         <template #ai>
