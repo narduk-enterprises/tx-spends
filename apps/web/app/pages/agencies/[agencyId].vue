@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useCountyMap } from '~/composables/useCountyMap'
 import {
   buildFetchKey,
   cleanQueryObject,
@@ -31,6 +32,12 @@ const trendsKey = computed(() =>
 const countiesKey = computed(() =>
   buildFetchKey(`agency-counties:${agencyId.value}`, detailQuery.value),
 )
+const countyMapKey = computed(() =>
+  buildFetchKey(`agency-county-map:${agencyId.value}`, {
+    agency_id: agencyId.value,
+    fiscal_year: fiscalYear.value,
+  }),
+)
 const payeesKey = computed(() =>
   buildFetchKey(`agency-payees:${agencyId.value}`, detailQuery.value),
 )
@@ -38,7 +45,7 @@ const objectsKey = computed(() =>
   buildFetchKey(`agency-objects:${agencyId.value}`, detailQuery.value),
 )
 
-const [detailState, trendsState, countiesState] = await Promise.all([
+const [detailState, trendsState, countiesState, countyMapState] = await Promise.all([
   useLazyFetch(() => `/api/v1/agencies/${agencyId.value}`, {
     key: detailKey,
     query: detailQuery,
@@ -51,10 +58,20 @@ const [detailState, trendsState, countiesState] = await Promise.all([
     key: countiesKey,
     query: detailQuery,
   }),
+  useCountyMap(
+    computed(() => ({
+      agency_id: agencyId.value,
+      fiscal_year: fiscalYear.value,
+    })),
+    {
+      key: countyMapKey,
+    },
+  ),
 ])
 const { data: detail, error, status } = detailState
 const { data: trends, status: trendsStatus } = trendsState
 const { data: counties, status: countiesStatus } = countiesState
+const { countyMetrics, countyMapStatus } = countyMapState
 const { data: payees, status: payeesStatus } = useFetch(
   () => `/api/v1/agencies/${agencyId.value}/payees`,
   {
@@ -262,8 +279,9 @@ const tabs = [
         />
 
         <CountyMapCard
-          :county-metrics="counties?.data || []"
-          :fy="fiscalYear || 'All years'"
+          :county-metrics="countyMetrics"
+          :fiscal-year="fiscalYear || 'All years'"
+          :loading="countyMapStatus === 'pending'"
           @select-county="router.push(`/counties/${$event}`)"
         />
       </section>

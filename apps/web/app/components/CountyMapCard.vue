@@ -1,38 +1,40 @@
 <script setup lang="ts">
+import type { CountyMapMetric } from '~/utils/county-map'
 import { formatCountyLabel, formatUsdCompact } from '~/utils/explorer'
 
-type CountyMetric = {
-  county_id: string
-  county_name: string | null
-  amount: number
-}
-
-const props = defineProps<{
-  countyMetrics: CountyMetric[]
-  fy?: number | string
-  loading?: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    countyMetrics: CountyMapMetric[]
+    fiscalYear?: number | string | null
+    loading?: boolean
+  }>(),
+  {
+    fiscalYear: null,
+    loading: false,
+  },
+)
 
 const emit = defineEmits<{
   selectCounty: [countyId: string]
 }>()
 
+const countyCount = computed(() => props.countyMetrics.length)
 const leaderboard = computed(() => props.countyMetrics.slice(0, 12))
 
-const fyLabel = computed(() => {
-  if (!props.fy) {
+const fiscalYearLabel = computed(() => {
+  if (!props.fiscalYear) {
     return ''
   }
 
-  if (typeof props.fy === 'number') {
-    return `FY ${props.fy}`
+  if (typeof props.fiscalYear === 'number') {
+    return `FY ${props.fiscalYear}`
   }
 
-  if (props.fy.toLowerCase() === 'all years') {
+  if (props.fiscalYear.toLowerCase() === 'all years') {
     return 'All years'
   }
 
-  return props.fy.startsWith('FY ') ? props.fy : `FY ${props.fy}`
+  return props.fiscalYear.startsWith('FY ') ? props.fiscalYear : `FY ${props.fiscalYear}`
 })
 </script>
 
@@ -48,11 +50,16 @@ const fyLabel = computed(() => {
           </p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-          <UBadge v-if="fyLabel" color="neutral" variant="soft" class="rounded-full px-3 py-1">
-            {{ fyLabel }}
+          <UBadge
+            v-if="fiscalYearLabel"
+            color="neutral"
+            variant="soft"
+            class="rounded-full px-3 py-1"
+          >
+            {{ fiscalYearLabel }}
           </UBadge>
           <UBadge color="primary" variant="subtle" class="rounded-full px-3 py-1">
-            {{ props.countyMetrics.length }} counties matched
+            {{ countyCount }} counties matched
           </UBadge>
         </div>
       </div>

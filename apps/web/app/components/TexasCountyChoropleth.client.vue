@@ -1,13 +1,8 @@
 <script setup lang="ts">
 import { geoPath, geoMercator } from 'd3-geo'
+import type { CountyMapMetric } from '~/utils/county-map'
 import texasCountyCollection from '~/utils/texas-counties.geo.json'
 import { formatCountyLabel, formatUsdCompact, normalizeCountyKey } from '~/utils/explorer'
-
-type CountyMetric = {
-  county_id: string
-  county_name: string | null
-  amount: number
-}
 
 type TexasCountyFeature = {
   type: 'Feature'
@@ -23,7 +18,7 @@ type TexasCountyFeature = {
 }
 
 const props = defineProps<{
-  countyMetrics: CountyMetric[]
+  countyMetrics: CountyMapMetric[]
 }>()
 
 const emit = defineEmits<{
@@ -161,7 +156,7 @@ function clearCountyFocus() {
   activeCountyKey.value = null
 }
 
-function openCounty(metric: CountyMetric | null) {
+function openCounty(metric: CountyMapMetric | null) {
   if (!metric) {
     return
   }
@@ -195,8 +190,8 @@ function openCounty(metric: CountyMetric | null) {
               'transition-base focus:outline-none',
               feature.metric ? 'cursor-pointer' : 'cursor-default',
             ]"
-            tabindex="0"
-            role="button"
+            :tabindex="feature.metric ? 0 : -1"
+            :role="feature.metric ? 'button' : undefined"
             @mouseenter="focusCounty(feature.countyKey)"
             @mouseleave="clearCountyFocus"
             @focus="focusCounty(feature.countyKey)"

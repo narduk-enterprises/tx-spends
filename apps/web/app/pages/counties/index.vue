@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useCountyMap } from '~/composables/useCountyMap'
 import {
   buildFetchKey,
   buildFiscalYearOptions,
@@ -32,33 +33,27 @@ const requestQuery = computed(() =>
   }),
 )
 
-const statewideMapQuery = computed(() =>
-  cleanQueryObject({
-    fiscal_year: fiscalYear.value,
-    q: searchQuery.value,
-    sort: 'amount',
-    order: 'desc',
-  }),
-)
+const statewideMapQuery = computed(() => ({
+  fiscal_year: fiscalYear.value,
+  q: searchQuery.value,
+}))
 
 const countyListKey = computed(() => buildFetchKey('counties-list', requestQuery.value))
 const countyMapKey = computed(() => buildFetchKey('counties-map', statewideMapQuery.value))
 
-const [countiesState, mapState] = await Promise.all([
+const [countiesState, countyMapState] = await Promise.all([
   useLazyFetch('/api/v1/counties', {
     key: countyListKey,
     query: requestQuery,
   }),
-  useLazyFetch('/api/v1/county-map', {
+  useCountyMap(statewideMapQuery, {
     key: countyMapKey,
-    query: statewideMapQuery,
   }),
 ])
 const { data, status } = countiesState
-const { data: mapData, status: mapStatus } = mapState
+const { countyMetrics, countyMapStatus } = countyMapState
 
 const counties = computed(() => data.value?.data || [])
-const countyMapMetrics = computed(() => mapData.value?.data || [])
 const meta = computed(() => data.value?.meta)
 const countyFiscalYearOptions = computed(() => {
   const availableFiscalYears = [...(meta.value?.available_fiscal_years || [])]
@@ -166,9 +161,9 @@ function updateSort(value: { column: string; direction: 'asc' | 'desc' }) {
     />
 
     <CountyMapCard
-      :county-metrics="countyMapMetrics"
-      :fy="fiscalYear || 'All years'"
-      :loading="mapStatus === 'pending'"
+      :county-metrics="countyMetrics"
+      :fiscal-year="fiscalYear || 'All years'"
+      :loading="countyMapStatus === 'pending'"
       @select-county="router.push(`/counties/${$event}`)"
     />
 

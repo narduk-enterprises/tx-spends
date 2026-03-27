@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useCountyMap } from '~/composables/useCountyMap'
 import {
   buildFetchKey,
   cleanQueryObject,
@@ -52,11 +53,29 @@ const overviewQuery = computed(() =>
 )
 
 const overviewKey = computed(() => buildFetchKey('overview', overviewQuery.value))
+const countyMapKey = computed(() =>
+  buildFetchKey('overview-county-map', {
+    fiscal_year: fiscalYear.value,
+  }),
+)
 
-const { data, status } = await useLazyFetch('/api/v1/overview', {
-  key: overviewKey,
-  query: overviewQuery,
-})
+const [overviewState, countyMapState] = await Promise.all([
+  useLazyFetch('/api/v1/overview', {
+    key: overviewKey,
+    query: overviewQuery,
+  }),
+  useCountyMap(
+    computed(() => ({
+      fiscal_year: fiscalYear.value,
+    })),
+    {
+      key: countyMapKey,
+    },
+  ),
+])
+
+const { data, status } = overviewState
+const { countyMetrics, countyMapStatus } = countyMapState
 
 const overview = computed(() => data.value?.data)
 const overviewMeta = computed(() => data.value?.meta)
@@ -321,8 +340,9 @@ const filters = computed({
       <section class="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(20rem,1fr)]">
         <DeferredCountyMapCard
           :hydrate-on-visible="deferredSectionHydration"
-          :county-metrics="overview.top_counties || []"
-          :fy="fiscalYear || 'All years'"
+          :county-metrics="countyMetrics"
+          :fiscal-year="fiscalYear || 'All years'"
+          :loading="countyMapStatus === 'pending'"
           @select-county="router.push(`/counties/${$event}`)"
         />
 
