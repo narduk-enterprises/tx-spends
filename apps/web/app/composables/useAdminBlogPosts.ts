@@ -1,3 +1,5 @@
+import { BLOG_AUTHOR_NAME } from '~/utils/blog'
+
 export type AdminBlogStatus = 'draft' | 'published' | 'archived'
 
 export interface AdminBlogSection {
@@ -17,12 +19,19 @@ export interface AdminBlogFindingPoint {
   context?: string
 }
 
+export interface AdminBlogDeepLink {
+  label: string
+  href: string
+  description: string
+}
+
 export interface AdminBlogFindings {
   angleId?: string
   angleName?: string
   fiscalYear?: number | null
   summary?: string
   dataPoints?: AdminBlogFindingPoint[]
+  deepLinks?: AdminBlogDeepLink[]
   limitations?: string[]
 }
 
@@ -131,7 +140,7 @@ function emptyBody(): AdminBlogBody {
 function emptyEditorState(): AdminBlogEditorState {
   return {
     slug: '',
-    author: 'narduk@mac.com',
+    author: BLOG_AUTHOR_NAME,
     title: '',
     excerpt: '',
     intro: '',
@@ -159,7 +168,7 @@ function normalizeSummary(post: AdminBlogPostSummaryResponse): AdminBlogPostSumm
   return {
     id: post.id,
     slug: post.slug,
-    author: post.author,
+    author: BLOG_AUTHOR_NAME,
     title: post.title,
     excerpt: post.excerpt,
     status: post.status,
@@ -188,7 +197,7 @@ function toEditorState(post: AdminBlogPostDetail | null): AdminBlogEditorState {
 
   return {
     slug: post.slug,
-    author: post.author,
+    author: BLOG_AUTHOR_NAME,
     title: post.title,
     excerpt: post.excerpt,
     intro: post.body.intro,
@@ -200,7 +209,7 @@ function toEditorState(post: AdminBlogPostDetail | null): AdminBlogEditorState {
 function normalizeEditorState(state: AdminBlogEditorState) {
   return {
     slug: state.slug.trim(),
-    author: state.author.trim(),
+    author: BLOG_AUTHOR_NAME,
     title: state.title.trim(),
     excerpt: state.excerpt.trim(),
     body: {

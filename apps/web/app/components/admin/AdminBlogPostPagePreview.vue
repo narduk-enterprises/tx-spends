@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AdminBlogPreviewPost } from '~/composables/useAdminBlogPosts'
+import { BLOG_AUTHOR_NAME } from '~/utils/blog'
 
 defineOptions({ inheritAttrs: false })
 
@@ -50,7 +51,7 @@ const formattedDate = computed(() => {
 
         <div class="flex items-center gap-3 text-sm text-muted">
           <UIcon name="i-lucide-user-round" class="size-4 shrink-0" />
-          <span>By {{ post.author || 'narduk@mac.com' }}</span>
+          <span>By {{ post.author || BLOG_AUTHOR_NAME }}</span>
           <USeparator orientation="vertical" class="h-4" />
           <UIcon name="i-lucide-calendar" class="size-4 shrink-0" />
           <span>{{ formattedDate ?? 'Draft preview' }}</span>
@@ -62,36 +63,7 @@ const formattedDate = computed(() => {
 
       <USeparator />
 
-      <div class="space-y-6 text-base leading-relaxed text-default">
-        <p v-if="post.body.intro">{{ post.body.intro }}</p>
-
-        <section
-          v-for="(section, index) in post.body.sections"
-          :key="`${section.heading}-${index}`"
-          class="space-y-3"
-        >
-          <h2 class="text-xl font-semibold text-default">
-            {{ section.heading || `Section ${index + 1}` }}
-          </h2>
-
-          <template
-            v-for="(paragraph, paragraphIndex) in section.content.split('\n\n')"
-            :key="paragraphIndex"
-          >
-            <p v-if="paragraph.trim()" class="leading-relaxed text-default/90">
-              {{ paragraph }}
-            </p>
-          </template>
-        </section>
-
-        <aside
-          v-if="post.body.dataNotes"
-          class="rounded-2xl border border-default bg-muted/30 p-4 text-sm text-muted"
-        >
-          <p class="mb-1 font-semibold text-default">Data Notes</p>
-          <p>{{ post.body.dataNotes }}</p>
-        </aside>
-      </div>
+      <BlogPostContent :body="post.body" />
     </article>
   </div>
 

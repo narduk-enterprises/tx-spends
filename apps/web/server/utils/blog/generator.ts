@@ -11,6 +11,7 @@ import type { H3Event } from 'h3'
 import { grokChat } from '#layer/server/utils/xai'
 import { getSystemPrompt } from '#layer/server/utils/systemPrompts'
 import type { SpotlightFindings } from '#server/utils/blog/analyzers'
+import { BLOG_AUTHOR_NAME } from '#server/utils/blog/metadata'
 import { buildPostSlug } from '#server/utils/blog/pure'
 
 export interface PostSection {
@@ -35,7 +36,7 @@ export interface GeneratedPost {
 }
 
 export const BLOG_PROMPT_KEY = 'blog-post-generator'
-export const DEFAULT_BLOG_AUTHOR = 'narduk@mac.com'
+export const DEFAULT_BLOG_AUTHOR = BLOG_AUTHOR_NAME
 
 export const DEFAULT_BLOG_SYSTEM_PROMPT = `You are a data journalist writing for "Texas State Spending Explorer", a public transparency tool covering Texas state government finances.
 
@@ -56,6 +57,9 @@ Writing rules:
 - Ground every claim in the data points provided. Do not invent numbers.
 - Use evidence language such as "the data shows", "records indicate", or "according to state spending records".
 - Only describe what is directly visible in the findings: rankings, dollar amounts, shares, year-over-year changes, and concentration.
+- Use 3 to 6 inline markdown links across the intro and sections when deep-link options are provided. Prefer links that land on collection tables, detail tables, or filtered transaction tables that support the claim being discussed.
+- Use only root-relative markdown links in the form [label](/path?query=value). Do not invent URLs. Use only the deep links supplied by the user message.
+- Do not use bare URLs, reference-style links, bullet lists of links, or markdown other than inline links.
 - Do not infer policy priorities, program effectiveness, agency mission importance, causes, motivations, or public outcomes from spending totals alone.
 - Do not explain what spending is "for" unless that context appears explicitly in the findings supplied by the user.
 - Do not invent county-specific details, vendor identities, or causal relationships not supported by the data.
@@ -64,7 +68,7 @@ Writing rules:
 - Prefer plain descriptions of concentration and ordering, for example: "The top three agencies accounted for X% of total public spending."
 - Include 2 to 4 H2 sections. Target total length: 400-600 words across intro + sections.
 - Reflect all limitations noted in the findings in the dataNotes field.
-- Do not add markdown formatting inside the JSON string values.`
+- Keep the prose readable first; links should feel editorially useful rather than stuffed into every sentence.`
 
 /**
  * Seed and retrieve the blog system prompt from D1 (layer system-prompts table).
@@ -149,6 +153,15 @@ export function buildUserMessage(findings: SpotlightFindings): string {
     'Known limitations to reflect in dataNotes:',
     ...findings.limitations.map((l) => `  - ${l}`),
   ]
+
+  if (findings.deepLinks.length > 0) {
+    lines.push(
+      '',
+      'Available deep links (use these URLs verbatim; do not invent others):',
+      ...findings.deepLinks.map((link) => `  - ${link.label}: ${link.href} [${link.description}]`),
+    )
+  }
+
   return lines.join('\n')
 }
 

@@ -36,11 +36,18 @@ export interface SpotlightDataPoint {
   context?: string
 }
 
+export interface SpotlightDeepLink {
+  label: string
+  href: string
+  description: string
+}
+
 export interface SpotlightFindings {
   angleId: string
   angleName: string
   fiscalYear: number | null
   dataPoints: SpotlightDataPoint[]
+  deepLinks: SpotlightDeepLink[]
   summary: string
   limitations: string[]
 }
@@ -48,6 +55,36 @@ export interface SpotlightFindings {
 function pct(part: number, total: number): string {
   if (total === 0) return '0%'
   return `${((part / total) * 100).toFixed(1)}%`
+}
+
+function buildAppPath(
+  path: string,
+  query: Record<string, string | number | boolean | null | undefined> = {},
+): string {
+  const params = new URLSearchParams()
+
+  for (const [key, value] of Object.entries(query)) {
+    if (value === undefined || value === null || value === false || value === '') continue
+    params.set(key, String(value))
+  }
+
+  const search = params.toString()
+  return search ? `${path}?${search}` : path
+}
+
+function dedupeDeepLinks(links: SpotlightDeepLink[], max = 8): SpotlightDeepLink[] {
+  const seen = new Set<string>()
+  const unique: SpotlightDeepLink[] = []
+
+  for (const link of links) {
+    if (!link.href || seen.has(link.href)) continue
+    seen.add(link.href)
+    unique.push(link)
+
+    if (unique.length >= max) break
+  }
+
+  return unique
 }
 
 /** Resolve the latest available fiscal year from rollup data. */
@@ -78,6 +115,7 @@ async function analyzeAgencySpendLeaders(event: H3Event): Promise<SpotlightFindi
       .limit(1),
     db
       .select({
+        agencyId: paymentAgencyRollups.agencyId,
         agencyName: agencies.agencyName,
         totalSpend: paymentAgencyRollups.totalSpendPublic,
         paymentCount: paymentAgencyRollups.paymentCountPublic,
@@ -106,11 +144,25 @@ async function analyzeAgencySpendLeaders(event: H3Event): Promise<SpotlightFindi
     })
   }
 
+  const deepLinks = dedupeDeepLinks([
+    {
+      label: `FY ${fiscalYear} agency rankings`,
+      href: buildAppPath('/agencies', { fy: fiscalYear, sort: 'total_spend' }),
+      description: 'Collection table sorted by public spending totals.',
+    },
+    ...agencyRows.slice(0, 5).map((row, index) => ({
+      label: `Agency detail: #${index + 1} ${formatAgencyDisplayName(row.agencyName)}`,
+      href: buildAppPath(`/agencies/${row.agencyId}`, { fy: fiscalYear }),
+      description: 'Agency detail tables for payees, objects, counties, and trends.',
+    })),
+  ])
+
   return {
     angleId: 'agency-spend-leaders',
     angleName: 'Agency Spending Leaders',
     fiscalYear,
     dataPoints,
+    deepLinks,
     summary: `In FY ${fiscalYear}, ${agencyRows[0] ? formatAgencyDisplayName(agencyRows[0].agencyName) : 'the top agency'} led all state agencies in public spending at ${formatUsdBig(Number(agencyRows[0]?.totalSpend || 0))} out of ${formatUsdBig(total)} total.`,
     limitations: [
       'Figures reflect public (non-confidential) payments only.',
@@ -144,6 +196,7 @@ async function analyzeCategoryTrends(event: H3Event): Promise<SpotlightFindings>
       angleName: 'Expenditure Category Trends',
       fiscalYear: null,
       dataPoints: [{ label: 'Insufficient data', value: 'No category rollup data found.' }],
+      deepLinks: [],
       summary: 'No category rollup data available.',
       limitations: ['Category rollup data has not been populated yet.'],
     }
@@ -211,11 +264,27 @@ async function analyzeCategoryTrends(event: H3Event): Promise<SpotlightFindings>
     }
   }
 
+  const rankedCategories = [...latestMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5)
+
+  const deepLinks = dedupeDeepLinks([
+    {
+      label: `FY ${latestFy} category rankings`,
+      href: buildAppPath('/categories', { fy: latestFy, sort: 'amount' }),
+      description: 'Collection table ranked by category totals.',
+    },
+    ...rankedCategories.map(([code]) => ({
+      label: `Category detail: ${formatCategoryDisplayName(titles.get(code) ?? code)}`,
+      href: buildAppPath(`/categories/${code}`, { fy: latestFy }),
+      description: 'Category detail tables for agencies, payees, objects, and trends.',
+    })),
+  ])
+
   return {
     angleId: 'category-trends',
     angleName: 'Expenditure Category Trends',
     fiscalYear: latestFy,
     dataPoints,
+    deepLinks,
     summary:
       prevFy !== null
         ? `Comparing FY${prevFy} to FY${latestFy}, the biggest year-over-year category shifts in Texas state spending are highlighted below.`
@@ -247,6 +316,7 @@ async function analyzePayeeConcentration(event: H3Event): Promise<SpotlightFindi
       .limit(1),
     db
       .select({
+        payeeId: paymentPayeeRollups.payeeId,
         payeeName: payees.payeeNameRaw,
         totalSpend: paymentPayeeRollups.totalAmountPublic,
       })
@@ -275,11 +345,25 @@ async function analyzePayeeConcentration(event: H3Event): Promise<SpotlightFindi
     })
   }
 
+  const deepLinks = dedupeDeepLinks([
+    {
+      label: `FY ${fiscalYear} payee rankings`,
+      href: buildAppPath('/payees', { fy: fiscalYear, sort: 'amount' }),
+      description: 'Collection table ranked by total received.',
+    },
+    ...payeeRows.slice(0, 5).map((row, index) => ({
+      label: `Payee detail: #${index + 1} ${row.payeeName || 'Unmatched payee'}`,
+      href: buildAppPath(`/payees/${row.payeeId}`, { fy: fiscalYear }),
+      description: 'Payee detail tables for agencies, categories, and trends.',
+    })),
+  ])
+
   return {
     angleId: 'payee-concentration',
     angleName: 'Payee Spending Concentration',
     fiscalYear,
     dataPoints,
+    deepLinks,
     summary: `In FY ${fiscalYear}, the top 10 public payees received ${pct(top10Sum, total)} of all public state spending (${formatUsdBig(top10Sum)}).`,
     limitations: [
       'Figures cover only non-confidential payees. Confidential recipients are excluded from all ranks.',
@@ -312,6 +396,7 @@ async function analyzeConfidentialityPatterns(event: H3Event): Promise<Spotlight
       .limit(1),
     db
       .select({
+        agencyId: paymentAgencyRollups.agencyId,
         agencyName: agencies.agencyName,
         totalAll: paymentAgencyRollups.totalSpendAll,
         totalPublic: paymentAgencyRollups.totalSpendPublic,
@@ -353,11 +438,29 @@ async function analyzeConfidentialityPatterns(event: H3Event): Promise<Spotlight
     }),
   ]
 
+  const deepLinks = dedupeDeepLinks([
+    {
+      label: `FY ${fiscalYear} confidential payment rows`,
+      href: buildAppPath('/transactions', { fy: fiscalYear, includeConfidential: true }),
+      description: 'Transaction table including rows marked confidential.',
+    },
+    ...agencyRows.map((row, index) => ({
+      label: `Confidential rows for #${index + 1} ${formatAgencyDisplayName(row.agencyName)}`,
+      href: buildAppPath('/transactions', {
+        fy: fiscalYear,
+        includeConfidential: true,
+        q: formatAgencyDisplayName(row.agencyName),
+      }),
+      description: 'Filtered transaction table for one paying agency.',
+    })),
+  ])
+
   return {
     angleId: 'confidentiality-patterns',
     angleName: 'Confidential Payment Patterns',
     fiscalYear,
     dataPoints,
+    deepLinks,
     summary: `In FY ${fiscalYear}, ${formatUsdBig(confTotal)} (${pct(confTotal, allTotal)}) of recorded Texas state payments were marked confidential across ${confCount.toLocaleString()} transactions.`,
     limitations: [
       'Confidential payments are legally designated under Texas Government Code. The Comptroller does not disclose payee identities for these transactions.',
@@ -379,6 +482,7 @@ async function analyzeCountyDistribution(event: H3Event): Promise<SpotlightFindi
       .from(countyExpenditureFacts),
     db
       .select({
+        countyId: geographiesCounties.id,
         countyName: geographiesCounties.countyName,
         amount: sql<string>`COALESCE(SUM(${countyExpenditureFacts.amount}), 0)`,
       })
@@ -389,6 +493,7 @@ async function analyzeCountyDistribution(event: H3Event): Promise<SpotlightFindi
       .limit(5),
     db
       .select({
+        countyId: geographiesCounties.id,
         countyName: geographiesCounties.countyName,
         amount: sql<string>`COALESCE(SUM(${countyExpenditureFacts.amount}), 0)`,
       })
@@ -413,11 +518,30 @@ async function analyzeCountyDistribution(event: H3Event): Promise<SpotlightFindi
     })),
   ]
 
+  const deepLinks = dedupeDeepLinks([
+    {
+      label: 'County expenditure rankings',
+      href: buildAppPath('/counties', { sort: 'amount' }),
+      description: 'Collection table ranked by county expenditure totals.',
+    },
+    ...topRows.map((row, index) => ({
+      label: `Top county detail: #${index + 1} ${formatCountyDisplayName(row.countyName)}`,
+      href: buildAppPath(`/counties/${row.countyId}`),
+      description: 'County detail tables for agencies, expenditure types, and trends.',
+    })),
+    ...bottomRows.slice(0, 2).map((row, index) => ({
+      label: `Bottom county detail: #${index + 1} ${formatCountyDisplayName(row.countyName)}`,
+      href: buildAppPath(`/counties/${row.countyId}`),
+      description: 'County detail page for a low-spend county.',
+    })),
+  ])
+
   return {
     angleId: 'county-distribution',
     angleName: 'County Expenditure Distribution',
     fiscalYear: null,
     dataPoints,
+    deepLinks,
     summary: `Across all available fiscal years, Texas county-level expenditure data covers ${formatUsdBig(grandTotal)} total, with significant geographic concentration at the top.`,
     limitations: [
       'County data comes from the Expenditures by County dataset, which covers agency-reported county allocations — not direct payments to county residents.',
@@ -463,11 +587,30 @@ async function analyzeObjectCodeBreakdown(event: H3Event): Promise<SpotlightFind
       total > 0 ? pct(Number(row.amount || 0), total) + ' of total' : (row.group ?? undefined),
   }))
 
+  const deepLinks = dedupeDeepLinks([
+    {
+      label: `FY ${fiscalYear} object rankings`,
+      href: buildAppPath('/objects', { fy: fiscalYear, sort: 'amount' }),
+      description: 'Collection table ranked by object totals.',
+    },
+    ...objectRows.slice(0, 5).map((row, index) => ({
+      label: `Object detail: #${index + 1} ${row.title} (${row.code})`,
+      href: buildAppPath(`/objects/${row.code}`, { fy: fiscalYear }),
+      description: 'Object detail page with totals and filtered transaction rows.',
+    })),
+    ...objectRows.slice(0, 3).map((row) => ({
+      label: `Transaction rows for object ${row.code}`,
+      href: buildAppPath('/transactions', { fy: fiscalYear, object: row.code }),
+      description: 'Transaction table filtered to one object code.',
+    })),
+  ])
+
   return {
     angleId: 'object-code-breakdown',
     angleName: 'Comptroller Object Code Breakdown',
     fiscalYear,
     dataPoints,
+    deepLinks,
     summary: `In FY ${fiscalYear}, the top 10 comptroller object codes accounted for ${pct(
       objectRows.reduce((s, r) => s + Number(r.amount || 0), 0),
       total,
@@ -527,11 +670,43 @@ async function analyzeFiscalYearContrast(event: H3Event): Promise<SpotlightFindi
     })
   }
 
+  const deepLinks = dedupeDeepLinks([
+    ...(currentFy
+      ? [
+          {
+            label: `FY ${currentFy} agency rankings`,
+            href: buildAppPath('/agencies', { fy: currentFy, sort: 'total_spend' }),
+            description: 'Agency leaderboard for the current fiscal year.',
+          },
+          {
+            label: `FY ${currentFy} payee rankings`,
+            href: buildAppPath('/payees', { fy: currentFy, sort: 'amount' }),
+            description: 'Payee leaderboard for the current fiscal year.',
+          },
+        ]
+      : []),
+    ...(previousFy
+      ? [
+          {
+            label: `FY ${previousFy} agency rankings`,
+            href: buildAppPath('/agencies', { fy: previousFy, sort: 'total_spend' }),
+            description: 'Agency leaderboard for the prior fiscal year.',
+          },
+          {
+            label: `FY ${previousFy} payee rankings`,
+            href: buildAppPath('/payees', { fy: previousFy, sort: 'amount' }),
+            description: 'Payee leaderboard for the prior fiscal year.',
+          },
+        ]
+      : []),
+  ])
+
   return {
     angleId: 'fiscal-year-contrast',
     angleName: 'Fiscal Year Spending Contrast',
     fiscalYear: currentFy,
     dataPoints,
+    deepLinks,
     summary:
       currentFy && previousFy
         ? `From FY${previousFy} to FY${currentFy}, Texas public state spending changed by ${delta >= 0 ? '+' : ''}${formatUsdBig(delta)} (${signedPct(delta, previousTotal)}).`
@@ -567,6 +742,7 @@ async function analyzeAgencyGrowthMovers(event: H3Event): Promise<SpotlightFindi
       dataPoints: [
         { label: 'Insufficient data', value: 'Need at least 2 fiscal years of rollup data.' },
       ],
+      deepLinks: [],
       summary: 'Not enough fiscal year rollup data to compute year-over-year agency changes.',
       limitations: ['Year-over-year analysis requires rollup data for at least two fiscal years.'],
     }
@@ -599,6 +775,7 @@ async function analyzeAgencyGrowthMovers(event: H3Event): Promise<SpotlightFindi
   const movers = currentRows
     .filter((r) => prevMap.has(r.agencyId))
     .map((r) => ({
+      agencyId: r.agencyId,
       name: formatAgencyDisplayName(r.agencyName),
       current: Number(r.total || 0),
       prev: prevMap.get(r.agencyId) ?? 0,
@@ -616,11 +793,30 @@ async function analyzeAgencyGrowthMovers(event: H3Event): Promise<SpotlightFindi
     }
   })
 
+  const deepLinks = dedupeDeepLinks([
+    {
+      label: `FY ${currentFy} agency rankings`,
+      href: buildAppPath('/agencies', { fy: currentFy, sort: 'total_spend' }),
+      description: 'Current-year agency leaderboard.',
+    },
+    {
+      label: `FY ${prevFy} agency rankings`,
+      href: buildAppPath('/agencies', { fy: prevFy, sort: 'total_spend' }),
+      description: 'Prior-year agency leaderboard.',
+    },
+    ...movers.slice(0, 5).map((m) => ({
+      label: `Agency mover detail: ${m.name}`,
+      href: buildAppPath(`/agencies/${m.agencyId}`, { fy: currentFy }),
+      description: 'Agency detail page with trend tables and related breakdowns.',
+    })),
+  ])
+
   return {
     angleId: 'agency-growth-movers',
     angleName: 'Biggest Agency Spending Movers',
     fiscalYear: currentFy,
     dataPoints,
+    deepLinks,
     summary: `Comparing FY${prevFy} to FY${currentFy}, the largest agency spending changes — both increases and reductions — are shown below.`,
     limitations: [
       'Only agencies present in both fiscal years are included in the comparison.',

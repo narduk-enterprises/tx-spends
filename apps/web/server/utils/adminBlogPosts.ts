@@ -2,6 +2,7 @@ import type { H3Event } from 'h3'
 import { and, desc, eq, gte, ne, sql } from 'drizzle-orm'
 import { notifyIndexNow } from '#layer/server/utils/indexNow'
 import { blogAngles, blogPosts } from '#server/database/schema'
+import { BLOG_AUTHOR_NAME } from '#server/utils/blog/metadata'
 import { useAppDatabase } from '#server/utils/database'
 
 const BLOG_PUBLICATION_LOCK_NAMESPACE = 5405
@@ -144,7 +145,7 @@ function mapSummary(
   return {
     id: row.id,
     slug: row.slug,
-    author: row.author,
+    author: BLOG_AUTHOR_NAME,
     title: row.title,
     excerpt: row.excerpt,
     status: row.status,
@@ -239,7 +240,7 @@ export async function updateAdminBlogPost(
     .update(blogPosts)
     .set({
       slug: input.slug,
-      author: input.author.trim(),
+      author: BLOG_AUTHOR_NAME,
       title: input.title.trim(),
       excerpt: input.excerpt.trim(),
       body: serializeBody(input.body) as unknown as Record<string, unknown>,

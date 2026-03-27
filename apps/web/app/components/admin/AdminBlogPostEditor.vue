@@ -167,9 +167,9 @@ const livePath = computed(() =>
 
               <UFormField
                 label="Byline"
-                description="Shown on the public article page and blog cards."
+                description="Fixed public byline for all spotlight articles."
               >
-                <UInput v-model="editorState.author" />
+                <UInput :model-value="editorState.author" disabled />
               </UFormField>
             </div>
 
@@ -234,7 +234,10 @@ const livePath = computed(() =>
                       <UInput v-model="section.heading" />
                     </UFormField>
 
-                    <UFormField label="Content" description="Separate paragraphs with blank lines.">
+                    <UFormField
+                      label="Content"
+                      description="Separate paragraphs with blank lines. Inline markdown links like [agency table](/agencies?fy=2025) are supported."
+                    >
                       <UTextarea v-model="section.content" :rows="8" autoresize />
                     </UFormField>
                   </div>
@@ -268,6 +271,19 @@ const livePath = computed(() =>
                   <span v-if="point.context" class="text-muted">({{ point.context }})</span>
                 </li>
               </ul>
+
+              <div v-if="findings.deepLinks?.length" class="mt-4 space-y-2">
+                <p class="text-sm font-semibold text-default">Suggested deep links</p>
+                <ul class="space-y-2 text-sm text-default">
+                  <li v-for="link in findings.deepLinks" :key="link.href">
+                    <span class="font-medium">{{ link.label }}:</span>
+                    <span class="text-muted"> {{ link.description }} </span>
+                    <code class="ml-1 rounded bg-default px-1.5 py-0.5 text-xs text-primary">
+                      {{ link.href }}
+                    </code>
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
 

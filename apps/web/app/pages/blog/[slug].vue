@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { buildFetchKey } from '~/utils/explorer'
+import { BLOG_AUTHOR_NAME } from '~/utils/blog'
 
 const route = useRoute('/blog/[slug]')
 const slug = computed(() => String(route.params.slug))
@@ -44,7 +45,7 @@ const postTitle = computed(() => post.value?.title ?? 'Spending Spotlight')
 const postExcerpt = computed(
   () => post.value?.excerpt ?? 'A data-backed look at Texas state government spending.',
 )
-const postAuthor = computed(() => post.value?.author?.trim() || 'narduk@mac.com')
+const postAuthor = computed(() => post.value?.author?.trim() || BLOG_AUTHOR_NAME)
 const postPublishedAt = computed(() =>
   post.value?.published_at ? new Date(post.value.published_at).toISOString() : undefined,
 )
@@ -153,34 +154,7 @@ const body = computed<PostBody>(() => {
 
       <USeparator />
 
-      <!-- Body -->
-      <div class="space-y-6 text-base leading-relaxed text-default">
-        <!-- Introduction -->
-        <p v-if="body.intro" class="text-base leading-relaxed">
-          {{ body.intro }}
-        </p>
-
-        <!-- Sections -->
-        <template v-if="body.sections && body.sections.length > 0">
-          <section v-for="(section, i) in body.sections" :key="i" class="space-y-3">
-            <h2 class="text-xl font-semibold text-default">
-              {{ section.heading }}
-            </h2>
-            <template v-for="(para, j) in section.content.split('\n\n')" :key="j">
-              <p class="leading-relaxed text-default/90">{{ para }}</p>
-            </template>
-          </section>
-        </template>
-
-        <!-- Data Notes -->
-        <aside
-          v-if="body.dataNotes"
-          class="rounded-2xl border border-default bg-muted/30 p-4 text-sm text-muted"
-        >
-          <p class="mb-1 font-semibold text-default">Data Notes</p>
-          <p>{{ body.dataNotes }}</p>
-        </aside>
-      </div>
+      <BlogPostContent :body="body" />
 
       <USeparator />
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { buildFetchKey } from '~/utils/explorer'
+import { BLOG_AUTHOR_NAME } from '~/utils/blog'
 
 const title = 'Texas Spending Spotlight Blog'
 const description =
@@ -55,7 +56,7 @@ const posts = computed(() => data.value?.data ?? [])
         v-for="post in posts"
         :key="post.id"
         :slug="post.slug"
-        :author="post.author ?? 'narduk@mac.com'"
+        :author="post.author ?? BLOG_AUTHOR_NAME"
         :title="post.title"
         :excerpt="post.excerpt"
         :angle-name="post.angle_name ?? ''"

@@ -5,6 +5,7 @@
 import { getValidatedQuery } from 'h3'
 import { desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
+import { BLOG_AUTHOR_NAME } from '#server/utils/blog/metadata'
 import { useAppDatabase } from '#server/utils/database'
 import { blogPosts, blogAngles } from '#server/database/schema'
 
@@ -40,7 +41,7 @@ export default defineEventHandler(async (event) => {
     data: rows.map((row) => ({
       id: row.id,
       slug: row.slug,
-      author: row.author,
+      author: BLOG_AUTHOR_NAME,
       title: row.title,
       excerpt: row.excerpt,
       angle_id: row.angleId,

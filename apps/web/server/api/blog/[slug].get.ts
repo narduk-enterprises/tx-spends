@@ -5,6 +5,7 @@
 import { getRouterParam } from 'h3'
 import { eq, and } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
+import { BLOG_AUTHOR_NAME } from '#server/utils/blog/metadata'
 import { blogPosts, blogAngles } from '#server/database/schema'
 
 export default defineEventHandler(async (event) => {
@@ -46,7 +47,7 @@ export default defineEventHandler(async (event) => {
     data: {
       id: row.id,
       slug: row.slug,
-      author: row.author,
+      author: BLOG_AUTHOR_NAME,
       title: row.title,
       excerpt: row.excerpt,
       body: row.body, // jsonb — already parsed by Drizzle
