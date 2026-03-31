@@ -1,3 +1,5 @@
+export * from '#server/database/auth-bridge-schema'
+
 import {
   pgTable,
   uuid,
