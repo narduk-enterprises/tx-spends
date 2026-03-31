@@ -31,43 +31,37 @@
  * ```
  */
 
-import { computed, toValue, type MaybeRefOrGetter } from 'vue'
-
-type SeoTextValue = MaybeRefOrGetter<string | undefined>
-type SeoTypeValue = MaybeRefOrGetter<'website' | 'article' | 'profile' | undefined>
-type SeoKeywordsValue = MaybeRefOrGetter<string[] | undefined>
-
 interface SeoOptions {
   /** Page title (used in <title>, og:title, twitter:title) */
-  title: SeoTextValue
+  title: string
   /** Page description (used in <meta name="description">, og:description, twitter:description) */
-  description: SeoTextValue
+  description: string
   /** Static image URL for og:image / twitter:image. Overridden by `ogImage` if set. */
-  image?: SeoTextValue
+  image?: string
   /** Open Graph type — defaults to 'website'. Use 'article' for blog posts. */
-  type?: SeoTypeValue
+  type?: 'website' | 'article' | 'profile'
   /** ISO 8601 date string — for articles */
-  publishedAt?: SeoTextValue
+  publishedAt?: string
   /** ISO 8601 date string — for articles */
-  modifiedAt?: SeoTextValue
+  modifiedAt?: string
   /** Author name — for articles */
-  author?: SeoTextValue
+  author?: string
   /** Override canonical URL (defaults to current page URL via @nuxtjs/seo) */
-  canonicalUrl?: SeoTextValue
+  canonicalUrl?: string
   /** Keywords for meta keywords tag */
-  keywords?: SeoKeywordsValue
+  keywords?: string[]
   /** Dynamic OG image options — renders via OG image templates at the edge */
   ogImage?: {
-    title?: SeoTextValue
-    description?: SeoTextValue
-    icon?: SeoTextValue
+    title?: string
+    description?: string
+    icon?: string
     /** OG image component name suffix — defaults to 'Default', auto-selects 'Article' for article type */
-    component?: SeoTextValue
+    component?: string
     /** Category badge text — used by the Article template */
-    category?: SeoTextValue
+    category?: string
   }
   /** Additional robots directives — e.g., 'noindex', 'nofollow' */
-  robots?: SeoTextValue
+  robots?: string
 }
 
 export function useSeo(options: SeoOptions) {
@@ -85,72 +79,46 @@ export function useSeo(options: SeoOptions) {
     robots,
   } = options
 
-  const resolvedTitle = computed(() => toValue(title) ?? '')
-  const resolvedDescription = computed(() => toValue(description) ?? '')
-  const resolvedType = computed(() => toValue(type) ?? 'website')
-  const resolvedImage = image ? computed(() => toValue(image)) : undefined
-  const resolvedPublishedAt = publishedAt
-    ? computed(() => (resolvedType.value === 'article' ? toValue(publishedAt) : undefined))
-    : undefined
-  const resolvedModifiedAt = modifiedAt
-    ? computed(() => (resolvedType.value === 'article' ? toValue(modifiedAt) : undefined))
-    : undefined
-  const resolvedAuthor = author ? computed(() => toValue(author)) : undefined
-  const resolvedArticleAuthor = resolvedAuthor
-    ? computed(() => {
-        const authorValue = resolvedAuthor.value
-        return resolvedType.value === 'article' && authorValue ? [authorValue] : undefined
-      })
-    : undefined
-  const resolvedKeywords = keywords
-    ? computed(() => {
-        const keywordValues = toValue(keywords)
-        return keywordValues?.length ? keywordValues.join(', ') : undefined
-      })
-    : undefined
-  const resolvedRobots = robots ? computed(() => toValue(robots)) : undefined
-
   // --- Core meta tags (no intermediate Record<string, any>) ---
   useSeoMeta({
-    title: resolvedTitle,
-    description: resolvedDescription,
-    ogTitle: resolvedTitle,
-    ogDescription: resolvedDescription,
+    title,
+    description,
+    ogTitle: title,
+    ogDescription: description,
     // ogType accepts 'website' | 'article' | 'profile' etc.
-    ogType: resolvedType,
+    ogType: type,
     twitterCard: 'summary_large_image',
-    twitterTitle: resolvedTitle,
-    twitterDescription: resolvedDescription,
+    twitterTitle: title,
+    twitterDescription: description,
     // Static image fallback
-    ...(resolvedImage && { ogImage: resolvedImage, twitterImage: resolvedImage }),
+    ...(image && { ogImage: image, twitterImage: image }),
     // Article-specific
-    ...(resolvedPublishedAt && { articlePublishedTime: resolvedPublishedAt }),
-    ...(resolvedModifiedAt && { articleModifiedTime: resolvedModifiedAt }),
-    ...(resolvedArticleAuthor && { articleAuthor: resolvedArticleAuthor }),
+    ...(type === 'article' && publishedAt && { articlePublishedTime: publishedAt }),
+    ...(type === 'article' && modifiedAt && { articleModifiedTime: modifiedAt }),
+    ...(type === 'article' && author && { articleAuthor: [author] }),
     // Keywords
-    ...(resolvedKeywords && { keywords: resolvedKeywords }),
+    ...(keywords?.length && { keywords: keywords.join(', ') }),
     // Robots
-    ...(resolvedRobots && { robots: resolvedRobots }),
+    ...(robots && { robots }),
   })
 
   // --- Head extras ---
-  if (canonicalUrl !== undefined) {
+  if (canonicalUrl) {
     useHead({
-      link: [{ rel: 'canonical', href: computed(() => toValue(canonicalUrl) ?? '') }],
+      link: [{ rel: 'canonical', href: canonicalUrl }],
     })
   }
 
   // Dynamic OG: nuxt-og-image only applies on SSR; the client stub warns in dev if called.
   if (ogImage && import.meta.server) {
-    const componentName =
-      toValue(ogImage.component) || (resolvedType.value === 'article' ? 'Article' : 'Default')
+    const componentName = ogImage.component || (type === 'article' ? 'Article' : 'Default')
     // OgImage component names are registered at the consuming-app level;
     // the layer can't enumerate them at type-check time.
     defineOgImage(componentName as never, {
-      title: toValue(ogImage.title) || resolvedTitle.value,
-      description: toValue(ogImage.description) || resolvedDescription.value,
-      icon: toValue(ogImage.icon) || '✨',
-      ...(toValue(ogImage.category) && { category: toValue(ogImage.category) }),
+      title: ogImage.title || title,
+      description: ogImage.description || description,
+      icon: ogImage.icon || '✨',
+      ...(ogImage.category && { category: ogImage.category }),
     })
   }
 }

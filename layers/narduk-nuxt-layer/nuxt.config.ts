@@ -50,6 +50,22 @@ const ormTablesEntry =
   process.env.NUXT_DATABASE_BACKEND === 'postgres'
     ? './server/database/pg-schema.ts'
     : './server/database/schema.ts'
+type ViteRollupWarning = string | { message?: string; plugin?: string }
+type MutableViteBuildConfig = {
+  build?: {
+    rollupOptions?: {
+      onwarn?: (warning: unknown, warn: (warning: unknown) => void) => unknown
+    }
+  }
+}
+
+function isTailwindBuildSourcemapWarning(warning: ViteRollupWarning): boolean {
+  return (
+    typeof warning !== 'string' &&
+    warning.plugin === '@tailwindcss/vite:generate:build' &&
+    warning.message?.includes("didn't generate a sourcemap") === true
+  )
+}
 
 export default defineNuxtConfig({
   alias: {
@@ -99,6 +115,11 @@ export default defineNuxtConfig({
     databaseBackend: process.env.NUXT_DATABASE_BACKEND === 'postgres' ? 'postgres' : 'd1',
     /** Wrangler Hyperdrive binding name (default `HYPERDRIVE`). */
     hyperdriveBinding: process.env.NUXT_HYPERDRIVE_BINDING || 'HYPERDRIVE',
+    /**
+     * Downstream apps can override shared layer policies without patching vendored files:
+     * `runtimeConfig.rateLimitPolicies.authLogin = { maxRequests: 20, windowMs: 60_000 }`
+     */
+    rateLimitPolicies: {},
     /** Optional: secret for cron routes (e.g. cache warming). Set CRON_SECRET in Doppler; provisioning sets it. */
     cronSecret: process.env.CRON_SECRET || '',
     ownerTagSecret: process.env.OWNER_TAG_SECRET || '',
@@ -115,10 +136,10 @@ export default defineNuxtConfig({
     },
     appleTeamId: process.env.APPLE_TEAM_ID || '',
     appleKeyId: process.env.APPLE_KEY_ID || '',
-    appleSecretKey: process.env.APPLE_SECRET_KEY || '',
+    appleSecretKey: process.env.APPLE_PRIVATE_KEY || process.env.APPLE_SECRET_KEY || '',
     mapkitServerApiKey: process.env.MAPKIT_SERVER_API_KEY || '',
     public: {
-      mapkitToken: process.env.MAPKIT_TOKEN || '',
+      mapkitToken: process.env.APPLE_MAPKIT_TOKEN || process.env.MAPKIT_TOKEN || '',
       appVersion,
       buildVersion,
       buildTime,
@@ -152,6 +173,26 @@ export default defineNuxtConfig({
         ) {
           imports.splice(i, 1)
         }
+      }
+    },
+    'vite:extendConfig'(config, { isServer }) {
+      if (!isServer) return
+
+      const mutableConfig = config as MutableViteBuildConfig
+      mutableConfig.build ??= {}
+      mutableConfig.build.rollupOptions ??= {}
+      const existingOnWarn = mutableConfig.build.rollupOptions.onwarn
+
+      mutableConfig.build.rollupOptions.onwarn = (warning, warn) => {
+        // Upstream: @tailwindcss/vite does not currently emit a build
+        // sourcemap for SSR, so filter only this one known warning.
+        if (isTailwindBuildSourcemapWarning(warning as ViteRollupWarning)) return
+
+        if (typeof existingOnWarn === 'function') {
+          return existingOnWarn(warning, warn)
+        }
+
+        warn(warning)
       }
     },
   },

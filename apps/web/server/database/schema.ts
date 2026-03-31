@@ -7,4 +7,5 @@
  * plus app-schema.ts.
  */
 export * from '#layer/server/database/pg-schema'
+export * from '#server/database/auth-bridge-schema'
 export * from '#server/database/app-schema'

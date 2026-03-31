@@ -15,7 +15,7 @@
     "generate": "NUXT_DATABASE_BACKEND=postgres nuxt generate",
     "preview": "NUXT_DATABASE_BACKEND=postgres nuxt preview",
     "typecheck": "NUXT_DATABASE_BACKEND=postgres nuxt typecheck",
-    "deploy": "wrangler deploy --env=\"\"",
+    "deploy": "node ../../tools/web-deploy.cjs",
     "prelint": "test -f .nuxt/eslint.config.mjs || NUXT_DATABASE_BACKEND=postgres nuxt prepare",
     "lint": "eslint . --max-warnings 0",
     "test:unit": "vitest run",
@@ -30,7 +30,9 @@
     "drizzle-orm": "^0.45.1",
     "nuxt": "^4.3.1",
     "postgres": "^3.4.8",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "@supabase/auth-js": "^2.100.1",
+    "@supabase/supabase-js": "^2.100.1"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250303.0",

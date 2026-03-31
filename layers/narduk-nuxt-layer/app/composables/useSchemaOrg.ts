@@ -26,35 +26,27 @@
  * ```
  */
 
-import { computed, toValue, type MaybeRefOrGetter } from 'vue'
-
-type SchemaTextValue = MaybeRefOrGetter<string | undefined>
-type WebPageTypeValue = MaybeRefOrGetter<
-  | 'WebPage'
-  | 'AboutPage'
-  | 'ContactPage'
-  | 'CollectionPage'
-  | 'FAQPage'
-  | 'ItemPage'
-  | 'SearchResultsPage'
-  | undefined
->
-
 // --- WebPage schema ---
 interface WebPageOptions {
-  name?: SchemaTextValue
-  description?: SchemaTextValue
-  type?: WebPageTypeValue
+  name?: string
+  description?: string
+  type?:
+    | 'WebPage'
+    | 'AboutPage'
+    | 'ContactPage'
+    | 'CollectionPage'
+    | 'FAQPage'
+    | 'ItemPage'
+    | 'SearchResultsPage'
 }
 
 export function useWebPageSchema(options: WebPageOptions = {}) {
   const { name, description, type = 'WebPage' } = options
-  const resolvedType = toValue(type) ?? 'WebPage'
   useSchemaOrg([
     defineWebPage({
-      '@type': resolvedType,
-      ...(name !== undefined && { name: computed(() => toValue(name)) }),
-      ...(description !== undefined && { description: computed(() => toValue(description)) }),
+      '@type': type,
+      name,
+      description,
     }),
   ])
 }

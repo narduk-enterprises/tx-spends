@@ -157,9 +157,9 @@ Never print secret values or commit `.env`.
 
 ## Skills (deep reference when needed)
 
-Repo `.agents/skills/`: **nuxt-patterns**, **vue-best-practices**, **nuxt-ui**,
-Cloudflare **workers-best-practices** / **wrangler**, **playwright**,
-**code-reviewer**.
+Repo `.github/skills/`: **nuxt-patterns**, **vue-best-practices**, **nuxt-ui**,
+**build-spec**, Cloudflare **workers-best-practices** / **wrangler**,
+**playwright**, **code-reviewer**.
 
 ## Notes
 

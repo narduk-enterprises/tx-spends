@@ -47,7 +47,8 @@
     "test:e2e:visual": "playwright test apps/web/tests/e2e/visual-audit.spec.ts --project=web --config=playwright.config.ts",
     "generate:favicons": "pnpm exec tsx tools/generate-favicons.ts",
     "format": "prettier --write \"**/*.{ts,mts,vue,js,mjs,json,yaml,yml,css,md}\"",
-    "format:check": "prettier --check \"**/*.{ts,mts,vue,js,mjs,json,yaml,yml,css,md}\""
+    "format:check": "prettier --check \"**/*.{ts,mts,vue,js,mjs,json,yaml,yml,css,md}\"",
+    "sync:github-skills": "pnpm exec tsx tools/sync-github-skills.ts"
   },
   "pnpm": {
     "overrides": {
