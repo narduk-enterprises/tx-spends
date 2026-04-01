@@ -4,7 +4,7 @@
   "private": true,
   "version": "1.17.2",
   "scripts": {
-    "build": "NUXT_DATABASE_BACKEND=postgres nuxt build",
+    "build": "node ../../tools/run-with-platform-secrets.mjs --app tx-spends --environment prd --profile build -- sh -c 'NUXT_DATABASE_BACKEND=postgres nuxt build'",
     "predev": "pnpm run db:ready",
     "dev": "doppler run --config dev -- sh -c 'NUXT_DATABASE_BACKEND=postgres CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE=\"$DATABASE_URL\" nuxt dev'",
     "quality": "echo 'Turbo dependsOn handles lint + typecheck + format:check'",
