@@ -1,4 +1,4 @@
-import { requireAdmin } from '#layer/server/utils/auth'
+import { requireAdmin } from '#server/lib/auth'
 import { listAdminBlogPosts } from '#server/utils/adminBlogPosts'
 
 export default defineEventHandler(async (event) => {

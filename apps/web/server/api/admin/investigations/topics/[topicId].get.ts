@@ -1,5 +1,5 @@
 import { getRouterParam } from 'h3'
-import { requireAdmin } from '#layer/server/utils/auth'
+import { requireAdmin } from '#server/lib/auth'
 import { getAdminInvestigationTopic } from '#server/utils/adminInvestigationTopics'
 
 export default defineEventHandler(async (event) => {

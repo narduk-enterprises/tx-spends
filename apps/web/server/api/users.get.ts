@@ -1,6 +1,6 @@
 import { desc, sql } from 'drizzle-orm'
 import { z } from 'zod'
-import { requireAdmin } from '#layer/server/utils/auth'
+import { requireAdmin } from '#server/lib/auth'
 import { useDatabase } from '#layer/server/utils/database'
 import { users } from '#layer/orm-tables'
 
