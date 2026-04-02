@@ -18,7 +18,7 @@ export default defineUserMutation(
   async ({ event, user, body }) => {
     const log = useLogger(event).child('Auth')
     const db = useDatabase(event)
-    const dbUser = await db.select().from(users).where(eq(users.id, user.id)).get()
+    const [dbUser] = await db.select().from(users).where(eq(users.id, user.id)).limit(1)
 
     if (!dbUser || !dbUser.passwordHash) {
       throw createError({
@@ -45,7 +45,6 @@ export default defineUserMutation(
         updatedAt: new Date().toISOString(),
       })
       .where(eq(users.id, user.id))
-      .run()
 
     log.info('Password changed', { userId: user.id })
     return { success: true }

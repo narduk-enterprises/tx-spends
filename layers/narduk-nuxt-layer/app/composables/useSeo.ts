@@ -1,3 +1,8 @@
+import { toValue, type MaybeRefOrGetter } from 'vue'
+
+type SeoField<T> = MaybeRefOrGetter<T>
+type SeoGraphType = 'website' | 'article' | 'profile'
+
 /**
  * useSeo — One-call composable for complete per-page SEO.
  *
@@ -33,35 +38,39 @@
 
 interface SeoOptions {
   /** Page title (used in <title>, og:title, twitter:title) */
-  title: string
+  title: SeoField<string>
   /** Page description (used in <meta name="description">, og:description, twitter:description) */
-  description: string
+  description: SeoField<string>
   /** Static image URL for og:image / twitter:image. Overridden by `ogImage` if set. */
-  image?: string
+  image?: SeoField<string | undefined>
   /** Open Graph type — defaults to 'website'. Use 'article' for blog posts. */
-  type?: 'website' | 'article' | 'profile'
+  type?: SeoField<SeoGraphType | undefined>
   /** ISO 8601 date string — for articles */
-  publishedAt?: string
+  publishedAt?: SeoField<string | undefined>
   /** ISO 8601 date string — for articles */
-  modifiedAt?: string
+  modifiedAt?: SeoField<string | undefined>
   /** Author name — for articles */
-  author?: string
+  author?: SeoField<string | undefined>
   /** Override canonical URL (defaults to current page URL via @nuxtjs/seo) */
-  canonicalUrl?: string
+  canonicalUrl?: SeoField<string | undefined>
   /** Keywords for meta keywords tag */
-  keywords?: string[]
+  keywords?: SeoField<string[] | undefined>
   /** Dynamic OG image options — renders via OG image templates at the edge */
   ogImage?: {
-    title?: string
-    description?: string
-    icon?: string
+    title?: SeoField<string | undefined>
+    description?: SeoField<string | undefined>
+    icon?: SeoField<string | undefined>
     /** OG image component name suffix — defaults to 'Default', auto-selects 'Article' for article type */
-    component?: string
+    component?: SeoField<string | undefined>
     /** Category badge text — used by the Article template */
-    category?: string
+    category?: SeoField<string | undefined>
   }
   /** Additional robots directives — e.g., 'noindex', 'nofollow' */
-  robots?: string
+  robots?: SeoField<string | undefined>
+}
+
+function resolveSeoField<T>(value: SeoField<T> | undefined): T | undefined {
+  return value === undefined ? undefined : toValue(value)
 }
 
 export function useSeo(options: SeoOptions) {
@@ -81,44 +90,54 @@ export function useSeo(options: SeoOptions) {
 
   // --- Core meta tags (no intermediate Record<string, any>) ---
   useSeoMeta({
-    title,
-    description,
-    ogTitle: title,
-    ogDescription: description,
+    title: () => resolveSeoField(title) ?? '',
+    description: () => resolveSeoField(description) ?? '',
+    ogTitle: () => resolveSeoField(title) ?? '',
+    ogDescription: () => resolveSeoField(description) ?? '',
     // ogType accepts 'website' | 'article' | 'profile' etc.
-    ogType: type,
+    ogType: () => resolveSeoField(type) ?? 'website',
     twitterCard: 'summary_large_image',
-    twitterTitle: title,
-    twitterDescription: description,
+    twitterTitle: () => resolveSeoField(title) ?? '',
+    twitterDescription: () => resolveSeoField(description) ?? '',
     // Static image fallback
-    ...(image && { ogImage: image, twitterImage: image }),
+    ogImage: () => resolveSeoField(image),
+    twitterImage: () => resolveSeoField(image),
     // Article-specific
-    ...(type === 'article' && publishedAt && { articlePublishedTime: publishedAt }),
-    ...(type === 'article' && modifiedAt && { articleModifiedTime: modifiedAt }),
-    ...(type === 'article' && author && { articleAuthor: [author] }),
+    articlePublishedTime: () =>
+      resolveSeoField(type) === 'article' ? resolveSeoField(publishedAt) : undefined,
+    articleModifiedTime: () =>
+      resolveSeoField(type) === 'article' ? resolveSeoField(modifiedAt) : undefined,
+    articleAuthor: () => {
+      const resolvedAuthor = resolveSeoField(author)
+      return resolveSeoField(type) === 'article' && resolvedAuthor ? [resolvedAuthor] : undefined
+    },
     // Keywords
-    ...(keywords?.length && { keywords: keywords.join(', ') }),
+    keywords: () => {
+      const resolvedKeywords = resolveSeoField(keywords)
+      return resolvedKeywords?.length ? resolvedKeywords.join(', ') : undefined
+    },
     // Robots
-    ...(robots && { robots }),
+    robots: () => resolveSeoField(robots),
   })
 
   // --- Head extras ---
-  if (canonicalUrl) {
-    useHead({
-      link: [{ rel: 'canonical', href: canonicalUrl }],
-    })
-  }
+  useHead(() => {
+    const href = resolveSeoField(canonicalUrl)
+    return href ? { link: [{ rel: 'canonical', href }] } : {}
+  })
 
   // Dynamic OG: nuxt-og-image only applies on SSR; the client stub warns in dev if called.
   if (ogImage && import.meta.server) {
-    const componentName = ogImage.component || (type === 'article' ? 'Article' : 'Default')
+    const resolvedType = resolveSeoField(type) ?? 'website'
+    const componentName =
+      resolveSeoField(ogImage.component) || (resolvedType === 'article' ? 'Article' : 'Default')
     // OgImage component names are registered at the consuming-app level;
     // the layer can't enumerate them at type-check time.
     defineOgImage(componentName as never, {
-      title: ogImage.title || title,
-      description: ogImage.description || description,
-      icon: ogImage.icon || '✨',
-      ...(ogImage.category && { category: ogImage.category }),
+      title: resolveSeoField(ogImage.title) || resolveSeoField(title) || '',
+      description: resolveSeoField(ogImage.description) || resolveSeoField(description) || '',
+      icon: resolveSeoField(ogImage.icon) || '✨',
+      ...(resolveSeoField(ogImage.category) && { category: resolveSeoField(ogImage.category) }),
     })
   }
 }

@@ -24,7 +24,7 @@ export default defineUserMutation(
     const deleted = await db
       .delete(apiKeys)
       .where(and(eq(apiKeys.id, id), eq(apiKeys.userId, user.id)))
-      .returning({ id: apiKeys.id })
+      .returning()
 
     if (deleted.length === 0) {
       log.warn('API key not found for deletion', { keyId: id, userId: user.id })

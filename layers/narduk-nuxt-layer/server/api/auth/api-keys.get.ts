@@ -11,21 +11,17 @@ export default defineEventHandler(async (event) => {
   const user = await requireAuth(event)
   const db = useDatabase(event)
 
-  const keys = await db
-    .select({
-      id: apiKeys.id,
-      name: apiKeys.name,
-      keyPrefix: apiKeys.keyPrefix,
-      lastUsedAt: apiKeys.lastUsedAt,
-      expiresAt: apiKeys.expiresAt,
-      createdAt: apiKeys.createdAt,
-    })
-    .from(apiKeys)
-    .where(eq(apiKeys.userId, user.id))
-    .all()
+  const keys = await db.select().from(apiKeys).where(eq(apiKeys.userId, user.id))
 
   log.debug('API keys listed', { count: keys.length, userId: user.id })
-  return keys.sort((a: { createdAt: string }, b: { createdAt: string }) =>
-    b.createdAt.localeCompare(a.createdAt),
-  )
+  return keys
+    .map((key) => ({
+      id: key.id,
+      name: key.name,
+      keyPrefix: key.keyPrefix,
+      lastUsedAt: key.lastUsedAt,
+      expiresAt: key.expiresAt,
+      createdAt: key.createdAt,
+    }))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 })

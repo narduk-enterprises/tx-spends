@@ -113,7 +113,7 @@ export async function markNotificationAsRead(
     .update(notifications)
     .set({ isRead: true, readAt: now })
     .where(and(eq(notifications.id, notificationId), eq(notifications.userId, userId)))
-    .returning({ id: notifications.id })
+    .returning()
 
   if (!result.length) {
     throw createError({ statusCode: 404, message: 'Notification not found.' })
@@ -146,7 +146,7 @@ export async function deleteNotification(
   const result = await db
     .delete(notifications)
     .where(and(eq(notifications.id, notificationId), eq(notifications.userId, userId)))
-    .returning({ id: notifications.id })
+    .returning()
 
   if (!result.length) {
     throw createError({ statusCode: 404, message: 'Notification not found.' })

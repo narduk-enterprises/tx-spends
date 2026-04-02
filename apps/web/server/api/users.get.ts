@@ -1,4 +1,4 @@
-import { sql } from 'drizzle-orm'
+import { desc, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import { requireAdmin } from '#layer/server/utils/auth'
 import { useDatabase } from '#layer/server/utils/database'
@@ -22,28 +22,20 @@ export default defineEventHandler(async (event) => {
 
   const db = useDatabase(event)
 
-  const [totalResult, userRows] = await Promise.all([
-    db
-      .select({ count: sql<number>`count(*)` })
-      .from(users)
-      .get(),
-    db
-      .select({
-        id: users.id,
-        email: users.email,
-        name: users.name,
-        isAdmin: users.isAdmin,
-        createdAt: users.createdAt,
-      })
-      .from(users)
-      .orderBy(sql.raw('"users"."created_at" desc'))
-      .limit(limit)
-      .offset(offset)
-      .all(),
+  const [totalRows, userRows] = await Promise.all([
+    db.select({ count: sql<number>`count(*)` }).from(users),
+    db.select().from(users).orderBy(desc(users.createdAt)).limit(limit).offset(offset),
   ])
+  const totalResult = totalRows[0]
 
   return {
-    users: userRows,
+    users: userRows.map((user) => ({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      isAdmin: user.isAdmin,
+      createdAt: user.createdAt,
+    })),
     total: Number(totalResult?.count || 0),
     page,
     limit,

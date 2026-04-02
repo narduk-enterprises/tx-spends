@@ -44,7 +44,7 @@ export async function deleteCurrentUserAccount(
 ): Promise<void> {
   const log = useLogger(event).child('Auth')
   const db = useDatabase(event)
-  const dbUser = await db.select().from(users).where(eq(users.id, user.id)).get()
+  const [dbUser] = await db.select().from(users).where(eq(users.id, user.id)).limit(1)
 
   if (!dbUser) {
     throw createError({
@@ -76,7 +76,7 @@ export async function deleteCurrentUserAccount(
   }
 
   try {
-    await db.delete(users).where(eq(users.id, user.id)).run()
+    await db.delete(users).where(eq(users.id, user.id))
   } catch (error) {
     if (isForeignKeyConstraintError(error)) {
       throw createError({

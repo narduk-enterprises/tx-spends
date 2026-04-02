@@ -18,7 +18,11 @@ export async function getSystemPrompt(
   defaults: Record<string, AppSystemPromptConfig>,
 ): Promise<string> {
   const db = useDatabase(event)
-  const existing = await db.select().from(systemPrompts).where(eq(systemPrompts.name, name)).get()
+  const [existing] = await db
+    .select()
+    .from(systemPrompts)
+    .where(eq(systemPrompts.name, name))
+    .limit(1)
 
   if (existing) {
     return existing.content

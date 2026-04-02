@@ -20,7 +20,7 @@ export default definePublicMutation(
     const db = useDatabase(event)
     const normalizedEmail = body.email.toLowerCase()
 
-    const user = await db.select().from(users).where(eq(users.email, normalizedEmail)).get()
+    const [user] = await db.select().from(users).where(eq(users.email, normalizedEmail)).limit(1)
 
     if (!user || !user.passwordHash) {
       log.warn('Login failed — invalid credentials', { email: normalizedEmail })

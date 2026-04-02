@@ -1,5 +1,3 @@
-export * from '#server/database/auth-bridge-schema'
-
 import {
   pgTable,
   uuid,
@@ -17,6 +15,8 @@ import {
   jsonb,
 } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
+
+export * from '#server/database/auth-bridge-schema'
 
 // ========== DIMENSIONS ==========
 

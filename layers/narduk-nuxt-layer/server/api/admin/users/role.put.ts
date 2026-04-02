@@ -30,7 +30,6 @@ export default defineAdminMutation(
         updatedAt: new Date().toISOString(),
       })
       .where(eq(users.id, body.userId))
-      .run()
 
     return { success: true }
   },

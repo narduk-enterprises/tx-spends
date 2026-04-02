@@ -21,7 +21,11 @@ export default definePublicMutation(
     const db = useDatabase(event)
     const normalizedEmail = body.email.toLowerCase()
 
-    const existingUser = await db.select().from(users).where(eq(users.email, normalizedEmail)).get()
+    const [existingUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, normalizedEmail))
+      .limit(1)
     if (existingUser) {
       log.warn('Registration rejected — email exists', { email: normalizedEmail })
       throw createError({

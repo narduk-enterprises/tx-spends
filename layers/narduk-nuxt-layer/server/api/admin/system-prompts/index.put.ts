@@ -25,7 +25,6 @@ export default defineAdminMutation(
         updatedAt: new Date().toISOString(),
       })
       .where(eq(systemPrompts.name, body.name))
-      .run()
 
     return { success: true }
   },

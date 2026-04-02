@@ -17,7 +17,7 @@ export async function resolveDemoSessionUser(
   demoEmail: string,
 ): Promise<DemoSessionUser> {
   const db = useDatabase(event)
-  const user = await db.select().from(users).where(eq(users.email, demoEmail)).get()
+  const [user] = await db.select().from(users).where(eq(users.email, demoEmail)).limit(1)
 
   if (!user) {
     throw createError({

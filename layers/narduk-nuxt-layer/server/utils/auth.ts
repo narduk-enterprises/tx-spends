@@ -104,34 +104,17 @@ export async function getSessionUser(event: H3Event): Promise<User | null> {
   const db = useDatabase(event)
   const now = nowSec()
 
-  const rows = await db
+  const [row] = await db
     .select({
-      id: users.id,
-      email: users.email,
-      name: users.name,
-      passwordHash: users.passwordHash,
-      appleId: users.appleId,
-      isAdmin: users.isAdmin,
-      createdAt: users.createdAt,
-      updatedAt: users.updatedAt,
+      user: users,
     })
     .from(sessions)
     .innerJoin(users, eq(sessions.userId, users.id))
     .where(and(eq(sessions.id, token), gt(sessions.expiresAt, now)))
     .limit(1)
 
-  const row = rows[0]
   if (!row) return null
-  return {
-    id: row.id,
-    email: row.email,
-    name: row.name,
-    passwordHash: row.passwordHash,
-    appleId: row.appleId,
-    isAdmin: row.isAdmin,
-    createdAt: row.createdAt,
-    updatedAt: row.updatedAt,
-  } satisfies User
+  return row.user
 }
 
 /**
@@ -146,51 +129,33 @@ export async function authenticateApiKey(event: H3Event): Promise<User | null> {
   const db = useDatabase(event)
   const keyHash = await hashApiKey(rawKey)
 
-  const rows = await db
+  const [row] = await db
     .select({
-      keyId: apiKeys.id,
-      keyExpiresAt: apiKeys.expiresAt,
-      id: users.id,
-      email: users.email,
-      name: users.name,
-      passwordHash: users.passwordHash,
-      appleId: users.appleId,
-      isAdmin: users.isAdmin,
-      createdAt: users.createdAt,
-      updatedAt: users.updatedAt,
+      apiKey: apiKeys,
+      user: users,
     })
     .from(apiKeys)
     .innerJoin(users, eq(apiKeys.userId, users.id))
     .where(eq(apiKeys.keyHash, keyHash))
     .limit(1)
 
-  const row = rows[0]
   if (!row) return null
 
   // Check expiration
-  if (row.keyExpiresAt && row.keyExpiresAt < nowSec()) return null
+  if (row.apiKey.expiresAt && row.apiKey.expiresAt < nowSec()) return null
 
   // Update last_used_at (fire-and-forget, don't block the response)
-  db.update(apiKeys)
+  void db
+    .update(apiKeys)
     .set({ lastUsedAt: new Date().toISOString() })
-    .where(eq(apiKeys.id, row.keyId))
-    .run()
+    .where(eq(apiKeys.id, row.apiKey.id))
     .catch((err: unknown) =>
       useLogger(event)
         .child('Auth')
         .warn('Failed to update API key last_used_at', { error: String(err) }),
     )
 
-  return {
-    id: row.id,
-    email: row.email,
-    name: row.name,
-    passwordHash: row.passwordHash,
-    appleId: row.appleId,
-    isAdmin: row.isAdmin,
-    createdAt: row.createdAt,
-    updatedAt: row.updatedAt,
-  } as User
+  return row.user
 }
 
 /**

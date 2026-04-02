@@ -222,6 +222,11 @@ function buildAppUrl(
   return url.toString()
 }
 
+async function firstRow<T>(query: PromiseLike<T[]>): Promise<T | undefined> {
+  const rows = await query
+  return rows[0]
+}
+
 function toSessionUser(user: LocalUser, extras: Partial<AppSessionUser> = {}): AppSessionUser {
   return {
     id: user.id,
@@ -367,20 +372,22 @@ async function ensureLinkedLocalUser(event: H3Event, authUser: SupabaseUser): Pr
 
   const metadata = extractProviderMetadata(authUser)
   const now = new Date().toISOString()
-  const linked = await appDb
-    .select()
-    .from(authUserLinks)
-    .where(eq(authUserLinks.authUserId, authUser.id))
-    .get()
+  const linked = await firstRow(
+    appDb.select().from(authUserLinks).where(eq(authUserLinks.authUserId, authUser.id)).limit(1),
+  )
 
   let localUser: LocalUser | undefined
 
   if (linked) {
-    localUser = await db.select().from(users).where(eq(users.id, linked.localUserId)).get()
+    localUser = await firstRow(
+      db.select().from(users).where(eq(users.id, linked.localUserId)).limit(1),
+    )
   }
 
   if (!localUser) {
-    localUser = await db.select().from(users).where(eq(users.email, normalizedEmail)).get()
+    localUser = await firstRow(
+      db.select().from(users).where(eq(users.email, normalizedEmail)).limit(1),
+    )
   }
 
   if (!localUser) {
@@ -398,7 +405,7 @@ async function ensureLinkedLocalUser(event: H3Event, authUser: SupabaseUser): Pr
       updatedAt: now,
     })
 
-    localUser = await db.select().from(users).where(eq(users.id, newUserId)).get()
+    localUser = await firstRow(db.select().from(users).where(eq(users.id, newUserId)).limit(1))
   }
 
   if (!localUser) {
@@ -410,7 +417,7 @@ async function ensureLinkedLocalUser(event: H3Event, authUser: SupabaseUser): Pr
 
   const conflictingEmailUser =
     localUser.email !== normalizedEmail
-      ? await db.select({ id: users.id }).from(users).where(eq(users.email, normalizedEmail)).get()
+      ? await firstRow(db.select().from(users).where(eq(users.email, normalizedEmail)).limit(1))
       : null
 
   if (conflictingEmailUser && conflictingEmailUser.id !== localUser.id) {
@@ -431,13 +438,11 @@ async function ensureLinkedLocalUser(event: H3Event, authUser: SupabaseUser): Pr
     localUpdates.appleId = metadata.appleId
   }
 
-  await db.update(users).set(localUpdates).where(eq(users.id, localUser.id)).run()
+  await db.update(users).set(localUpdates).where(eq(users.id, localUser.id))
 
-  const existingLink = await appDb
-    .select()
-    .from(authUserLinks)
-    .where(eq(authUserLinks.localUserId, localUser.id))
-    .get()
+  const existingLink = await firstRow(
+    appDb.select().from(authUserLinks).where(eq(authUserLinks.localUserId, localUser.id)).limit(1),
+  )
 
   const linkValues = {
     localUserId: localUser.id,
@@ -454,7 +459,6 @@ async function ensureLinkedLocalUser(event: H3Event, authUser: SupabaseUser): Pr
       .update(authUserLinks)
       .set(linkValues)
       .where(eq(authUserLinks.localUserId, localUser.id))
-      .run()
   } else {
     await appDb.insert(authUserLinks).values({
       ...linkValues,
@@ -511,7 +515,7 @@ async function persistSupabaseSession(
   }
 
   if (params.sessionId) {
-    await appDb.update(authSessions).set(values).where(eq(authSessions.id, params.sessionId)).run()
+    await appDb.update(authSessions).set(values).where(eq(authSessions.id, params.sessionId))
   } else {
     await appDb.insert(authSessions).values({
       id: authSessionId,
@@ -544,7 +548,7 @@ async function clearCurrentSession(event: H3Event) {
   const authSessionId = sessionUser?.authSessionId
   if (authSessionId) {
     const appDb = useAppDatabase(event)
-    await appDb.delete(authSessions).where(eq(authSessions.id, authSessionId)).run()
+    await appDb.delete(authSessions).where(eq(authSessions.id, authSessionId))
   }
 
   deleteCookie(event, PKCE_COOKIE_NAME, { path: '/' })
@@ -561,11 +565,13 @@ export async function getCurrentSupabaseContext(event: H3Event) {
   }
 
   const appDb = useAppDatabase(event)
-  const authSession = await appDb
-    .select()
-    .from(authSessions)
-    .where(eq(authSessions.id, sessionUser.authSessionId))
-    .get()
+  const authSession = await firstRow(
+    appDb
+      .select()
+      .from(authSessions)
+      .where(eq(authSessions.id, sessionUser.authSessionId))
+      .limit(1),
+  )
 
   if (!authSession) {
     await clearUserSession(event)
@@ -582,7 +588,7 @@ export async function getCurrentSupabaseContext(event: H3Event) {
   })
 
   if (error || !data.session || !data.user) {
-    await appDb.delete(authSessions).where(eq(authSessions.id, authSession.id)).run()
+    await appDb.delete(authSessions).where(eq(authSessions.id, authSession.id))
     await clearUserSession(event)
     throw createError({
       statusCode: 401,
@@ -678,7 +684,9 @@ async function loginWithLocalAuth(event: H3Event, body: LoginInput): Promise<Aut
   const log = useLogger(event).child('AppAuth')
   const db = useDatabase(event)
   const normalizedEmail = normalizeEmail(body.email)
-  const user = await db.select().from(users).where(eq(users.email, normalizedEmail)).get()
+  const user = await firstRow(
+    db.select().from(users).where(eq(users.email, normalizedEmail)).limit(1),
+  )
 
   if (!user || !user.passwordHash) {
     log.warn('Local login failed', { email: normalizedEmail })
@@ -768,7 +776,9 @@ async function registerWithLocalAuth(
   const log = useLogger(event).child('AppAuth')
   const db = useDatabase(event)
   const normalizedEmail = normalizeEmail(body.email)
-  const existingUser = await db.select().from(users).where(eq(users.email, normalizedEmail)).get()
+  const existingUser = await firstRow(
+    db.select().from(users).where(eq(users.email, normalizedEmail)).limit(1),
+  )
 
   if (existingUser) {
     log.warn('Local registration rejected', { email: normalizedEmail })
@@ -787,7 +797,7 @@ async function registerWithLocalAuth(
     passwordHash,
   })
 
-  const user = await db.select().from(users).where(eq(users.id, userId)).get()
+  const user = await firstRow(db.select().from(users).where(eq(users.id, userId)).limit(1))
   if (!user) {
     throw createError({
       statusCode: 500,
@@ -1036,7 +1046,6 @@ export async function updateProfile(event: H3Event, body: UpdateProfileInput) {
         updatedAt: new Date().toISOString(),
       })
       .where(eq(users.id, context.localUser.id))
-      .run()
 
     if (data.user) {
       await ensureLinkedLocalUser(event, data.user)
@@ -1065,7 +1074,6 @@ export async function updateProfile(event: H3Event, body: UpdateProfileInput) {
       updatedAt: new Date().toISOString(),
     })
     .where(eq(users.id, sessionUser.id))
-    .run()
 
   const refreshedUser = {
     ...sessionUser,
@@ -1135,7 +1143,9 @@ export async function changePassword(event: H3Event, body: ChangePasswordInput) 
   }
 
   const db = useDatabase(event)
-  const dbUser = await db.select().from(users).where(eq(users.id, sessionUser.id)).get()
+  const dbUser = await firstRow(
+    db.select().from(users).where(eq(users.id, sessionUser.id)).limit(1),
+  )
 
   if (!dbUser || !dbUser.passwordHash) {
     throw createError({
@@ -1160,7 +1170,6 @@ export async function changePassword(event: H3Event, body: ChangePasswordInput) 
       updatedAt: new Date().toISOString(),
     })
     .where(eq(users.id, sessionUser.id))
-    .run()
 
   return { success: true }
 }
@@ -1261,11 +1270,9 @@ export async function deleteSupabaseAuthUser(event: H3Event, localUserId: string
   const config = getAuthConfig(event)
   const appDb = useAppDatabase(event)
 
-  const link = await appDb
-    .select({ authUserId: authUserLinks.authUserId })
-    .from(authUserLinks)
-    .where(eq(authUserLinks.localUserId, localUserId))
-    .get()
+  const link = await firstRow(
+    appDb.select().from(authUserLinks).where(eq(authUserLinks.localUserId, localUserId)).limit(1),
+  )
 
   if (!link) {
     return
