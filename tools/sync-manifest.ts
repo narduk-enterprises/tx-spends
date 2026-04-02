@@ -17,7 +17,9 @@ export const VERBATIM_SYNC_FILES = [
   'tools/install-git-hooks.cjs',
   'tools/command.ts',
   'tools/gsc-verify.ts',
+  'tools/layer-bundle-manifest.ts',
   'tools/provision-metadata.ts',
+  'tools/template-layer-selection.ts',
   'tools/update-layer.ts',
   'tools/validate.ts',
 
@@ -94,6 +96,7 @@ export const AUTH_BRIDGE_SYNC_FILES = [
   'apps/web/server/database/pg-app-schema.ts',
   'apps/web/server/database/pg-schema.ts',
   'apps/web/server/utils/app-auth.ts',
+  'apps/web/server/utils/accountDeletionBridge.ts',
   'apps/web/server/utils/session-user.ts',
   'apps/web/server/utils/supabase.ts',
   'apps/web/drizzle/0001_auth_bridge.sql',
@@ -115,6 +118,7 @@ export const REFERENCE_BASELINE_FILES = [
 
 export const RECURSIVE_SYNC_DIRECTORIES = [
   ...INHERITED_AGENTIC_WORKFLOW_DIRECTORIES,
+  '.github/skills',
   'deploy/preview',
   'packages/eslint-config',
   'tools/guardrails',
@@ -127,6 +131,7 @@ export const STALE_SYNC_PATHS = [
   '.agents/.DS_Store',
   '.github/workflows/publish-layer.yml',
   '.github/workflows/deploy-showcase.yml',
+  'apps/showcase',
   '.github/workflows/deploy.yml',
   '.github/workflows/version-bump.yml',
   '.github/workflows/template-sync-bot.yml',

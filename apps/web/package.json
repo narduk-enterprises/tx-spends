@@ -25,14 +25,16 @@
   },
   "dependencies": {
     "@narduk-enterprises/eslint-config": "^1.0.17",
-    "@narduk-enterprises/narduk-nuxt-template-layer": "workspace:*",
     "d3-geo": "^3.1.1",
     "drizzle-orm": "^0.45.1",
     "nuxt": "^4.3.1",
     "postgres": "^3.4.8",
     "zod": "^4.3.6",
     "@supabase/auth-js": "^2.100.1",
-    "@supabase/supabase-js": "^2.100.1"
+    "@supabase/supabase-js": "^2.100.1",
+    "@narduk-enterprises/narduk-nuxt-template-layer-core": "^1.0.14",
+    "@narduk-enterprises/narduk-nuxt-template-layer-auth": "^1.0.14",
+    "@narduk-enterprises/narduk-nuxt-template-layer-analytics": "^1.0.14"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250303.0",
