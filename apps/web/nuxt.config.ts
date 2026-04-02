@@ -78,7 +78,11 @@ const authProviders =
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   // Extend the published Narduk Nuxt Layer
-  extends: ['@narduk-enterprises/narduk-nuxt-template-layer'],
+  extends: [
+    '@narduk-enterprises/narduk-nuxt-template-layer-core',
+    '@narduk-enterprises/narduk-nuxt-template-layer-auth',
+    '@narduk-enterprises/narduk-nuxt-template-layer-analytics',
+  ],
 
   alias: {
     '#server/app-orm-tables': fileURLToPath(new URL(appOrmTablesEntry, import.meta.url)),

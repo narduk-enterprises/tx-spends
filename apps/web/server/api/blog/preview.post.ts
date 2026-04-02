@@ -24,7 +24,7 @@ import { runAnalyzer } from '#server/utils/blog/analyzers'
 import { generateBlogPost } from '#server/utils/blog/generator'
 import { defineAdminMutation, withOptionalValidatedBody } from '#layer/server/utils/mutation'
 import { RATE_LIMIT_POLICIES } from '#layer/server/utils/rateLimit'
-import { notifyIndexNow } from '#layer/server/utils/indexNow'
+import { notifyIndexNow } from '@narduk-enterprises/narduk-nuxt-template-layer-analytics/server/utils/indexNow'
 
 const bodySchema = z.object({
   angle_id: z

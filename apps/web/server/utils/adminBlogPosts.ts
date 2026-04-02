@@ -1,6 +1,6 @@
 import type { H3Event } from 'h3'
 import { and, desc, eq, gte, ne, sql } from 'drizzle-orm'
-import { notifyIndexNow } from '#layer/server/utils/indexNow'
+import { notifyIndexNow } from '@narduk-enterprises/narduk-nuxt-template-layer-analytics/server/utils/indexNow'
 import { blogAngles, blogPosts } from '#server/database/schema'
 import { BLOG_AUTHOR_NAME } from '#server/utils/blog/metadata'
 import { useAppDatabase } from '#server/utils/database'
