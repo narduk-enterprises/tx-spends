@@ -1,51 +1,33 @@
 <script setup lang="ts">
 import {
   buildFetchKey,
-  cleanQueryObject,
-  FISCAL_YEAR_OPTIONS,
   formatUsd,
   formatUsdCompact,
-  getNumberQueryValue,
 } from '~/utils/explorer'
 
 const route = useRoute()
 const router = useRouter()
-
 const objectCode = computed(() => String(route.params.code))
-const fiscalYear = computed(() => getNumberQueryValue(route.query.fy))
 
-const requestQuery = computed(() =>
-  cleanQueryObject({
-    fiscal_year: fiscalYear.value,
-  }),
-)
+const backBreadcrumb = ref({ label: 'Objects', to: '/objects' })
 
-const transactionsQuery = computed(() =>
-  cleanQueryObject({
-    object_code: objectCode.value,
-    fiscal_year: fiscalYear.value,
-    limit: 10,
-  }),
-)
+onMounted(() => {
+  const back = router.options.history.state.back
+  if (typeof back === 'string' && back !== '/') {
+    const splitPath = back.split('?')[0]
+    const segment = splitPath.split('/')[1]
+    const label = segment ? segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, ' ') : 'Back'
+    backBreadcrumb.value = { label, to: back }
+  }
+})
+
 const detailKey = computed(() =>
-  buildFetchKey(`object-detail:${objectCode.value}`, requestQuery.value),
-)
-const transactionsKey = computed(() =>
-  buildFetchKey(`object-transactions:${objectCode.value}`, transactionsQuery.value),
+  buildFetchKey(`object-detail:${objectCode.value}`),
 )
 
-const [detailState, transactionsState] = await Promise.all([
-  useLazyFetch(() => `/api/v1/objects/${objectCode.value}`, {
-    key: detailKey,
-    query: requestQuery,
-  }),
-  useLazyFetch('/api/v1/transactions', {
-    key: transactionsKey,
-    query: transactionsQuery,
-  }),
-])
-const { data: detail, status } = detailState
-const { data: transactions, status: transactionsStatus } = transactionsState
+const { data: detail, status } = await useLazyFetch(() => `/api/v1/objects/${objectCode.value}`, {
+  key: detailKey,
+})
 
 const objectDetail = computed(() => detail.value?.data)
 
@@ -56,7 +38,7 @@ const title = computed(() =>
 )
 const description = computed(() =>
   objectDetail.value
-    ? `Explore total spend and recent public transactions for comptroller object ${objectDetail.value.object_code}.`
+    ? `Explore total spend and referential details for comptroller object ${objectDetail.value.object_code}.`
     : 'Explore a comptroller object.',
 )
 
@@ -75,21 +57,6 @@ useWebPageSchema({
   description,
   type: 'ItemPage',
 })
-
-const filters = computed({
-  get: () => ({
-    fiscal_year: fiscalYear.value ? String(fiscalYear.value) : null,
-  }),
-  set: (value: { fiscal_year: string | null }) => {
-    router.replace({
-      query: cleanQueryObject({
-        ...route.query,
-        fy:
-          value.fiscal_year && value.fiscal_year !== 'all' ? String(value.fiscal_year) : undefined,
-      }),
-    })
-  },
-})
 </script>
 
 <template>
@@ -103,27 +70,28 @@ const filters = computed({
         eyebrow="Object detail"
         :title="objectDetail.object_title"
         :subtitle="
-          objectDetail.object_group || 'Comptroller object detail from the state payment feed.'
+          objectDetail.category_title || objectDetail.object_group || 'Comptroller object detail from the state payment feed.'
         "
         :breadcrumbs="[
           { label: 'Home', to: '/' },
-          { label: 'Objects', to: '/objects' },
+          backBreadcrumb,
           { label: objectDetail.object_code },
         ]"
         :badge="objectDetail.object_code"
-      />
-
-      <FilterBar
-        v-model="filters"
-        :available-filters="[
-          {
-            key: 'fiscal_year',
-            label: 'Fiscal year',
-            type: 'select',
-            options: FISCAL_YEAR_OPTIONS,
-          },
-        ]"
-      />
+      >
+        <template #actions>
+          <UButton
+            :to="`https://comptroller.texas.gov/open-search/?q=${objectDetail.object_code}`"
+            target="_blank"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-external-link"
+            class="rounded-full"
+          >
+            Official reference
+          </UButton>
+        </template>
+      </PageHeader>
 
       <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <KpiCard
@@ -139,40 +107,12 @@ const filters = computed({
           icon="i-lucide-hash"
         />
         <KpiCard
-          label="Object group"
-          :value="objectDetail.object_group || 'Unlisted'"
-          helper="Reference taxonomy"
+          label="Category"
+          :value="objectDetail.category_title || objectDetail.object_group || 'Unlisted'"
+          helper="Parent expenditure bucket"
           icon="i-lucide-layers-3"
         />
       </section>
-
-      <DataTableCard
-        title="Recent transactions"
-        description="Latest public transactions for this object code."
-        :columns="[
-          { key: 'payment_date', label: 'Date' },
-          { key: 'agency_name', label: 'Agency' },
-          { key: 'payee_name', label: 'Payee' },
-          { key: 'amount', label: 'Amount' },
-        ]"
-        :rows="transactions?.data || []"
-        :loading="transactionsStatus === 'pending'"
-      >
-        <template #agency_name-data="{ row }">
-          <UButton
-            :to="row.agency_id ? `/agencies/${row.agency_id}` : undefined"
-            :prefetch="false"
-            color="neutral"
-            variant="link"
-            class="px-0 font-semibold text-primary"
-          >
-            {{ row.agency_name || 'Unknown agency' }}
-          </UButton>
-        </template>
-        <template #amount-data="{ row }">
-          <span class="font-semibold text-default">{{ formatUsd(row.amount, 2) }}</span>
-        </template>
-      </DataTableCard>
     </template>
 
     <EmptyState

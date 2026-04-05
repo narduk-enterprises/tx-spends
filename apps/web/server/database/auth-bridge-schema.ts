@@ -1,5 +1,5 @@
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
-import { users } from '#layer/server/database/schema'
+import { users } from '../../../../layers/narduk-nuxt-layer/server/database/schema'
 
 /**
  * Template-managed authentication bridge tables.

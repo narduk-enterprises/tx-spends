@@ -25,25 +25,9 @@ export default defineNitroPlugin((nitro) => {
     if (event.cron !== BLOG_CRON_PATTERN) return
 
     const config = useRuntimeConfig()
-    // cronSecret and appUrl are app/layer runtime config keys; cast required
+    // cronSecret is an app/layer runtime config key; cast required
     const appConfig = config as Record<string, unknown>
     const cronSecret = (appConfig.cronSecret as string | undefined) ?? ''
-    const publicConfig = (appConfig.public as Record<string, unknown>) ?? {}
-    const siteUrl = (publicConfig.appUrl as string | undefined) ?? ''
-
-    // Security: only send the cron secret to a known HTTPS URL to prevent
-    // accidental leakage if appUrl is misconfigured.
-    if (!siteUrl.startsWith('https://') && !siteUrl.startsWith('http://localhost')) {
-      console.error(
-        JSON.stringify({
-          timestamp: new Date().toISOString(),
-          level: 'error',
-          message: 'Blog scheduler: appUrl is not a trusted URL — skipping publish',
-          data: { cron: event.cron },
-        }),
-      )
-      return
-    }
 
     // Fail closed if cronSecret is not configured — sending an empty bearer
     // token would trigger a 401 from the route and waste the request.
@@ -53,14 +37,16 @@ export default defineNitroPlugin((nitro) => {
           timestamp: new Date().toISOString(),
           level: 'error',
           message: 'Blog scheduler: cronSecret is not configured — skipping publish',
-          data: { cron: event.cron, hasAppUrl: Boolean(siteUrl) },
+          data: { cron: event.cron },
         }),
       )
       return
     }
 
     try {
-      await $fetch(`${siteUrl}/api/cron/blog/publish`, {
+      // Use a relative path to ensure Nitro routes the request internally.
+      // This avoids Cloudflare 'loop detected' errors when fetching our own custom domain.
+      await $fetch('/api/cron/blog/publish', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${cronSecret}`,

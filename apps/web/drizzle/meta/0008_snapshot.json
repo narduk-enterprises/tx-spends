@@ -1,0 +1,6267 @@
+{
+  "id": "cf61e010-4aaf-42bc-ab4a-e616c45ba49d",
+  "prevId": "2ae97d02-2575-4d95-b9d5-0b67a9c84b1f",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.agencies": {
+      "name": "agencies",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "agency_code": {
+          "name": "agency_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "agency_name": {
+          "name": "agency_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "agency_name_normalized": {
+          "name": "agency_name_normalized",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_system": {
+          "name": "source_system",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'texas_comptroller'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_agencies_name": {
+          "name": "idx_agencies_name",
+          "columns": [
+            {
+              "expression": "agency_name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_agencies_normalized": {
+          "name": "idx_agencies_normalized",
+          "columns": [
+            {
+              "expression": "agency_name_normalized",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "agencies_agency_name_normalized_unique": {
+          "name": "agencies_agency_name_normalized_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "agency_name_normalized"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.agency_external_ids": {
+      "name": "agency_external_ids",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "agency_id": {
+          "name": "agency_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "system": {
+          "name": "system",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "external_id": {
+          "name": "external_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "agency_external_ids_agency_id_agencies_id_fk": {
+          "name": "agency_external_ids_agency_id_agencies_id_fk",
+          "tableFrom": "agency_external_ids",
+          "tableTo": "agencies",
+          "columnsFrom": [
+            "agency_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "agency_external_ids_system_uq": {
+          "name": "agency_external_ids_system_uq",
+          "nullsNotDistinct": false,
+          "columns": [
+            "system",
+            "external_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.agency_name_crosswalk": {
+      "name": "agency_name_crosswalk",
+      "schema": "",
+      "columns": {
+        "county_agency_name_normalized": {
+          "name": "county_agency_name_normalized",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "agency_id": {
+          "name": "agency_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'manual'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "agency_name_crosswalk_agency_id_agencies_id_fk": {
+          "name": "agency_name_crosswalk_agency_id_agencies_id_fk",
+          "tableFrom": "agency_name_crosswalk",
+          "tableTo": "agencies",
+          "columnsFrom": [
+            "agency_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.annual_cash_report_facts": {
+      "name": "annual_cash_report_facts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "fiscal_year": {
+          "name": "fiscal_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fund_number": {
+          "name": "fund_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fund_name": {
+          "name": "fund_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cash_balance": {
+          "name": "cash_balance",
+          "type": "numeric(18, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "revenue_amount": {
+          "name": "revenue_amount",
+          "type": "numeric(18, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expenditure_amount": {
+          "name": "expenditure_amount",
+          "type": "numeric(18, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_table_name": {
+          "name": "source_table_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_loaded_at": {
+          "name": "source_loaded_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_acrf_fy": {
+          "name": "idx_acrf_fy",
+          "columns": [
+            {
+              "expression": "fiscal_year",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "annual_cash_report_facts_fiscal_year_fiscal_years_fiscal_year_fk": {
+          "name": "annual_cash_report_facts_fiscal_year_fiscal_years_fiscal_year_fk",
+          "tableFrom": "annual_cash_report_facts",
+          "tableTo": "fiscal_years",
+          "columnsFrom": [
+            "fiscal_year"
+          ],
+          "columnsTo": [
+            "fiscal_year"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "acrf_unique_key": {
+          "name": "acrf_unique_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "fiscal_year",
+            "fund_number",
+            "source_table_name"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.beverage_sales_facts": {
+      "name": "beverage_sales_facts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "source_row_hash": {
+          "name": "source_row_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payee_id": {
+          "name": "payee_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location_name_raw": {
+          "name": "location_name_raw",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location_city": {
+          "name": "location_city",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "taxpayer_name_raw": {
+          "name": "taxpayer_name_raw",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tabc_permit_number": {
+          "name": "tabc_permit_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "total_sales_receipts": {
+          "name": "total_sales_receipts",
+          "type": "numeric(15, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "total_taxable_receipts": {
+          "name": "total_taxable_receipts",
+          "type": "numeric(15, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "obligation_end_date": {
+          "name": "obligation_end_date",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_bsf_payee_id": {
+          "name": "idx_bsf_payee_id",
+          "columns": [
+            {
+              "expression": "payee_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "beverage_sales_facts_payee_id_payees_id_fk": {
+          "name": "beverage_sales_facts_payee_id_payees_id_fk",
+          "tableFrom": "beverage_sales_facts",
+          "tableTo": "payees",
+          "columnsFrom": [
+            "payee_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "beverage_sales_facts_source_row_hash_unique": {
+          "name": "beverage_sales_facts_source_row_hash_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "source_row_hash"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.blog_analyzer_runs": {
+      "name": "blog_analyzer_runs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "angle_id": {
+          "name": "angle_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "findings_json": {
+          "name": "findings_json",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "error_text": {
+          "name": "error_text",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "data_as_of_fiscal_year": {
+          "name": "data_as_of_fiscal_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "finished_at": {
+          "name": "finished_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "idx_blog_analyzer_runs_angle": {
+          "name": "idx_blog_analyzer_runs_angle",
+          "columns": [
+            {
+              "expression": "angle_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "started_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "blog_analyzer_runs_angle_id_blog_angles_id_fk": {
+          "name": "blog_analyzer_runs_angle_id_blog_angles_id_fk",
+          "tableFrom": "blog_analyzer_runs",
+          "tableTo": "blog_angles",
+          "columnsFrom": [
+            "angle_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.blog_angles": {
+      "name": "blog_angles",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_used_at": {
+          "name": "last_used_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "use_count": {
+          "name": "use_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.blog_posts": {
+      "name": "blog_posts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "author": {
+          "name": "author",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'narduk@mac.com'"
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "excerpt": {
+          "name": "excerpt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "body": {
+          "name": "body",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "angle_id": {
+          "name": "angle_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "analyzer_run_id": {
+          "name": "analyzer_run_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "findings_json": {
+          "name": "findings_json",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'draft'"
+        },
+        "published_at": {
+          "name": "published_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "generation_model": {
+          "name": "generation_model",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "generation_prompt_key": {
+          "name": "generation_prompt_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "index_now_submitted": {
+          "name": "index_now_submitted",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_blog_posts_status_published": {
+          "name": "idx_blog_posts_status_published",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "published_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_blog_posts_angle": {
+          "name": "idx_blog_posts_angle",
+          "columns": [
+            {
+              "expression": "angle_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "blog_posts_angle_id_blog_angles_id_fk": {
+          "name": "blog_posts_angle_id_blog_angles_id_fk",
+          "tableFrom": "blog_posts",
+          "tableTo": "blog_angles",
+          "columnsFrom": [
+            "angle_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "blog_posts_analyzer_run_id_blog_analyzer_runs_id_fk": {
+          "name": "blog_posts_analyzer_run_id_blog_analyzer_runs_id_fk",
+          "tableFrom": "blog_posts",
+          "tableTo": "blog_analyzer_runs",
+          "columnsFrom": [
+            "analyzer_run_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "blog_posts_slug_unique": {
+          "name": "blog_posts_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.comptroller_object_category_map": {
+      "name": "comptroller_object_category_map",
+      "schema": "",
+      "columns": {
+        "comptroller_object_code": {
+          "name": "comptroller_object_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expenditure_category_code": {
+          "name": "expenditure_category_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mapping_source": {
+          "name": "mapping_source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_inferred": {
+          "name": "is_inferred",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "comptroller_object_category_map_comptroller_object_code_comptroller_objects_code_fk": {
+          "name": "comptroller_object_category_map_comptroller_object_code_comptroller_objects_code_fk",
+          "tableFrom": "comptroller_object_category_map",
+          "tableTo": "comptroller_objects",
+          "columnsFrom": [
+            "comptroller_object_code"
+          ],
+          "columnsTo": [
+            "code"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "comptroller_object_category_map_expenditure_category_code_expenditure_categories_code_fk": {
+          "name": "comptroller_object_category_map_expenditure_category_code_expenditure_categories_code_fk",
+          "tableFrom": "comptroller_object_category_map",
+          "tableTo": "expenditure_categories",
+          "columnsFrom": [
+            "expenditure_category_code"
+          ],
+          "columnsTo": [
+            "code"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "comptroller_object_category_map_comptroller_object_code_expenditure_category_code_pk": {
+          "name": "comptroller_object_category_map_comptroller_object_code_expenditure_category_code_pk",
+          "columns": [
+            "comptroller_object_code",
+            "expenditure_category_code"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.comptroller_objects": {
+      "name": "comptroller_objects",
+      "schema": "",
+      "columns": {
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "object_group": {
+          "name": "object_group",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_expenditure": {
+          "name": "is_expenditure",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.county_expenditure_facts": {
+      "name": "county_expenditure_facts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "fiscal_year": {
+          "name": "fiscal_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "county_id": {
+          "name": "county_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "agency_id": {
+          "name": "agency_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "agency_name_raw": {
+          "name": "agency_name_raw",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expenditure_type_raw": {
+          "name": "expenditure_type_raw",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expenditure_category_code": {
+          "name": "expenditure_category_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "amount": {
+          "name": "amount",
+          "type": "numeric(16, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_dataset_key": {
+          "name": "source_dataset_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_loaded_at": {
+          "name": "source_loaded_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_cef_county_fy": {
+          "name": "idx_cef_county_fy",
+          "columns": [
+            {
+              "expression": "county_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "fiscal_year",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_cef_agency_fy": {
+          "name": "idx_cef_agency_fy",
+          "columns": [
+            {
+              "expression": "agency_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "fiscal_year",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_cef_fy_county_amount": {
+          "name": "idx_cef_fy_county_amount",
+          "columns": [
+            {
+              "expression": "fiscal_year",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "county_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "amount",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "county_expenditure_facts_fiscal_year_fiscal_years_fiscal_year_fk": {
+          "name": "county_expenditure_facts_fiscal_year_fiscal_years_fiscal_year_fk",
+          "tableFrom": "county_expenditure_facts",
+          "tableTo": "fiscal_years",
+          "columnsFrom": [
+            "fiscal_year"
+          ],
+          "columnsTo": [
+            "fiscal_year"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "county_expenditure_facts_county_id_geographies_counties_id_fk": {
+          "name": "county_expenditure_facts_county_id_geographies_counties_id_fk",
+          "tableFrom": "county_expenditure_facts",
+          "tableTo": "geographies_counties",
+          "columnsFrom": [
+            "county_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "county_expenditure_facts_agency_id_agencies_id_fk": {
+          "name": "county_expenditure_facts_agency_id_agencies_id_fk",
+          "tableFrom": "county_expenditure_facts",
+          "tableTo": "agencies",
+          "columnsFrom": [
+            "agency_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "county_expenditure_facts_expenditure_category_code_expenditure_categories_code_fk": {
+          "name": "county_expenditure_facts_expenditure_category_code_expenditure_categories_code_fk",
+          "tableFrom": "county_expenditure_facts",
+          "tableTo": "expenditure_categories",
+          "columnsFrom": [
+            "expenditure_category_code"
+          ],
+          "columnsTo": [
+            "code"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "cef_unique_key": {
+          "name": "cef_unique_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "fiscal_year",
+            "county_id",
+            "agency_name_raw",
+            "expenditure_type_raw"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.dir_contracts": {
+      "name": "dir_contracts",
+      "schema": "",
+      "columns": {
+        "dir_contract_number": {
+          "name": "dir_contract_number",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "vendor_vid": {
+          "name": "vendor_vid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vendor_name": {
+          "name": "vendor_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rfo": {
+          "name": "rfo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contract_status": {
+          "name": "contract_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contract_start_date": {
+          "name": "contract_start_date",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contract_term_date": {
+          "name": "contract_term_date",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contract_expiration_date": {
+          "name": "contract_expiration_date",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "commodity_codes_json": {
+          "name": "commodity_codes_json",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "products_services_json": {
+          "name": "products_services_json",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contract_documents_json": {
+          "name": "contract_documents_json",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ingestion_run_id": {
+          "name": "ingestion_run_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_row_hash": {
+          "name": "source_row_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "dir_contracts_source_row_hash_unique": {
+          "name": "dir_contracts_source_row_hash_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "source_row_hash"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.dir_sales_facts": {
+      "name": "dir_sales_facts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "source_row_hash": {
+          "name": "source_row_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fiscal_year": {
+          "name": "fiscal_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "customer_name_raw": {
+          "name": "customer_name_raw",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "agency_id": {
+          "name": "agency_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vendor_name_raw": {
+          "name": "vendor_name_raw",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "purchase_amount": {
+          "name": "purchase_amount",
+          "type": "numeric(16, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "contract_number": {
+          "name": "contract_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rfo_description": {
+          "name": "rfo_description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "order_quantity": {
+          "name": "order_quantity",
+          "type": "numeric(16, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "unit_price": {
+          "name": "unit_price",
+          "type": "numeric(16, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "invoice_number": {
+          "name": "invoice_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "po_number": {
+          "name": "po_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "shipped_date": {
+          "name": "shipped_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contract_type": {
+          "name": "contract_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contract_subtype": {
+          "name": "contract_subtype",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "staffing_contractor_name": {
+          "name": "staffing_contractor_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "staffing_title": {
+          "name": "staffing_title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "staffing_start_date": {
+          "name": "staffing_start_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_loaded_at": {
+          "name": "source_loaded_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_dsf_agency_fy": {
+          "name": "idx_dsf_agency_fy",
+          "columns": [
+            {
+              "expression": "agency_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "fiscal_year",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_dsf_po_number": {
+          "name": "idx_dsf_po_number",
+          "columns": [
+            {
+              "expression": "po_number",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "dir_sales_facts_agency_id_agencies_id_fk": {
+          "name": "dir_sales_facts_agency_id_agencies_id_fk",
+          "tableFrom": "dir_sales_facts",
+          "tableTo": "agencies",
+          "columnsFrom": [
+            "agency_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "dir_sales_facts_source_row_hash_unique": {
+          "name": "dir_sales_facts_source_row_hash_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "source_row_hash"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.economic_development_facts": {
+      "name": "economic_development_facts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "source_row_hash": {
+          "name": "source_row_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "recipient_name_raw": {
+          "name": "recipient_name_raw",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fund_raw": {
+          "name": "fund_raw",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expenditure_category_raw": {
+          "name": "expenditure_category_raw",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fiscal_year": {
+          "name": "fiscal_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount": {
+          "name": "amount",
+          "type": "numeric(18, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_loaded_at": {
+          "name": "source_loaded_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_edf_fy_recipient": {
+          "name": "idx_edf_fy_recipient",
+          "columns": [
+            {
+              "expression": "fiscal_year",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "recipient_name_raw",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "economic_development_facts_fiscal_year_fiscal_years_fiscal_year_fk": {
+          "name": "economic_development_facts_fiscal_year_fiscal_years_fiscal_year_fk",
+          "tableFrom": "economic_development_facts",
+          "tableTo": "fiscal_years",
+          "columnsFrom": [
+            "fiscal_year"
+          ],
+          "columnsTo": [
+            "fiscal_year"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "economic_development_facts_source_row_hash_unique": {
+          "name": "economic_development_facts_source_row_hash_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "source_row_hash"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.esbd_attachments": {
+      "name": "esbd_attachments",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "solicitation_id": {
+          "name": "solicitation_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "attachment_name": {
+          "name": "attachment_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "attachment_description": {
+          "name": "attachment_description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "attachment_url": {
+          "name": "attachment_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "esbd_attachments_solicitation_id_esbd_solicitations_details_solicitation_id_fk": {
+          "name": "esbd_attachments_solicitation_id_esbd_solicitations_details_solicitation_id_fk",
+          "tableFrom": "esbd_attachments",
+          "tableTo": "esbd_solicitations_details",
+          "columnsFrom": [
+            "solicitation_id"
+          ],
+          "columnsTo": [
+            "solicitation_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.esbd_solicitations_details": {
+      "name": "esbd_solicitations_details",
+      "schema": "",
+      "columns": {
+        "solicitation_id": {
+          "name": "solicitation_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "contact_name": {
+          "name": "contact_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contact_phone": {
+          "name": "contact_phone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contact_email": {
+          "name": "contact_email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "posting_requirement": {
+          "name": "posting_requirement",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "procurement_certification": {
+          "name": "procurement_certification",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "solicitation_posting_date": {
+          "name": "solicitation_posting_date",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_modified_datetime": {
+          "name": "last_modified_datetime",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "class_item_codes_raw": {
+          "name": "class_item_codes_raw",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "addendum_text": {
+          "name": "addendum_text",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "solicitation_description": {
+          "name": "solicitation_description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ingestion_run_id": {
+          "name": "ingestion_run_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_row_hash": {
+          "name": "source_row_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "esbd_solicitations_details_source_row_hash_unique": {
+          "name": "esbd_solicitations_details_source_row_hash_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "source_row_hash"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.esbd_solicitations": {
+      "name": "esbd_solicitations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "solicitation_id": {
+          "name": "solicitation_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "agency_member_number": {
+          "name": "agency_member_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "posting_date": {
+          "name": "posting_date",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_datetime": {
+          "name": "created_datetime",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_updated_datetime": {
+          "name": "last_updated_datetime",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "due_date": {
+          "name": "due_date",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "due_time": {
+          "name": "due_time",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "details_url": {
+          "name": "details_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ingestion_run_id": {
+          "name": "ingestion_run_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_row_hash": {
+          "name": "source_row_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "esbd_solicitations_source_row_hash_unique": {
+          "name": "esbd_solicitations_source_row_hash_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "source_row_hash"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.expenditure_categories": {
+      "name": "expenditure_categories",
+      "schema": "",
+      "columns": {
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "display_order": {
+          "name": "display_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.fiscal_years": {
+      "name": "fiscal_years",
+      "schema": "",
+      "columns": {
+        "fiscal_year": {
+          "name": "fiscal_year",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "start_date": {
+          "name": "start_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "end_date": {
+          "name": "end_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "label": {
+          "name": "label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.geographies_counties": {
+      "name": "geographies_counties",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "state_code": {
+          "name": "state_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'TX'"
+        },
+        "county_name": {
+          "name": "county_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "county_name_normalized": {
+          "name": "county_name_normalized",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fips_code": {
+          "name": "fips_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "counties_state_name_uq": {
+          "name": "counties_state_name_uq",
+          "nullsNotDistinct": false,
+          "columns": [
+            "state_code",
+            "county_name_normalized"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.ingestion_runs": {
+      "name": "ingestion_runs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "job_name": {
+          "name": "job_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_name": {
+          "name": "source_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_url": {
+          "name": "source_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_dataset_id": {
+          "name": "source_dataset_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_file_name": {
+          "name": "source_file_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "artifact_checksum_sha256": {
+          "name": "artifact_checksum_sha256",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rows_in": {
+          "name": "rows_in",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rows_staged": {
+          "name": "rows_staged",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rows_inserted": {
+          "name": "rows_inserted",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rows_updated": {
+          "name": "rows_updated",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rows_rejected": {
+          "name": "rows_rejected",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "error_text": {
+          "name": "error_text",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "finished_at": {
+          "name": "finished_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "idx_ingestion_runs_job_started": {
+          "name": "idx_ingestion_runs_job_started",
+          "columns": [
+            {
+              "expression": "job_name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "started_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.investigation_topics": {
+      "name": "investigation_topics",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "priority_rank": {
+          "name": "priority_rank",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'backlog'"
+        },
+        "lane": {
+          "name": "lane",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "flagged_pattern": {
+          "name": "flagged_pattern",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "impact": {
+          "name": "impact",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "difficulty": {
+          "name": "difficulty",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "summary": {
+          "name": "summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "investigative_question": {
+          "name": "investigative_question",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "public_impact": {
+          "name": "public_impact",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "notes": {
+          "name": "notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "source_references": {
+          "name": "source_references",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "records_to_obtain": {
+          "name": "records_to_obtain",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "reporting_steps": {
+          "name": "reporting_steps",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "visual_ideas": {
+          "name": "visual_ideas",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_investigation_topics_status": {
+          "name": "idx_investigation_topics_status",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_investigation_topics_priority_updated": {
+          "name": "idx_investigation_topics_priority_updated",
+          "columns": [
+            {
+              "expression": "priority_rank",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "investigation_topics_slug_unique": {
+          "name": "investigation_topics_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.lbb_contracts": {
+      "name": "lbb_contracts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "agency_code": {
+          "name": "agency_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "contract_number": {
+          "name": "contract_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "subject": {
+          "name": "subject",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "purchase_requisition_number": {
+          "name": "purchase_requisition_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "agency_approval_date": {
+          "name": "agency_approval_date",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "solicitation_post_date": {
+          "name": "solicitation_post_date",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "award_date": {
+          "name": "award_date",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "requisition_date": {
+          "name": "requisition_date",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "completion_date": {
+          "name": "completion_date",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "current_value_usd": {
+          "name": "current_value_usd",
+          "type": "numeric(18, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "maximum_value_usd": {
+          "name": "maximum_value_usd",
+          "type": "numeric(18, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "competitive_type": {
+          "name": "competitive_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "revenue_generating": {
+          "name": "revenue_generating",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pcc_codes_json": {
+          "name": "pcc_codes_json",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "report_requirement_codes_json": {
+          "name": "report_requirement_codes_json",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vendor_name_raw": {
+          "name": "vendor_name_raw",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vendor_address1": {
+          "name": "vendor_address1",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vendor_address2": {
+          "name": "vendor_address2",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vendor_address3": {
+          "name": "vendor_address3",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vendor_address4": {
+          "name": "vendor_address4",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vendor_city": {
+          "name": "vendor_city",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vendor_state": {
+          "name": "vendor_state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vendor_postal_code": {
+          "name": "vendor_postal_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vendor_area_code": {
+          "name": "vendor_area_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vendor_phone_number": {
+          "name": "vendor_phone_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "attachments_count": {
+          "name": "attachments_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ingestion_run_id": {
+          "name": "ingestion_run_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_row_hash": {
+          "name": "source_row_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "lbb_contracts_source_row_hash_unique": {
+          "name": "lbb_contracts_source_row_hash_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "source_row_hash"
+          ]
+        },
+        "lbb_contracts_agency_number_uq": {
+          "name": "lbb_contracts_agency_number_uq",
+          "nullsNotDistinct": false,
+          "columns": [
+            "agency_code",
+            "contract_number"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.nigp_commodity_codes": {
+      "name": "nigp_commodity_codes",
+      "schema": "",
+      "columns": {
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.payee_vendor_matches": {
+      "name": "payee_vendor_matches",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "payee_id": {
+          "name": "payee_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "vendor_enrichment_id": {
+          "name": "vendor_enrichment_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "match_method": {
+          "name": "match_method",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "match_confidence": {
+          "name": "match_confidence",
+          "type": "numeric(5, 4)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_manual_override": {
+          "name": "is_manual_override",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "review_status": {
+          "name": "review_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'unreviewed'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_payee_vendor_matches_vendor": {
+          "name": "idx_payee_vendor_matches_vendor",
+          "columns": [
+            {
+              "expression": "vendor_enrichment_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "payee_vendor_matches_payee_id_payees_id_fk": {
+          "name": "payee_vendor_matches_payee_id_payees_id_fk",
+          "tableFrom": "payee_vendor_matches",
+          "tableTo": "payees",
+          "columnsFrom": [
+            "payee_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "payee_vendor_matches_vendor_enrichment_id_vendor_enrichment_id_fk": {
+          "name": "payee_vendor_matches_vendor_enrichment_id_vendor_enrichment_id_fk",
+          "tableFrom": "payee_vendor_matches",
+          "tableTo": "vendor_enrichment",
+          "columnsFrom": [
+            "vendor_enrichment_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "payee_vendor_matches_payee_id_uq": {
+          "name": "payee_vendor_matches_payee_id_uq",
+          "nullsNotDistinct": false,
+          "columns": [
+            "payee_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.payees": {
+      "name": "payees",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "payee_name_raw": {
+          "name": "payee_name_raw",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payee_name_normalized": {
+          "name": "payee_name_normalized",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_confidential": {
+          "name": "is_confidential",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "entity_type": {
+          "name": "entity_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_payees_normalized": {
+          "name": "idx_payees_normalized",
+          "columns": [
+            {
+              "expression": "payee_name_normalized",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "payees_normalized_confidential_uq": {
+          "name": "payees_normalized_confidential_uq",
+          "nullsNotDistinct": false,
+          "columns": [
+            "payee_name_normalized",
+            "is_confidential"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.payment_agency_rollups": {
+      "name": "payment_agency_rollups",
+      "schema": "",
+      "columns": {
+        "scope_fiscal_year": {
+          "name": "scope_fiscal_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "agency_id": {
+          "name": "agency_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "total_spend_all": {
+          "name": "total_spend_all",
+          "type": "numeric(18, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "total_spend_public": {
+          "name": "total_spend_public",
+          "type": "numeric(18, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payment_count_all": {
+          "name": "payment_count_all",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payment_count_public": {
+          "name": "payment_count_public",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "distinct_payee_count_all": {
+          "name": "distinct_payee_count_all",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "distinct_payee_count_public": {
+          "name": "distinct_payee_count_public",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_par_scope_total_public": {
+          "name": "idx_par_scope_total_public",
+          "columns": [
+            {
+              "expression": "scope_fiscal_year",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "total_spend_public",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_par_scope_total_all": {
+          "name": "idx_par_scope_total_all",
+          "columns": [
+            {
+              "expression": "scope_fiscal_year",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "total_spend_all",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "payment_agency_rollups_agency_id_agencies_id_fk": {
+          "name": "payment_agency_rollups_agency_id_agencies_id_fk",
+          "tableFrom": "payment_agency_rollups",
+          "tableTo": "agencies",
+          "columnsFrom": [
+            "agency_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "payment_agency_rollups_scope_fiscal_year_agency_id_pk": {
+          "name": "payment_agency_rollups_scope_fiscal_year_agency_id_pk",
+          "columns": [
+            "scope_fiscal_year",
+            "agency_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.payment_category_rollups": {
+      "name": "payment_category_rollups",
+      "schema": "",
+      "columns": {
+        "scope_fiscal_year": {
+          "name": "scope_fiscal_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category_code": {
+          "name": "category_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category_title": {
+          "name": "category_title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "total_amount_all": {
+          "name": "total_amount_all",
+          "type": "numeric(18, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "total_amount_public": {
+          "name": "total_amount_public",
+          "type": "numeric(18, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payment_count_all": {
+          "name": "payment_count_all",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payment_count_public": {
+          "name": "payment_count_public",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "agency_count_all": {
+          "name": "agency_count_all",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "agency_count_public": {
+          "name": "agency_count_public",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payee_count_all": {
+          "name": "payee_count_all",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payee_count_public": {
+          "name": "payee_count_public",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_pcr_scope_total_public": {
+          "name": "idx_pcr_scope_total_public",
+          "columns": [
+            {
+              "expression": "scope_fiscal_year",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "total_amount_public",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_pcr_scope_total_all": {
+          "name": "idx_pcr_scope_total_all",
+          "columns": [
+            {
+              "expression": "scope_fiscal_year",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "total_amount_all",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "payment_category_rollups_scope_fiscal_year_category_code_pk": {
+          "name": "payment_category_rollups_scope_fiscal_year_category_code_pk",
+          "columns": [
+            "scope_fiscal_year",
+            "category_code"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.payment_object_rollups": {
+      "name": "payment_object_rollups",
+      "schema": "",
+      "columns": {
+        "scope_fiscal_year": {
+          "name": "scope_fiscal_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "object_code": {
+          "name": "object_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "object_title": {
+          "name": "object_title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "object_group": {
+          "name": "object_group",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "total_amount_all": {
+          "name": "total_amount_all",
+          "type": "numeric(18, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "total_amount_public": {
+          "name": "total_amount_public",
+          "type": "numeric(18, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payment_count_all": {
+          "name": "payment_count_all",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payment_count_public": {
+          "name": "payment_count_public",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_por_scope_total_public": {
+          "name": "idx_por_scope_total_public",
+          "columns": [
+            {
+              "expression": "scope_fiscal_year",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "total_amount_public",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_por_scope_total_all": {
+          "name": "idx_por_scope_total_all",
+          "columns": [
+            {
+              "expression": "scope_fiscal_year",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "total_amount_all",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "payment_object_rollups_object_code_comptroller_objects_code_fk": {
+          "name": "payment_object_rollups_object_code_comptroller_objects_code_fk",
+          "tableFrom": "payment_object_rollups",
+          "tableTo": "comptroller_objects",
+          "columnsFrom": [
+            "object_code"
+          ],
+          "columnsTo": [
+            "code"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "payment_object_rollups_scope_fiscal_year_object_code_pk": {
+          "name": "payment_object_rollups_scope_fiscal_year_object_code_pk",
+          "columns": [
+            "scope_fiscal_year",
+            "object_code"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.payment_overview_rollups": {
+      "name": "payment_overview_rollups",
+      "schema": "",
+      "columns": {
+        "scope_fiscal_year": {
+          "name": "scope_fiscal_year",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "total_spend_all": {
+          "name": "total_spend_all",
+          "type": "numeric(18, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "total_spend_public": {
+          "name": "total_spend_public",
+          "type": "numeric(18, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payment_count_all": {
+          "name": "payment_count_all",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payment_count_public": {
+          "name": "payment_count_public",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "agency_count_all": {
+          "name": "agency_count_all",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "agency_count_public": {
+          "name": "agency_count_public",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payee_count_all": {
+          "name": "payee_count_all",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payee_count_public": {
+          "name": "payee_count_public",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.payment_payee_rollups": {
+      "name": "payment_payee_rollups",
+      "schema": "",
+      "columns": {
+        "scope_fiscal_year": {
+          "name": "scope_fiscal_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payee_id": {
+          "name": "payee_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "total_amount_all": {
+          "name": "total_amount_all",
+          "type": "numeric(18, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "total_amount_public": {
+          "name": "total_amount_public",
+          "type": "numeric(18, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payment_count_all": {
+          "name": "payment_count_all",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payment_count_public": {
+          "name": "payment_count_public",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "agency_count_all": {
+          "name": "agency_count_all",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "agency_count_public": {
+          "name": "agency_count_public",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_ppr_scope_total_public": {
+          "name": "idx_ppr_scope_total_public",
+          "columns": [
+            {
+              "expression": "scope_fiscal_year",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "total_amount_public",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_ppr_scope_total_all": {
+          "name": "idx_ppr_scope_total_all",
+          "columns": [
+            {
+              "expression": "scope_fiscal_year",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "total_amount_all",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "payment_payee_rollups_payee_id_payees_id_fk": {
+          "name": "payment_payee_rollups_payee_id_payees_id_fk",
+          "tableFrom": "payment_payee_rollups",
+          "tableTo": "payees",
+          "columnsFrom": [
+            "payee_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "payment_payee_rollups_scope_fiscal_year_payee_id_pk": {
+          "name": "payment_payee_rollups_scope_fiscal_year_payee_id_pk",
+          "columns": [
+            "scope_fiscal_year",
+            "payee_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.state_payment_facts": {
+      "name": "state_payment_facts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "source_row_hash": {
+          "name": "source_row_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payment_date": {
+          "name": "payment_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fiscal_year": {
+          "name": "fiscal_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "agency_id": {
+          "name": "agency_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payee_id": {
+          "name": "payee_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "payee_name_raw": {
+          "name": "payee_name_raw",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount": {
+          "name": "amount",
+          "type": "numeric(16, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "object_category_raw": {
+          "name": "object_category_raw",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "comptroller_object_code": {
+          "name": "comptroller_object_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "appropriated_fund_raw": {
+          "name": "appropriated_fund_raw",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "appropriation_number": {
+          "name": "appropriation_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "appropriation_year": {
+          "name": "appropriation_year",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_confidential": {
+          "name": "is_confidential",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "confidentiality_note": {
+          "name": "confidentiality_note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_loaded_at": {
+          "name": "source_loaded_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_spf_agency_fy": {
+          "name": "idx_spf_agency_fy",
+          "columns": [
+            {
+              "expression": "agency_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "fiscal_year",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_spf_payee_fy": {
+          "name": "idx_spf_payee_fy",
+          "columns": [
+            {
+              "expression": "payee_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "fiscal_year",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_spf_fy_date": {
+          "name": "idx_spf_fy_date",
+          "columns": [
+            {
+              "expression": "fiscal_year",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "payment_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_spf_object": {
+          "name": "idx_spf_object",
+          "columns": [
+            {
+              "expression": "comptroller_object_code",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_spf_confidential": {
+          "name": "idx_spf_confidential",
+          "columns": [
+            {
+              "expression": "is_confidential",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_spf_payment_date_desc": {
+          "name": "idx_spf_payment_date_desc",
+          "columns": [
+            {
+              "expression": "payment_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_spf_public_payment_date": {
+          "name": "idx_spf_public_payment_date",
+          "columns": [
+            {
+              "expression": "payment_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"state_payment_facts\".\"is_confidential\" = false",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_spf_amount_desc": {
+          "name": "idx_spf_amount_desc",
+          "columns": [
+            {
+              "expression": "amount",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_spf_agency_payment_date": {
+          "name": "idx_spf_agency_payment_date",
+          "columns": [
+            {
+              "expression": "agency_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "payment_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_spf_payee_payment_date": {
+          "name": "idx_spf_payee_payment_date",
+          "columns": [
+            {
+              "expression": "payee_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "payment_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_spf_agency_payee_fy": {
+          "name": "idx_spf_agency_payee_fy",
+          "columns": [
+            {
+              "expression": "agency_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "payee_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "fiscal_year",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "state_payment_facts_fiscal_year_fiscal_years_fiscal_year_fk": {
+          "name": "state_payment_facts_fiscal_year_fiscal_years_fiscal_year_fk",
+          "tableFrom": "state_payment_facts",
+          "tableTo": "fiscal_years",
+          "columnsFrom": [
+            "fiscal_year"
+          ],
+          "columnsTo": [
+            "fiscal_year"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "state_payment_facts_agency_id_agencies_id_fk": {
+          "name": "state_payment_facts_agency_id_agencies_id_fk",
+          "tableFrom": "state_payment_facts",
+          "tableTo": "agencies",
+          "columnsFrom": [
+            "agency_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "state_payment_facts_payee_id_payees_id_fk": {
+          "name": "state_payment_facts_payee_id_payees_id_fk",
+          "tableFrom": "state_payment_facts",
+          "tableTo": "payees",
+          "columnsFrom": [
+            "payee_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "state_payment_facts_comptroller_object_code_comptroller_objects_code_fk": {
+          "name": "state_payment_facts_comptroller_object_code_comptroller_objects_code_fk",
+          "tableFrom": "state_payment_facts",
+          "tableTo": "comptroller_objects",
+          "columnsFrom": [
+            "comptroller_object_code"
+          ],
+          "columnsTo": [
+            "code"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "state_payment_facts_source_row_hash_unique": {
+          "name": "state_payment_facts_source_row_hash_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "source_row_hash"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.stg_annual_cash_report_raw": {
+      "name": "stg_annual_cash_report_raw",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "fiscal_year": {
+          "name": "fiscal_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sheet_name": {
+          "name": "sheet_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fund_number": {
+          "name": "fund_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fund_name": {
+          "name": "fund_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "line_item": {
+          "name": "line_item",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "amount": {
+          "name": "amount",
+          "type": "numeric(18, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_file_name": {
+          "name": "source_file_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_url": {
+          "name": "source_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_loaded_at": {
+          "name": "source_loaded_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_snapshot_date": {
+          "name": "source_snapshot_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "row_number": {
+          "name": "row_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.stg_beverage_sales_raw": {
+      "name": "stg_beverage_sales_raw",
+      "schema": "",
+      "columns": {
+        "taxpayer_number": {
+          "name": "taxpayer_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "taxpayer_name": {
+          "name": "taxpayer_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "taxpayer_address": {
+          "name": "taxpayer_address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "taxpayer_city": {
+          "name": "taxpayer_city",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "taxpayer_state": {
+          "name": "taxpayer_state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "taxpayer_zip": {
+          "name": "taxpayer_zip",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "taxpayer_county": {
+          "name": "taxpayer_county",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location_number": {
+          "name": "location_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location_name": {
+          "name": "location_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location_address": {
+          "name": "location_address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location_city": {
+          "name": "location_city",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location_state": {
+          "name": "location_state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location_zip": {
+          "name": "location_zip",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location_county": {
+          "name": "location_county",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "inside_outside_city_limits": {
+          "name": "inside_outside_city_limits",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tabc_permit_number": {
+          "name": "tabc_permit_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "responsibility_begin_date": {
+          "name": "responsibility_begin_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "responsibility_end_date": {
+          "name": "responsibility_end_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "obligation_end_date": {
+          "name": "obligation_end_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "total_sales_receipts": {
+          "name": "total_sales_receipts",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "total_taxable_receipts": {
+          "name": "total_taxable_receipts",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.stg_comptroller_objects_raw": {
+      "name": "stg_comptroller_objects_raw",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "object_code": {
+          "name": "object_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "object_group": {
+          "name": "object_group",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_file_name": {
+          "name": "source_file_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_url": {
+          "name": "source_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_loaded_at": {
+          "name": "source_loaded_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_snapshot_date": {
+          "name": "source_snapshot_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "row_number": {
+          "name": "row_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.stg_dir_sales_raw": {
+      "name": "stg_dir_sales_raw",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "fiscal_year": {
+          "name": "fiscal_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "customer_name": {
+          "name": "customer_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vendor_name": {
+          "name": "vendor_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "purchase_amount": {
+          "name": "purchase_amount",
+          "type": "numeric(16, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contract_number": {
+          "name": "contract_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rfo_description": {
+          "name": "rfo_description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "order_quantity": {
+          "name": "order_quantity",
+          "type": "numeric(16, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "unit_price": {
+          "name": "unit_price",
+          "type": "numeric(16, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "invoice_number": {
+          "name": "invoice_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "po_number": {
+          "name": "po_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "shipped_date": {
+          "name": "shipped_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contract_type": {
+          "name": "contract_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contract_subtype": {
+          "name": "contract_subtype",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "staffing_contractor_name": {
+          "name": "staffing_contractor_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "staffing_title": {
+          "name": "staffing_title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "staffing_level": {
+          "name": "staffing_level",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "staffing_start_date": {
+          "name": "staffing_start_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sales_fact_number": {
+          "name": "sales_fact_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_file_name": {
+          "name": "source_file_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_loaded_at": {
+          "name": "source_loaded_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_snapshot_date": {
+          "name": "source_snapshot_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.stg_economic_development_raw": {
+      "name": "stg_economic_development_raw",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "recipient_name": {
+          "name": "recipient_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fund": {
+          "name": "fund",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expenditure_category": {
+          "name": "expenditure_category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fiscal_year": {
+          "name": "fiscal_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "amount": {
+          "name": "amount",
+          "type": "numeric(18, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_file_name": {
+          "name": "source_file_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_url": {
+          "name": "source_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_loaded_at": {
+          "name": "source_loaded_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_snapshot_date": {
+          "name": "source_snapshot_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "row_number": {
+          "name": "row_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.stg_esbd_solicitations_raw": {
+      "name": "stg_esbd_solicitations_raw",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "solicitation_id": {
+          "name": "solicitation_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "agency_name_raw": {
+          "name": "agency_name_raw",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nigp_codes": {
+          "name": "nigp_codes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "posted_date": {
+          "name": "posted_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "document_urls": {
+          "name": "document_urls",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_file_name": {
+          "name": "source_file_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_url": {
+          "name": "source_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_loaded_at": {
+          "name": "source_loaded_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_snapshot_date": {
+          "name": "source_snapshot_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "row_number": {
+          "name": "row_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.stg_expenditure_categories_raw": {
+      "name": "stg_expenditure_categories_raw",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "category_code": {
+          "name": "category_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "category_title": {
+          "name": "category_title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_file_name": {
+          "name": "source_file_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_url": {
+          "name": "source_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_loaded_at": {
+          "name": "source_loaded_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_snapshot_date": {
+          "name": "source_snapshot_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "row_number": {
+          "name": "row_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.stg_expenditures_by_county_raw": {
+      "name": "stg_expenditures_by_county_raw",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "fiscal_year": {
+          "name": "fiscal_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "agency_number": {
+          "name": "agency_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "agency_name": {
+          "name": "agency_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "county": {
+          "name": "county",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "major_spending_category": {
+          "name": "major_spending_category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "amount": {
+          "name": "amount",
+          "type": "numeric(16, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_file_name": {
+          "name": "source_file_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_url": {
+          "name": "source_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_loaded_at": {
+          "name": "source_loaded_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_snapshot_date": {
+          "name": "source_snapshot_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "row_number": {
+          "name": "row_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.stg_lbb_contract_awards_raw": {
+      "name": "stg_lbb_contract_awards_raw",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "contract_id": {
+          "name": "contract_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "agency_name_raw": {
+          "name": "agency_name_raw",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vendor_name_raw": {
+          "name": "vendor_name_raw",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "award_date": {
+          "name": "award_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "total_value": {
+          "name": "total_value",
+          "type": "numeric(18, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "subject": {
+          "name": "subject",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "document_urls": {
+          "name": "document_urls",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_file_name": {
+          "name": "source_file_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_url": {
+          "name": "source_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_loaded_at": {
+          "name": "source_loaded_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_snapshot_date": {
+          "name": "source_snapshot_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "row_number": {
+          "name": "row_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.stg_nigp_commodity_codes_raw": {
+      "name": "stg_nigp_commodity_codes_raw",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "class_item_code": {
+          "name": "class_item_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "commodity_title": {
+          "name": "commodity_title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_file_name": {
+          "name": "source_file_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_url": {
+          "name": "source_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_loaded_at": {
+          "name": "source_loaded_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_snapshot_date": {
+          "name": "source_snapshot_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "row_number": {
+          "name": "row_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.stg_payments_to_payee_raw": {
+      "name": "stg_payments_to_payee_raw",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "agency_name": {
+          "name": "agency_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "payee_name": {
+          "name": "payee_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "payment_date": {
+          "name": "payment_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "amount": {
+          "name": "amount",
+          "type": "numeric(16, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "object_category": {
+          "name": "object_category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "comptroller_object": {
+          "name": "comptroller_object",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "appropriation_number": {
+          "name": "appropriation_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "appropriation_year": {
+          "name": "appropriation_year",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fund": {
+          "name": "fund",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_confidential": {
+          "name": "is_confidential",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "fiscal_year": {
+          "name": "fiscal_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_file_name": {
+          "name": "source_file_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_url": {
+          "name": "source_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_loaded_at": {
+          "name": "source_loaded_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_snapshot_date": {
+          "name": "source_snapshot_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "row_number": {
+          "name": "row_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.stg_travel_payment_raw": {
+      "name": "stg_travel_payment_raw",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "agency_name": {
+          "name": "agency_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "payee_name": {
+          "name": "payee_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "payment_date": {
+          "name": "payment_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "amount": {
+          "name": "amount",
+          "type": "numeric(16, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "travel_expense_type": {
+          "name": "travel_expense_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fiscal_year": {
+          "name": "fiscal_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_file_name": {
+          "name": "source_file_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_url": {
+          "name": "source_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_loaded_at": {
+          "name": "source_loaded_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_snapshot_date": {
+          "name": "source_snapshot_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "row_number": {
+          "name": "row_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.stg_vendor_commodity_class_raw": {
+      "name": "stg_vendor_commodity_class_raw",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "cmbl_vendor_no": {
+          "name": "cmbl_vendor_no",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "class_item_code": {
+          "name": "class_item_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_file_name": {
+          "name": "source_file_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_url": {
+          "name": "source_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_loaded_at": {
+          "name": "source_loaded_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_snapshot_date": {
+          "name": "source_snapshot_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "row_number": {
+          "name": "row_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.stg_vendor_debarment_raw": {
+      "name": "stg_vendor_debarment_raw",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "vendor_id_raw": {
+          "name": "vendor_id_raw",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vendor_name_raw": {
+          "name": "vendor_name_raw",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "address_raw": {
+          "name": "address_raw",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "debarment_date": {
+          "name": "debarment_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "duration_months": {
+          "name": "duration_months",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_file_name": {
+          "name": "source_file_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_url": {
+          "name": "source_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_loaded_at": {
+          "name": "source_loaded_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_snapshot_date": {
+          "name": "source_snapshot_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "row_number": {
+          "name": "row_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.stg_vendor_master_raw": {
+      "name": "stg_vendor_master_raw",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "web_vendor_name": {
+          "name": "web_vendor_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "web_vid": {
+          "name": "web_vid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "web_vendor_no": {
+          "name": "web_vendor_no",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "web_city": {
+          "name": "web_city",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "web_county": {
+          "name": "web_county",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "web_state": {
+          "name": "web_state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "web_zip": {
+          "name": "web_zip",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "web_hub_status": {
+          "name": "web_hub_status",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "web_small_bus_flag": {
+          "name": "web_small_bus_flag",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "web_desc": {
+          "name": "web_desc",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_file_name": {
+          "name": "source_file_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_url": {
+          "name": "source_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_loaded_at": {
+          "name": "source_loaded_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_snapshot_date": {
+          "name": "source_snapshot_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "row_number": {
+          "name": "row_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.stg_vendor_performance_raw": {
+      "name": "stg_vendor_performance_raw",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "vendor_id_raw": {
+          "name": "vendor_id_raw",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "grade": {
+          "name": "grade",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reporting_agency_raw": {
+          "name": "reporting_agency_raw",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "report_date": {
+          "name": "report_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_file_name": {
+          "name": "source_file_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_url": {
+          "name": "source_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_loaded_at": {
+          "name": "source_loaded_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_snapshot_date": {
+          "name": "source_snapshot_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "row_number": {
+          "name": "row_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.travel_payment_facts": {
+      "name": "travel_payment_facts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "source_row_hash": {
+          "name": "source_row_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "agency_id": {
+          "name": "agency_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payee_name_raw": {
+          "name": "payee_name_raw",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payee_id": {
+          "name": "payee_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "payment_date": {
+          "name": "payment_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fiscal_year": {
+          "name": "fiscal_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount": {
+          "name": "amount",
+          "type": "numeric(16, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "travel_expense_type_raw": {
+          "name": "travel_expense_type_raw",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_loaded_at": {
+          "name": "source_loaded_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_tpf_agency_fy": {
+          "name": "idx_tpf_agency_fy",
+          "columns": [
+            {
+              "expression": "agency_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "fiscal_year",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_tpf_payee": {
+          "name": "idx_tpf_payee",
+          "columns": [
+            {
+              "expression": "payee_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "travel_payment_facts_agency_id_agencies_id_fk": {
+          "name": "travel_payment_facts_agency_id_agencies_id_fk",
+          "tableFrom": "travel_payment_facts",
+          "tableTo": "agencies",
+          "columnsFrom": [
+            "agency_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "travel_payment_facts_payee_id_payees_id_fk": {
+          "name": "travel_payment_facts_payee_id_payees_id_fk",
+          "tableFrom": "travel_payment_facts",
+          "tableTo": "payees",
+          "columnsFrom": [
+            "payee_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "travel_payment_facts_fiscal_year_fiscal_years_fiscal_year_fk": {
+          "name": "travel_payment_facts_fiscal_year_fiscal_years_fiscal_year_fk",
+          "tableFrom": "travel_payment_facts",
+          "tableTo": "fiscal_years",
+          "columnsFrom": [
+            "fiscal_year"
+          ],
+          "columnsTo": [
+            "fiscal_year"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "travel_payment_facts_source_row_hash_unique": {
+          "name": "travel_payment_facts_source_row_hash_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "source_row_hash"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.usaspending_award_transactions": {
+      "name": "usaspending_award_transactions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "generated_unique_award_id": {
+          "name": "generated_unique_award_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "award_id": {
+          "name": "award_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "action_date": {
+          "name": "action_date",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "federal_action_obligation": {
+          "name": "federal_action_obligation",
+          "type": "numeric(18, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "award_type": {
+          "name": "award_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "recipient_name": {
+          "name": "recipient_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "recipient_uei": {
+          "name": "recipient_uei",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "recipient_parent_name": {
+          "name": "recipient_parent_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "recipient_parent_uei": {
+          "name": "recipient_parent_uei",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "recipient_state_code": {
+          "name": "recipient_state_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "place_of_performance_state_code": {
+          "name": "place_of_performance_state_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "awarding_agency_name": {
+          "name": "awarding_agency_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "funding_agency_name": {
+          "name": "funding_agency_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "raw_row_json": {
+          "name": "raw_row_json",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ingestion_run_id": {
+          "name": "ingestion_run_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_row_hash": {
+          "name": "source_row_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "usaspending_award_transactions_source_row_hash_unique": {
+          "name": "usaspending_award_transactions_source_row_hash_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "source_row_hash"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.vendor_aliases": {
+      "name": "vendor_aliases",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "vendor_entity_id": {
+          "name": "vendor_entity_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "alias_name": {
+          "name": "alias_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "alias_name_normalized": {
+          "name": "alias_name_normalized",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_system": {
+          "name": "source_system",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "confidence": {
+          "name": "confidence",
+          "type": "numeric(5, 4)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "vendor_aliases_vendor_entity_id_vendor_entities_vendor_entity_id_fk": {
+          "name": "vendor_aliases_vendor_entity_id_vendor_entities_vendor_entity_id_fk",
+          "tableFrom": "vendor_aliases",
+          "tableTo": "vendor_entities",
+          "columnsFrom": [
+            "vendor_entity_id"
+          ],
+          "columnsTo": [
+            "vendor_entity_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.vendor_commodity_class_map": {
+      "name": "vendor_commodity_class_map",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "vendor_enrichment_id": {
+          "name": "vendor_enrichment_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cmbl_vendor_no": {
+          "name": "cmbl_vendor_no",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "commodity_code": {
+          "name": "commodity_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_snapshot_date": {
+          "name": "source_snapshot_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_vendor_commodity": {
+          "name": "idx_vendor_commodity",
+          "columns": [
+            {
+              "expression": "vendor_enrichment_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "commodity_code",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "vendor_commodity_class_map_vendor_enrichment_id_vendor_enrichment_id_fk": {
+          "name": "vendor_commodity_class_map_vendor_enrichment_id_vendor_enrichment_id_fk",
+          "tableFrom": "vendor_commodity_class_map",
+          "tableTo": "vendor_enrichment",
+          "columnsFrom": [
+            "vendor_enrichment_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "vendor_commodity_class_map_commodity_code_nigp_commodity_codes_code_fk": {
+          "name": "vendor_commodity_class_map_commodity_code_nigp_commodity_codes_code_fk",
+          "tableFrom": "vendor_commodity_class_map",
+          "tableTo": "nigp_commodity_codes",
+          "columnsFrom": [
+            "commodity_code"
+          ],
+          "columnsTo": [
+            "code"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.vendor_debarments": {
+      "name": "vendor_debarments",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "vendor_id_raw": {
+          "name": "vendor_id_raw",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "vendor_name_raw": {
+          "name": "vendor_name_raw",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "address_raw": {
+          "name": "address_raw",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "debarment_date": {
+          "name": "debarment_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "duration_months": {
+          "name": "duration_months",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_loaded_at": {
+          "name": "source_loaded_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_vd_vendor_id": {
+          "name": "idx_vd_vendor_id",
+          "columns": [
+            {
+              "expression": "vendor_id_raw",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.vendor_enrichment": {
+      "name": "vendor_enrichment",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "vendor_name_raw": {
+          "name": "vendor_name_raw",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "vendor_name_normalized": {
+          "name": "vendor_name_normalized",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cmbl_vendor_no": {
+          "name": "cmbl_vendor_no",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "web_vid": {
+          "name": "web_vid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hub_status": {
+          "name": "hub_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "small_business_flag": {
+          "name": "small_business_flag",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sdv_flag": {
+          "name": "sdv_flag",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "city": {
+          "name": "city",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "county": {
+          "name": "county",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "state": {
+          "name": "state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "zip": {
+          "name": "zip",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "phone": {
+          "name": "phone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_snapshot_date": {
+          "name": "source_snapshot_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_vendor_enrichment_normalized": {
+          "name": "idx_vendor_enrichment_normalized",
+          "columns": [
+            {
+              "expression": "vendor_name_normalized",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "uq_vendor_enrichment_ids": {
+          "name": "uq_vendor_enrichment_ids",
+          "columns": [
+            {
+              "expression": "COALESCE(\"web_vid\", '')",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "COALESCE(\"cmbl_vendor_no\", '')",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.vendor_entities": {
+      "name": "vendor_entities",
+      "schema": "",
+      "columns": {
+        "vendor_entity_id": {
+          "name": "vendor_entity_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "canonical_name": {
+          "name": "canonical_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "canonical_name_normalized": {
+          "name": "canonical_name_normalized",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "canonical_slug": {
+          "name": "canonical_slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.vendor_identifiers": {
+      "name": "vendor_identifiers",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "vendor_entity_id": {
+          "name": "vendor_entity_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "id_type": {
+          "name": "id_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "id_value": {
+          "name": "id_value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_system": {
+          "name": "source_system",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "first_seen_at": {
+          "name": "first_seen_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "last_seen_at": {
+          "name": "last_seen_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "vendor_identifiers_vendor_entity_id_vendor_entities_vendor_entity_id_fk": {
+          "name": "vendor_identifiers_vendor_entity_id_vendor_entities_vendor_entity_id_fk",
+          "tableFrom": "vendor_identifiers",
+          "tableTo": "vendor_entities",
+          "columnsFrom": [
+            "vendor_entity_id"
+          ],
+          "columnsTo": [
+            "vendor_entity_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "vendor_identifiers_type_val_uq": {
+          "name": "vendor_identifiers_type_val_uq",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id_type",
+            "id_value"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.vendor_payee_links": {
+      "name": "vendor_payee_links",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "payee_id": {
+          "name": "payee_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "vendor_entity_id": {
+          "name": "vendor_entity_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "match_method": {
+          "name": "match_method",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "confidence": {
+          "name": "confidence",
+          "type": "numeric(5, 4)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "vendor_payee_links_payee_id_payees_id_fk": {
+          "name": "vendor_payee_links_payee_id_payees_id_fk",
+          "tableFrom": "vendor_payee_links",
+          "tableTo": "payees",
+          "columnsFrom": [
+            "payee_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "vendor_payee_links_vendor_entity_id_vendor_entities_vendor_entity_id_fk": {
+          "name": "vendor_payee_links_vendor_entity_id_vendor_entities_vendor_entity_id_fk",
+          "tableFrom": "vendor_payee_links",
+          "tableTo": "vendor_entities",
+          "columnsFrom": [
+            "vendor_entity_id"
+          ],
+          "columnsTo": [
+            "vendor_entity_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "vendor_payee_links_payee_uq": {
+          "name": "vendor_payee_links_payee_uq",
+          "nullsNotDistinct": false,
+          "columns": [
+            "payee_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.vendor_performance_reports": {
+      "name": "vendor_performance_reports",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "vendor_id_raw": {
+          "name": "vendor_id_raw",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "grade": {
+          "name": "grade",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reporting_agency_raw": {
+          "name": "reporting_agency_raw",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "report_date": {
+          "name": "report_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_loaded_at": {
+          "name": "source_loaded_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_vpr_vendor_id": {
+          "name": "idx_vpr_vendor_id",
+          "columns": [
+            {
+              "expression": "vendor_id_raw",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

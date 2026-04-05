@@ -5,9 +5,12 @@ const props = defineProps<{
   availableFilters: {
     key: string
     label: string
-    type: 'select' | 'input' | 'boolean'
+    type: 'select' | 'input' | 'boolean' | 'autocomplete'
     placeholder?: string
     options?: { label: string; value: string | number | boolean }[]
+    search?: (q: string) => Promise<any[]>
+    optionAttribute?: string
+    valueAttribute?: string
   }[]
   modelValue: Record<string, FilterValue>
 }>()
@@ -17,6 +20,7 @@ const emit = defineEmits<{
 }>()
 
 const filters = ref<Record<string, FilterValue>>({})
+const isExpanded = ref(false)
 
 watch(
   () => props.modelValue,
@@ -53,7 +57,7 @@ function getSelectValue(key: string) {
 
 <template>
   <section
-    class="sticky top-[5.25rem] z-20 rounded-[1.5rem] border border-default bg-default/90 p-4 shadow-card backdrop-blur-xl"
+    class="sticky top-[5.25rem] z-20 max-h-[calc(100vh-6rem)] overflow-y-auto rounded-[1.5rem] border border-default bg-default/90 p-4 shadow-card backdrop-blur-xl"
   >
     <div class="mb-4 flex items-center justify-between gap-3">
       <div class="flex items-center gap-2">
@@ -71,6 +75,14 @@ function getSelectValue(key: string) {
       </div>
 
       <div class="flex shrink-0 items-center gap-2">
+        <UButton
+          color="neutral"
+          variant="ghost"
+          class="rounded-full md:hidden"
+          @click="isExpanded = !isExpanded"
+        >
+          {{ isExpanded ? 'Hide filters' : 'Show filters' }}
+        </UButton>
         <UButton color="neutral" variant="ghost" class="rounded-full" @click="clearFilters">
           Reset
         </UButton>
@@ -78,7 +90,10 @@ function getSelectValue(key: string) {
       </div>
     </div>
 
-    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div
+      class="gap-4 md:grid-cols-2 xl:grid-cols-4"
+      :class="isExpanded ? 'grid' : 'hidden md:grid'"
+    >
       <div v-for="filter in availableFilters" :key="filter.key" class="min-w-0">
         <UFormField v-if="filter.type !== 'boolean'" :label="filter.label" class="w-full">
           <USelect
@@ -96,8 +111,26 @@ function getSelectValue(key: string) {
             "
           />
 
+          <USelectMenu
+            v-if="filter.type === 'autocomplete'"
+            :id="getFilterId(filter.key)"
+            :name="filter.key"
+            :model-value="getSelectValue(filter.key)"
+            :search="filter.search"
+            searchable
+            :option-attribute="filter.optionAttribute"
+            :value-attribute="filter.valueAttribute"
+            :placeholder="filter.placeholder || `Search ${filter.label.toLowerCase()}`"
+            class="w-full"
+            color="neutral"
+            variant="outline"
+            @update:model-value="
+              updateFilter(filter.key, $event === 'all' || !$event ? null : ($event as FilterValue))
+            "
+          />
+
           <UInput
-            v-else
+            v-else-if="filter.type === 'input'"
             :id="getFilterId(filter.key)"
             :name="filter.key"
             :model-value="String(filters[filter.key] ?? '')"

@@ -62,14 +62,14 @@ does not support.
 
 ### 2.1 Name and positioning
 
-- **Product name (v1):** Texas State Spending Explorer (or equivalent; avoid
-  “Local Government Spending Explorer”).
+- **Product name:** Texas State Spending Explorer
 - **What it is:** A public explorer for **Texas state treasury / state
   accounting–oriented spending**: who agencies pay, how spend is categorized,
   trends over time, and **where state dollars land by county** via a **separate
   annual aggregate layer**.
+- **Expansion (v1.5+):** It now also includes exploration of **DIR IT Cooperative Contracts**, tracking of **Mixed Beverage Sales Receipts**, integrated **AI Analysis and Newsroom (Blog)** modules for automated reporting, and a robust **Auth & Admin panel** for investigations.
 
-### 2.2 Core user questions (MVP)
+### 2.2 Core user questions (MVP + Expansions)
 
 1. Which agencies spend the most?
 2. Who are the biggest payees?
@@ -77,6 +77,8 @@ does not support.
 4. How has agency spending changed over time?
 5. How much state spending lands in my county?
 6. Which agencies drive spending in a county?
+7. What IT hardware and software are state agencies procuring (DIR)?
+8. What does the automated newsroom highlight regarding anomalies?
 
 ### 2.3 Hard product truths
 
@@ -99,15 +101,17 @@ does not support.
    daily/near-daily intent; ~10 fiscal years coverage (validate at ingest).
 2. **Expenditures by County** — Texas Open Data Portal; **annual**; county ×
    agency × expenditure type (and variants by year).
-3. **Comptroller object codes** — Authoritative 4-digit codes (+ titles, object
+3. **DIR IT Cooperative Contracts** — Socrata export containing IT procurement sales, volumes, and unit prices.
+4. **Mixed Beverage Sales Receipts** — Sales and tax receipts from locations with TABC liquor licenses.
+5. **Comptroller object codes** — Authoritative 4-digit codes (+ titles, object
    group where available).
-4. **Expenditure category codes** — Broad 2-digit categories used in
+6. **Expenditure category codes** — Broad 2-digit categories used in
    reporting/UI.
-5. **Object → category map** — May require published crosswalk, reconstruction
+7. **Object → category map** — May require published crosswalk, reconstruction
    from documentation, or inferred mapping (`is_inferred = true`).
-6. **Vendor master (CMBL / VetHUB)** — Structured vendor file(s); **nightly
+8. **Vendor master (CMBL / VetHUB)** — Structured vendor file(s); **nightly
    refresh** documented for typical layouts; **not** joinable by ID to payments.
-7. **Annual Cash Report** — Annual XLSX/ZIP; fund-level
+9. **Annual Cash Report** — Annual XLSX/ZIP; fund-level
    revenue/expenditure/balances; not transactional.
 
 ### 3.2 Final verdict
@@ -653,7 +657,7 @@ section summarizes **how** to ingest each source.
 
 ## 9. MVP product contract
 
-### 9.1 First five pages
+### 9.1 Core Pages (Including Expansions)
 
 1. **State Spending Overview** (`/`) — totals, trends, top
    agencies/payees/categories, county preview, transactions preview.
@@ -665,6 +669,12 @@ section summarizes **how** to ingest each source.
    tables; **explicit annual aggregate disclaimer**.
 5. **Payee Explorer** (`/payees`, `/payees/[id]`) — trends, agencies,
    categories; enrichment labeled non-authoritative.
+6. **IT Cooperative Contracts** (`/it-contracts`) — Hardware/software vendor spend.
+7. **Analysis & Intelligence** (`/analysis`, `/data-health`) — AI-driven analysis endpoints and data ingestion pipelines health tracking.
+8. **Newsroom / Blog** (`/blog`, `/blog/[slug]`) — Automated deep-dive publications surfacing reporting angles over the dataset.
+9. **Auth & Admin Portal** (`/auth/`, `/admin/investigations/`) — Managing research topics and system credentials securely.
+
+*(Note: Mixed Beverage Sales Receipts are currently ingested into the data warehouse but do not have a dedicated front-end route yet.)*
 
 **Plus:** `/transactions` (table explorer), `/search`, static `/about`,
 `/methodology`, `/data-sources`, `/disclaimers`.
@@ -988,7 +998,7 @@ alternatives:
 
 ### 11.2 Locked page files
 
-Target page surface for v1:
+Target page surface:
 
 ```text
 apps/web/app/pages/
@@ -1009,6 +1019,15 @@ apps/web/app/pages/
   objects/[objectCode].vue
   counties/index.vue
   counties/[countyId].vue
+  it-contracts/index.vue
+  blog/index.vue
+  blog/[slug].vue
+  analysis/index.vue
+  data-health.vue
+  auth/login.vue (and related auth endpoints)
+  admin/investigations/index.vue
+  logout.vue
+  reset-password.vue
 ```
 
 Current placeholder param files such as `[id].vue` or `[code].vue` may exist in
@@ -1558,11 +1577,16 @@ changes.
 
 ---
 
-## 19. Non-goals and forbidden claims
+## 19. Future Plans and Constraints
 
-**Out of scope v1:** auth, saved views, alerts, local government ledger
-ingestion, procurement contract explorer, FOIA workflow.
+**Future Plans (v2+):**
+While features like the **procurement contract explorer** and **authentication** originally slated for future releases have been fully implemented, the following remain on the roadmap for future milestones:
+- Local government ledger ingestion (city/county-level checks)
+- FOIA workflow management
+- Saved views and active alerts
+- Fully dedicated map UI for Mixed Beverage Sales Receipts
 
+**Forbidden claims (Constraints):**
 **Do not claim:** transaction-level spend by county; city-level payment
 geography; perfect vendor identity; one-to-one payment↔procurement vendor joins;
 “full” local transparency.

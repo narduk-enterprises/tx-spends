@@ -157,6 +157,16 @@ function updateSort(value: { column: string; direction: 'asc' | 'desc' }) {
     }),
   })
 }
+
+async function searchCategories(q: string) {
+  if (!q) return []
+  try {
+    const response: any = await $fetch('/api/v1/categories', { query: { q, limit: 15 } })
+    return response.data || []
+  } catch (error) {
+    return []
+  }
+}
 </script>
 
 <template>
@@ -200,9 +210,12 @@ function updateSort(value: { column: string; direction: 'asc' | 'desc' }) {
         { key: 'q', label: 'Search', type: 'input', placeholder: 'Agency or payee' },
         {
           key: 'category_code',
-          label: 'Category code',
-          type: 'input',
-          placeholder: 'public-assistance-payments',
+          label: 'Category',
+          type: 'autocomplete',
+          search: searchCategories,
+          optionAttribute: 'category_title',
+          valueAttribute: 'category_code',
+          placeholder: 'Search categories...',
         },
         { key: 'object_code', label: 'Object code', type: 'input', placeholder: '7211' },
         { key: 'min_amount', label: 'Min amount', type: 'input', placeholder: '10000' },
@@ -269,15 +282,23 @@ function updateSort(value: { column: string; direction: 'asc' | 'desc' }) {
         <span class="text-sm text-default">{{ row.payee_name || 'Unknown payee' }}</span>
       </template>
       <template #object_code-data="{ row }">
-        <UButton
-          :to="row.object_code ? `/objects/${row.object_code}` : undefined"
-          :prefetch="false"
-          color="neutral"
-          variant="link"
-          class="px-0 font-semibold text-primary"
-        >
-          {{ row.object_code || 'Unmapped' }}
-        </UButton>
+        <div class="flex flex-col items-start justify-center">
+          <UButton
+            :to="row.object_code ? `/objects/${row.object_code}` : undefined"
+            :prefetch="false"
+            color="neutral"
+            variant="link"
+            class="h-auto p-0 text-left font-semibold text-primary leading-tight whitespace-normal"
+          >
+            {{ row.object_title || row.object_code || 'Unmapped' }}
+          </UButton>
+          <span
+            v-if="row.object_title && row.object_code"
+            class="mt-0.5 text-[0.65rem] uppercase tracking-wider text-muted"
+          >
+            Code {{ row.object_code }}
+          </span>
+        </div>
       </template>
       <template #amount-data="{ row }">
         <span class="font-semibold text-default">{{ formatUsd(row.amount, 2) }}</span>

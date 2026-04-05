@@ -91,6 +91,19 @@ const { data: objects, status: objectsStatus } = useFetch(
   },
 )
 
+const itContractsKey = computed(() =>
+  buildFetchKey(`agency-it-contracts:${agencyId.value}`, detailQuery.value),
+)
+const { data: itContracts, status: itContractsStatus } = useFetch(
+  () => `/api/v1/agencies/${agencyId.value}/it-contracts`,
+  {
+    key: itContractsKey,
+    query: detailQuery,
+    server: false,
+    default: () => ({ data: [] }),
+  },
+)
+
 const agency = computed(() => detail.value?.data)
 const topObject = computed(() => objects.value?.data?.[0] || agency.value?.top_object || null)
 
@@ -140,6 +153,7 @@ const tabs = [
   { label: 'Overview', key: 'overview', icon: 'i-lucide-layout-dashboard' },
   { label: 'Payees', key: 'payees', icon: 'i-lucide-briefcase-business' },
   { label: 'Objects', key: 'objects', icon: 'i-lucide-badge-dollar-sign' },
+  { label: 'IT Contracts', key: 'it-contracts', icon: 'i-lucide-server' },
   { label: 'Counties', key: 'counties', icon: 'i-lucide-map-pinned' },
   { label: 'Trends', key: 'trends', icon: 'i-lucide-chart-line' },
 ]
@@ -374,6 +388,46 @@ const tabs = [
           </template>
         </DataTableCard>
       </template>
+
+      <DataTableCard
+        v-else-if="activeTab === 'it-contracts'"
+        title="DIR IT Contracts"
+        description="Associated granular IT invoices directly from the state's procurement ledgers."
+        :columns="[
+          { key: 'payment_date', label: 'Date' },
+          { key: 'payee_name', label: 'Vendor' },
+          { key: 'contract', label: 'Contract Details' },
+          { key: 'amount', label: 'Amount' },
+        ]"
+        :loading="itContractsStatus === 'pending'"
+        :rows="itContracts?.data || []"
+        empty-title="No linked DIR contracts"
+        empty-description="No IT procurement line items matched this agency for the current filter."
+      >
+        <template #payment_date-data="{ row }">
+          <UBadge color="neutral" variant="soft">{{ row.shipped_date || 'Unknown' }}</UBadge>
+        </template>
+        <template #payee_name-data="{ row }">
+          <div class="flex flex-col items-start">
+            <span class="font-semibold text-primary">{{ row.vendor_name || 'Unknown payee' }}</span>
+            <span v-if="row.staffing_contractor_name" class="text-xs text-muted">
+              Staff: {{ row.staffing_contractor_name }}
+            </span>
+          </div>
+        </template>
+        <template #contract-data="{ row }">
+          <div class="flex flex-col items-start justify-center">
+            <span class="font-semibold text-default leading-tight whitespace-normal">{{ row.contract_number }}</span>
+            <span class="mt-0.5 text-xs text-muted line-clamp-2">
+              {{ row.rfo_description }}
+            </span>
+          </div>
+        </template>
+        <template #amount-data="{ row }">
+          <span class="font-semibold text-default">{{ formatUsd(row.purchase_amount, 2) }}</span>
+        </template>
+      </DataTableCard>
+
 
       <TrendChartCard
         v-else

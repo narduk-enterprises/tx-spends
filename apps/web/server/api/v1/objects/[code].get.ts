@@ -1,7 +1,12 @@
 import { getRouterParam, getValidatedQuery } from 'h3'
 import { and, eq } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
-import { comptrollerObjects, paymentObjectRollups } from '#server/database/schema'
+import {
+  comptrollerObjectCategoryMap,
+  comptrollerObjects,
+  expenditureCategories,
+  paymentObjectRollups,
+} from '#server/database/schema'
 import { getRollupScopeFiscalYear } from '#server/utils/payment-rollups'
 import { globalQuerySchema } from '#server/utils/query'
 
@@ -15,8 +20,22 @@ export default defineEventHandler(async (event) => {
   }
 
   const [obj] = await db
-    .select()
+    .select({
+      code: comptrollerObjects.code,
+      title: comptrollerObjects.title,
+      objectGroup: comptrollerObjects.objectGroup,
+      expenditureCategoryTitle: expenditureCategories.title,
+      expenditureCategoryCode: expenditureCategories.code,
+    })
     .from(comptrollerObjects)
+    .leftJoin(
+      comptrollerObjectCategoryMap,
+      eq(comptrollerObjects.code, comptrollerObjectCategoryMap.comptrollerObjectCode),
+    )
+    .leftJoin(
+      expenditureCategories,
+      eq(comptrollerObjectCategoryMap.expenditureCategoryCode, expenditureCategories.code),
+    )
     .where(eq(comptrollerObjects.code, code))
     .limit(1)
 
@@ -47,6 +66,8 @@ export default defineEventHandler(async (event) => {
       object_code: obj.code,
       object_title: obj.title,
       object_group: obj.objectGroup,
+      category_title: obj.expenditureCategoryTitle,
+      category_code: obj.expenditureCategoryCode,
       total_spend: Number(summary?.total_spend || 0),
     },
   }

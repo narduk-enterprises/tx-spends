@@ -15,9 +15,7 @@ import {
   jsonb,
 } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
-
-export * from '#server/database/auth-bridge-schema'
-
+// export * from './auth-bridge-schema'
 // ========== DIMENSIONS ==========
 
 export const fiscalYears = pgTable('fiscal_years', {
@@ -172,6 +170,23 @@ export const agencyNameCrosswalk = pgTable('agency_name_crosswalk', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 })
 
+export const nigpCommodityCodes = pgTable('nigp_commodity_codes', {
+  code: text('code').primaryKey(),
+  title: text('title').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+})
+
+export const vendorCommodityClassMap = pgTable('vendor_commodity_class_map', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  vendorEnrichmentId: uuid('vendor_enrichment_id').references(() => vendorEnrichment.id),
+  cmblVendorNo: text('cmbl_vendor_no'),
+  commodityCode: text('commodity_code').notNull().references(() => nigpCommodityCodes.code),
+  sourceSnapshotDate: date('source_snapshot_date'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index('idx_vendor_commodity').on(table.vendorEnrichmentId, table.commodityCode),
+])
+
 // ========== FACTS ==========
 
 export const statePaymentFacts = pgTable(
@@ -275,6 +290,95 @@ export const annualCashReportFacts = pgTable(
     index('idx_acrf_fy').on(table.fiscalYear),
   ],
 )
+
+export const dirSalesFacts = pgTable(
+  'dir_sales_facts',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    sourceRowHash: text('source_row_hash').notNull().unique(),
+    fiscalYear: integer('fiscal_year').notNull(),
+    customerNameRaw: text('customer_name_raw').notNull(),
+    agencyId: uuid('agency_id').references(() => agencies.id),
+    vendorNameRaw: text('vendor_name_raw').notNull(),
+    purchaseAmount: numeric('purchase_amount', { precision: 16, scale: 2 }).notNull(),
+    contractNumber: text('contract_number'),
+    rfoDescription: text('rfo_description'),
+    orderQuantity: numeric('order_quantity', { precision: 16, scale: 2 }),
+    unitPrice: numeric('unit_price', { precision: 16, scale: 2 }),
+    invoiceNumber: text('invoice_number'),
+    poNumber: text('po_number'),
+    shippedDate: date('shipped_date'),
+    contractType: text('contract_type'),
+    contractSubtype: text('contract_subtype'),
+    staffingContractorName: text('staffing_contractor_name'),
+    staffingTitle: text('staffing_title'),
+    staffingStartDate: date('staffing_start_date'),
+    sourceLoadedAt: timestamp('source_loaded_at', { withTimezone: true }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index('idx_dsf_agency_fy').on(table.agencyId, table.fiscalYear),
+    index('idx_dsf_po_number').on(table.poNumber),
+  ],
+)
+
+export const travelPaymentFacts = pgTable('travel_payment_facts', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  sourceRowHash: text('source_row_hash').notNull().unique(),
+  agencyId: uuid('agency_id').notNull().references(() => agencies.id),
+  payeeNameRaw: text('payee_name_raw').notNull(),
+  payeeId: uuid('payee_id').references(() => payees.id),
+  paymentDate: date('payment_date').notNull(),
+  fiscalYear: integer('fiscal_year').notNull().references(() => fiscalYears.fiscalYear),
+  amount: numeric('amount', { precision: 16, scale: 2 }).notNull(),
+  travelExpenseTypeRaw: text('travel_expense_type_raw').notNull(),
+  sourceLoadedAt: timestamp('source_loaded_at', { withTimezone: true }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index('idx_tpf_agency_fy').on(table.agencyId, table.fiscalYear),
+  index('idx_tpf_payee').on(table.payeeId),
+])
+
+export const economicDevelopmentFacts = pgTable('economic_development_facts', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  sourceRowHash: text('source_row_hash').notNull().unique(),
+  recipientNameRaw: text('recipient_name_raw').notNull(),
+  fundRaw: text('fund_raw'),
+  expenditureCategoryRaw: text('expenditure_category_raw'),
+  fiscalYear: integer('fiscal_year').notNull().references(() => fiscalYears.fiscalYear),
+  amount: numeric('amount', { precision: 18, scale: 2 }).notNull(),
+  sourceLoadedAt: timestamp('source_loaded_at', { withTimezone: true }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index('idx_edf_fy_recipient').on(table.fiscalYear, table.recipientNameRaw),
+])
+
+export const vendorDebarments = pgTable('vendor_debarments', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  vendorIdRaw: text('vendor_id_raw').notNull(),
+  vendorNameRaw: text('vendor_name_raw').notNull(),
+  addressRaw: text('address_raw'),
+  debarmentDate: date('debarment_date').notNull(),
+  durationMonths: integer('duration_months'),
+  sourceLoadedAt: timestamp('source_loaded_at', { withTimezone: true }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index('idx_vd_vendor_id').on(table.vendorIdRaw),
+])
+
+export const vendorPerformanceReports = pgTable('vendor_performance_reports', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  vendorIdRaw: text('vendor_id_raw').notNull(),
+  grade: text('grade').notNull(),
+  reportingAgencyRaw: text('reporting_agency_raw'),
+  reportDate: date('report_date').notNull(),
+  sourceLoadedAt: timestamp('source_loaded_at', { withTimezone: true }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index('idx_vpr_vendor_id').on(table.vendorIdRaw),
+])
+
 
 export const paymentOverviewRollups = pgTable('payment_overview_rollups', {
   scopeFiscalYear: integer('scope_fiscal_year').primaryKey(),
@@ -408,6 +512,116 @@ export const ingestionRuns = pgTable(
 
 // ========== STAGING ==========
 
+export const stgTravelPaymentRaw = pgTable('stg_travel_payment_raw', {
+  id: serial('id').primaryKey(),
+  agencyName: text('agency_name'),
+  payeeName: text('payee_name'),
+  paymentDate: text('payment_date'),
+  amount: numeric('amount', { precision: 16, scale: 2 }),
+  travelExpenseType: text('travel_expense_type'),
+  fiscalYear: integer('fiscal_year'),
+  sourceFileName: text('source_file_name'),
+  sourceUrl: text('source_url'),
+  sourceLoadedAt: text('source_loaded_at'),
+  sourceSnapshotDate: text('source_snapshot_date'),
+  rowNumber: integer('row_number'),
+})
+
+export const stgEconomicDevelopmentRaw = pgTable('stg_economic_development_raw', {
+  id: serial('id').primaryKey(),
+  recipientName: text('recipient_name'),
+  fund: text('fund'),
+  expenditureCategory: text('expenditure_category'),
+  fiscalYear: integer('fiscal_year'),
+  amount: numeric('amount', { precision: 18, scale: 2 }),
+  sourceFileName: text('source_file_name'),
+  sourceUrl: text('source_url'),
+  sourceLoadedAt: text('source_loaded_at'),
+  sourceSnapshotDate: text('source_snapshot_date'),
+  rowNumber: integer('row_number'),
+})
+
+export const stgNigpCommodityCodesRaw = pgTable('stg_nigp_commodity_codes_raw', {
+  id: serial('id').primaryKey(),
+  classItemCode: text('class_item_code'),
+  commodityTitle: text('commodity_title'),
+  sourceFileName: text('source_file_name'),
+  sourceUrl: text('source_url'),
+  sourceLoadedAt: text('source_loaded_at'),
+  sourceSnapshotDate: text('source_snapshot_date'),
+  rowNumber: integer('row_number'),
+})
+
+export const stgVendorCommodityClassRaw = pgTable('stg_vendor_commodity_class_raw', {
+  id: serial('id').primaryKey(),
+  cmblVendorNo: text('cmbl_vendor_no'),
+  classItemCode: text('class_item_code'),
+  sourceFileName: text('source_file_name'),
+  sourceUrl: text('source_url'),
+  sourceLoadedAt: text('source_loaded_at'),
+  sourceSnapshotDate: text('source_snapshot_date'),
+  rowNumber: integer('row_number'),
+})
+
+export const stgVendorDebarmentRaw = pgTable('stg_vendor_debarment_raw', {
+  id: serial('id').primaryKey(),
+  vendorIdRaw: text('vendor_id_raw'),
+  vendorNameRaw: text('vendor_name_raw'),
+  addressRaw: text('address_raw'),
+  debarmentDate: text('debarment_date'),
+  durationMonths: integer('duration_months'),
+  sourceFileName: text('source_file_name'),
+  sourceUrl: text('source_url'),
+  sourceLoadedAt: text('source_loaded_at'),
+  sourceSnapshotDate: text('source_snapshot_date'),
+  rowNumber: integer('row_number'),
+})
+
+export const stgVendorPerformanceRaw = pgTable('stg_vendor_performance_raw', {
+  id: serial('id').primaryKey(),
+  vendorIdRaw: text('vendor_id_raw'),
+  grade: text('grade'),
+  reportingAgencyRaw: text('reporting_agency_raw'),
+  reportDate: text('report_date'),
+  sourceFileName: text('source_file_name'),
+  sourceUrl: text('source_url'),
+  sourceLoadedAt: text('source_loaded_at'),
+  sourceSnapshotDate: text('source_snapshot_date'),
+  rowNumber: integer('row_number'),
+})
+
+export const stgLbbContractAwardsRaw = pgTable('stg_lbb_contract_awards_raw', {
+  id: serial('id').primaryKey(),
+  contractId: text('contract_id'),
+  agencyNameRaw: text('agency_name_raw'),
+  vendorNameRaw: text('vendor_name_raw'),
+  awardDate: text('award_date'),
+  totalValue: numeric('total_value', { precision: 18, scale: 2 }),
+  subject: text('subject'),
+  documentUrls: text('document_urls'),
+  sourceFileName: text('source_file_name'),
+  sourceUrl: text('source_url'),
+  sourceLoadedAt: text('source_loaded_at'),
+  sourceSnapshotDate: text('source_snapshot_date'),
+  rowNumber: integer('row_number'),
+})
+
+export const stgEsbdSolicitationsRaw = pgTable('stg_esbd_solicitations_raw', {
+  id: serial('id').primaryKey(),
+  solicitationId: text('solicitation_id'),
+  agencyNameRaw: text('agency_name_raw'),
+  title: text('title'),
+  nigpCodes: text('nigp_codes'),
+  postedDate: text('posted_date'),
+  status: text('status'),
+  documentUrls: text('document_urls'),
+  sourceFileName: text('source_file_name'),
+  sourceUrl: text('source_url'),
+  sourceLoadedAt: text('source_loaded_at'),
+  sourceSnapshotDate: text('source_snapshot_date'),
+  rowNumber: integer('row_number'),
+})
+
 export const stgExpendituresByCountyRaw = pgTable('stg_expenditures_by_county_raw', {
   id: serial('id').primaryKey(),
   fiscalYear: integer('fiscal_year'),
@@ -498,6 +712,31 @@ export const stgPaymentsToPayeeRaw = pgTable('stg_payments_to_payee_raw', {
   sourceLoadedAt: text('source_loaded_at'),
   sourceSnapshotDate: text('source_snapshot_date'),
   rowNumber: integer('row_number'),
+})
+
+export const stgDirSalesRaw = pgTable('stg_dir_sales_raw', {
+  id: serial('id').primaryKey(),
+  fiscalYear: integer('fiscal_year'),
+  customerName: text('customer_name'),
+  vendorName: text('vendor_name'),
+  purchaseAmount: numeric('purchase_amount', { precision: 16, scale: 2 }),
+  contractNumber: text('contract_number'),
+  rfoDescription: text('rfo_description'),
+  orderQuantity: numeric('order_quantity', { precision: 16, scale: 2 }),
+  unitPrice: numeric('unit_price', { precision: 16, scale: 2 }),
+  invoiceNumber: text('invoice_number'),
+  poNumber: text('po_number'),
+  shippedDate: text('shipped_date'),
+  contractType: text('contract_type'),
+  contractSubtype: text('contract_subtype'),
+  staffingContractorName: text('staffing_contractor_name'),
+  staffingTitle: text('staffing_title'),
+  staffingLevel: text('staffing_level'),
+  staffingStartDate: text('staffing_start_date'),
+  salesFactNumber: text('sales_fact_number'),
+  sourceFileName: text('source_file_name'),
+  sourceLoadedAt: text('source_loaded_at'),
+  sourceSnapshotDate: text('source_snapshot_date'),
 })
 
 // ========== BLOG ==========
@@ -617,3 +856,225 @@ export const investigationTopics = pgTable(
     index('idx_investigation_topics_priority_updated').on(table.priorityRank, table.updatedAt),
   ],
 )
+
+export const stgBeverageSalesRaw = pgTable('stg_beverage_sales_raw', {
+  taxpayerNumber: text('taxpayer_number'),
+  taxpayerName: text('taxpayer_name'),
+  taxpayerAddress: text('taxpayer_address'),
+  taxpayerCity: text('taxpayer_city'),
+  taxpayerState: text('taxpayer_state'),
+  taxpayerZip: text('taxpayer_zip'),
+  taxpayerCounty: text('taxpayer_county'),
+  locationNumber: text('location_number'),
+  locationName: text('location_name'),
+  locationAddress: text('location_address'),
+  locationCity: text('location_city'),
+  locationState: text('location_state'),
+  locationZip: text('location_zip'),
+  locationCounty: text('location_county'),
+  insideOutsideCityLimits: text('inside_outside_city_limits'),
+  tabcPermitNumber: text('tabc_permit_number'),
+  responsibilityBeginDate: text('responsibility_begin_date'),
+  responsibilityEndDate: text('responsibility_end_date'),
+  obligationEndDate: text('obligation_end_date'),
+  totalSalesReceipts: text('total_sales_receipts'),
+  totalTaxableReceipts: text('total_taxable_receipts'),
+})
+
+export const beverageSalesFacts = pgTable(
+  'beverage_sales_facts',
+  {
+    id: serial('id').primaryKey(),
+    sourceRowHash: text('source_row_hash').notNull().unique(),
+    payeeId: uuid('payee_id').references(() => payees.id), // Fuzzy matched Taxpayer -> Payee using pg_trgm
+    locationNameRaw: text('location_name_raw'),
+    locationCity: text('location_city'),
+    taxpayerNameRaw: text('taxpayer_name_raw'),
+    tabcPermitNumber: text('tabc_permit_number'),
+    totalSalesReceipts: numeric('total_sales_receipts', { precision: 15, scale: 2 }),
+    totalTaxableReceipts: numeric('total_taxable_receipts', { precision: 15, scale: 2 }),
+    obligationEndDate: timestamp('obligation_end_date', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index('idx_bsf_payee_id').on(table.payeeId),
+  ],
+)
+
+
+
+// ========== VENDOR IDENTITY GRAPH ==========
+
+export const agencyExternalIds = pgTable('agency_external_ids', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  agencyId: uuid('agency_id').notNull().references(() => agencies.id),
+  system: text('system').notNull(),
+  externalId: text('external_id').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  unique('agency_external_ids_system_uq').on(table.system, table.externalId)
+])
+
+export const vendorEntities = pgTable('vendor_entities', {
+  vendorEntityId: text('vendor_entity_id').primaryKey(),
+  canonicalName: text('canonical_name').notNull(),
+  canonicalNameNormalized: text('canonical_name_normalized').notNull(),
+  canonicalSlug: text('canonical_slug').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+})
+
+export const vendorIdentifiers = pgTable('vendor_identifiers', {
+  id: text('id').primaryKey(),
+  vendorEntityId: text('vendor_entity_id').notNull().references(() => vendorEntities.vendorEntityId),
+  idType: text('id_type').notNull(),
+  idValue: text('id_value').notNull(),
+  sourceSystem: text('source_system').notNull(),
+  firstSeenAt: timestamp('first_seen_at', { withTimezone: true }).defaultNow().notNull(),
+  lastSeenAt: timestamp('last_seen_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  unique('vendor_identifiers_type_val_uq').on(table.idType, table.idValue)
+])
+
+export const vendorAliases = pgTable('vendor_aliases', {
+  id: text('id').primaryKey(),
+  vendorEntityId: text('vendor_entity_id').notNull().references(() => vendorEntities.vendorEntityId),
+  aliasName: text('alias_name').notNull(),
+  aliasNameNormalized: text('alias_name_normalized').notNull(),
+  sourceSystem: text('source_system').notNull(),
+  confidence: numeric('confidence', { precision: 5, scale: 4 }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+})
+
+export const vendorPayeeLinks = pgTable('vendor_payee_links', {
+  id: text('id').primaryKey(),
+  payeeId: uuid('payee_id').notNull().references(() => payees.id),
+  vendorEntityId: text('vendor_entity_id').notNull().references(() => vendorEntities.vendorEntityId),
+  matchMethod: text('match_method').notNull(),
+  confidence: numeric('confidence', { precision: 5, scale: 4 }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  unique('vendor_payee_links_payee_uq').on(table.payeeId)
+])
+
+// ========== PROCUREMENT & CONTRACT EXTENSIONS ==========
+
+export const lbbContracts = pgTable('lbb_contracts', {
+  id: text('id').primaryKey(),
+  agencyCode: text('agency_code').notNull(),
+  contractNumber: text('contract_number').notNull(),
+  subject: text('subject'),
+  purchaseRequisitionNumber: text('purchase_requisition_number'),
+  agencyApprovalDate: timestamp('agency_approval_date', { withTimezone: true }),
+  solicitationPostDate: timestamp('solicitation_post_date', { withTimezone: true }),
+  awardDate: timestamp('award_date', { withTimezone: true }),
+  requisitionDate: timestamp('requisition_date', { withTimezone: true }),
+  completionDate: timestamp('completion_date', { withTimezone: true }),
+  currentValueUsd: numeric('current_value_usd', { precision: 18, scale: 2 }),
+  maximumValueUsd: numeric('maximum_value_usd', { precision: 18, scale: 2 }),
+  competitiveType: text('competitive_type'),
+  revenueGenerating: boolean('revenue_generating'),
+  pccCodesJson: jsonb('pcc_codes_json'),
+  reportRequirementCodesJson: jsonb('report_requirement_codes_json'),
+  vendorNameRaw: text('vendor_name_raw'),
+  vendorAddress1: text('vendor_address1'),
+  vendorAddress2: text('vendor_address2'),
+  vendorAddress3: text('vendor_address3'),
+  vendorAddress4: text('vendor_address4'),
+  vendorCity: text('vendor_city'),
+  vendorState: text('vendor_state'),
+  vendorPostalCode: text('vendor_postal_code'),
+  vendorAreaCode: text('vendor_area_code'),
+  vendorPhoneNumber: text('vendor_phone_number'),
+  attachmentsCount: integer('attachments_count'),
+  ingestionRunId: text('ingestion_run_id').notNull(),
+  sourceRowHash: text('source_row_hash').notNull().unique(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  unique('lbb_contracts_agency_number_uq').on(table.agencyCode, table.contractNumber)
+])
+
+export const esbdSolicitations = pgTable('esbd_solicitations', {
+  id: text('id').primaryKey(),
+  solicitationId: text('solicitation_id').notNull(),
+  title: text('title').notNull(),
+  status: text('status').notNull(),
+  agencyMemberNumber: text('agency_member_number').notNull(),
+  postingDate: timestamp('posting_date', { withTimezone: true }),
+  createdDatetime: timestamp('created_datetime', { withTimezone: true }),
+  lastUpdatedDatetime: timestamp('last_updated_datetime', { withTimezone: true }),
+  dueDate: timestamp('due_date', { withTimezone: true }),
+  dueTime: text('due_time'),
+  detailsUrl: text('details_url').notNull(),
+  ingestionRunId: text('ingestion_run_id').notNull(),
+  sourceRowHash: text('source_row_hash').notNull().unique(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+})
+
+export const esbdSolicitationDetails = pgTable('esbd_solicitations_details', {
+  solicitationId: text('solicitation_id').primaryKey(),
+  contactName: text('contact_name'),
+  contactPhone: text('contact_phone'),
+  contactEmail: text('contact_email'),
+  postingRequirement: text('posting_requirement'),
+  procurementCertification: text('procurement_certification'),
+  solicitationPostingDate: timestamp('solicitation_posting_date', { withTimezone: true }),
+  lastModifiedDatetime: timestamp('last_modified_datetime', { withTimezone: true }),
+  classItemCodesRaw: text('class_item_codes_raw'),
+  addendumText: text('addendum_text'),
+  solicitationDescription: text('solicitation_description'),
+  ingestionRunId: text('ingestion_run_id').notNull(),
+  sourceRowHash: text('source_row_hash').notNull().unique(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+})
+
+export const esbdAttachments = pgTable('esbd_attachments', {
+  id: text('id').primaryKey(),
+  solicitationId: text('solicitation_id').notNull().references(() => esbdSolicitationDetails.solicitationId),
+  attachmentName: text('attachment_name').notNull(),
+  attachmentDescription: text('attachment_description'),
+  attachmentUrl: text('attachment_url').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+})
+
+export const dirContracts = pgTable('dir_contracts', {
+  dirContractNumber: text('dir_contract_number').primaryKey(),
+  vendorVid: text('vendor_vid'),
+  vendorName: text('vendor_name'),
+  rfo: text('rfo'),
+  contractStatus: text('contract_status'),
+  contractStartDate: timestamp('contract_start_date', { withTimezone: true }),
+  contractTermDate: timestamp('contract_term_date', { withTimezone: true }),
+  contractExpirationDate: timestamp('contract_expiration_date', { withTimezone: true }),
+  commodityCodesJson: jsonb('commodity_codes_json'),
+  productsServicesJson: jsonb('products_services_json'),
+  contractDocumentsJson: jsonb('contract_documents_json'),
+  ingestionRunId: text('ingestion_run_id').notNull(),
+  sourceRowHash: text('source_row_hash').notNull().unique(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+})
+
+export const usaspendingAwardTransactions = pgTable('usaspending_award_transactions', {
+  id: text('id').primaryKey(),
+  generatedUniqueAwardId: text('generated_unique_award_id'),
+  awardId: text('award_id'),
+  actionDate: timestamp('action_date', { withTimezone: true }),
+  federalActionObligation: numeric('federal_action_obligation', { precision: 18, scale: 2 }),
+  awardType: text('award_type'),
+  recipientName: text('recipient_name'),
+  recipientUei: text('recipient_uei'),
+  recipientParentName: text('recipient_parent_name'),
+  recipientParentUei: text('recipient_parent_uei'),
+  recipientStateCode: text('recipient_state_code'),
+  placeOfPerformanceStateCode: text('place_of_performance_state_code'),
+  awardingAgencyName: text('awarding_agency_name'),
+  fundingAgencyName: text('funding_agency_name'),
+  rawRowJson: jsonb('raw_row_json').notNull(),
+  ingestionRunId: text('ingestion_run_id').notNull(),
+  sourceRowHash: text('source_row_hash').notNull().unique(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+})

@@ -14,7 +14,6 @@ const MONTH_SCROLLBAR_DOWN_ARROW_INDEX = 2
 const DOWNLOAD_TIMEOUT_MS = 300_000
 const MAX_EXPORT_ATTEMPTS = 3
 const RETRY_DELAY_MS = 4_000
-const DOPPLER_CONFIG = process.env.DOPPLER_CONFIG || 'dev'
 const DATA_ROOT = resolve(process.cwd(), '.data/payments')
 const XLSX_DIR = join(DATA_ROOT, 'xlsx')
 const CSV_DIR = join(DATA_ROOT, 'csv')
@@ -275,8 +274,8 @@ function toCsv(rows: ParsedPaymentRow[]): string {
   return body ? `${header}\n${body}\n` : `${header}\n`
 }
 
-function runDopplerPsql(command: string, input?: string | Buffer) {
-  execFileSync('doppler', ['run', '--config', DOPPLER_CONFIG, '--', 'bash', '-lc', command], {
+function runPlatformPsql(command: string, input?: string | Buffer) {
+  execFileSync('narduk-cli', ['platform-secrets', 'exec', '--app', 'tx-spends', '--environment', 'dev', '--profile', 'runtime', '--', 'bash', '-lc', command], {
     cwd: process.cwd(),
     input,
     stdio: ['pipe', 'inherit', 'inherit'],
@@ -284,26 +283,26 @@ function runDopplerPsql(command: string, input?: string | Buffer) {
 }
 
 function truncatePaymentsStaging() {
-  runDopplerPsql('psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "TRUNCATE stg_payments_to_payee_raw"')
+  runPlatformPsql('psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "TRUNCATE stg_payments_to_payee_raw"')
 }
 
 function copyCsvIntoStaging(csvPath: string) {
   const copySql = `psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "\\copy stg_payments_to_payee_raw(${STAGING_COLUMNS.join(',')}) FROM STDIN WITH (FORMAT csv, HEADER true)"`
-  runDopplerPsql(copySql, readFileSync(csvPath))
+  runPlatformPsql(copySql, readFileSync(csvPath))
 }
 
 function runFactTransform() {
   const sqlPath = resolve(process.cwd(), 'tools/etl/payments-ingest.sql')
-  runDopplerPsql(`psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "${sqlPath}"`)
+  runPlatformPsql(`psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "${sqlPath}"`)
 }
 
 function refreshPaymentRollups() {
   const sqlPath = resolve(process.cwd(), 'tools/etl/refresh-payment-rollups.sql')
-  runDopplerPsql(`psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "${sqlPath}"`)
+  runPlatformPsql(`psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "${sqlPath}"`)
 }
 
 function analyzePaymentsTables() {
-  runDopplerPsql(
+  runPlatformPsql(
     'psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "ANALYZE agencies; ANALYZE payees; ANALYZE comptroller_objects; ANALYZE state_payment_facts;"',
   )
 }

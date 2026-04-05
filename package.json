@@ -8,7 +8,7 @@
     "predev": "node tools/check-setup.cjs",
     "dev": "pnpm --filter web dev",
     "prebuild": "node tools/check-setup.cjs",
-    "build": "doppler run -- pnpm -r build",
+    "build": "narduk-cli platform-secrets exec --app tx-spends --environment dev --profile runtime -- pnpm -r build",
     "build:plugins": "pnpm --filter @narduk/eslint-config build",
     "preship": "node tools/check-setup.cjs && pnpm install --frozen-lockfile && pnpm audit --audit-level=critical && pnpm exec tsx tools/check-drift-ci.ts && pnpm exec tsx tools/check-sync-health.ts && pnpm run quality:check",
     "ship": "pnpm exec tsx tools/ship.ts",
@@ -97,5 +97,9 @@
     "turbo": "^2.8.12",
     "wait-on": "^8.0.5",
     "xlsx": "^0.18.5"
+  },
+  "dependencies": {
+    "csv-parse": "^6.2.1",
+    "csv-stringify": "^6.7.0"
   }
 }

@@ -1,5 +1,5 @@
 import { boolean, integer, pgTable, text } from 'drizzle-orm/pg-core'
-import { users } from '#layer/server/database/pg-schema'
+export const users = pgTable('users', { id: text('id').primaryKey() })
 
 /**
  * PostgreSQL mirror of the template-managed auth bridge tables.

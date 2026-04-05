@@ -19,6 +19,13 @@ overrides:
 importers:
 
   .:
+    dependencies:
+      csv-parse:
+        specifier: ^6.2.1
+        version: 6.2.1
+      csv-stringify:
+        specifier: ^6.7.0
+        version: 6.7.0
     devDependencies:
       '@playwright/test':
         specifier: ^1.49.0
@@ -957,18 +964,27 @@ packages:
     peerDependencies:
       nuxt: '>=3.16.0'
       wrangler: '>=4.0.0'
+    peerDependenciesMeta:
+      wrangler:
+        optional: true
 
   '@narduk-enterprises/narduk-nuxt-template-layer-auth@1.0.14':
     resolution: {integrity: sha512-sfKn33ocWWHjbP1R2EXF7QD+5k9ow5yY+SxB+dv/pzZ06+FfGqR5atjrt4IcKRqHbAeGOPMYtzH+wwuvp3DsKA==, tarball: https://code.platform.nard.uk/api/packages/narduk-enterprises/npm/%40narduk-enterprises%2Fnarduk-nuxt-template-layer-auth/-/1.0.14/narduk-nuxt-template-layer-auth-1.0.14.tgz}
     peerDependencies:
       nuxt: '>=3.16.0'
       wrangler: '>=4.0.0'
+    peerDependenciesMeta:
+      wrangler:
+        optional: true
 
   '@narduk-enterprises/narduk-nuxt-template-layer-core@1.0.14':
     resolution: {integrity: sha512-QfE2snCOdVXAlsCdjUNHQtmacPy+pAL8Zkh9tmvn3YIKz+7JTva6iQUbpNvhUjc76bC8qbCS2Bh5b58yxxwN+w==, tarball: https://code.platform.nard.uk/api/packages/narduk-enterprises/npm/%40narduk-enterprises%2Fnarduk-nuxt-template-layer-core/-/1.0.14/narduk-nuxt-template-layer-core-1.0.14.tgz}
     peerDependencies:
       nuxt: '>=3.16.0'
       wrangler: '>=4.0.0'
+    peerDependenciesMeta:
+      wrangler:
+        optional: true
 
   '@neondatabase/serverless@1.0.2':
     resolution: {integrity: sha512-I5sbpSIAHiB+b6UttofhrN/UJXII+4tZPAq1qugzwCwLIL8EZLV7F/JyHUrEIiGgQpEXzpnjlJ+zwcEhheGvCw==}
@@ -3538,6 +3554,12 @@ packages:
 
   csstype@3.2.3:
     resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
+
+  csv-parse@6.2.1:
+    resolution: {integrity: sha512-LRLMV+UCyfMokp8Wb411duBf1gaBKJfOfBWU9eHMJ+b+cJYZsNu3AFmjJf3+yPGd59Exz1TsMjaSFyxnYB9+IQ==}
+
+  csv-stringify@6.7.0:
+    resolution: {integrity: sha512-UdtziYp5HuTz7e5j8Nvq+a/3HQo+2/aJZ9xntNTpmRRIg/3YYqDVgiS9fvAhtNbnyfbv2ZBe0bqCHqzhE7FqWQ==}
 
   culori@4.0.2:
     resolution: {integrity: sha512-1+BhOB8ahCn4O0cep0Sh2l9KCOfOdY+BXJnKMHFFzDEouSr/el18QwXEMRlOj9UY5nCeA8UN3a/82rUWRBeyBw==}
@@ -7632,8 +7654,9 @@ snapshots:
       posthog-js: 1.363.4
       satori: 0.26.0
       tailwindcss: 4.2.2
-      wrangler: 4.77.0(@cloudflare/workers-types@4.20260307.1)
       zod: 4.3.6
+    optionalDependencies:
+      wrangler: 4.77.0(@cloudflare/workers-types@4.20260307.1)
     transitivePeerDependencies:
       - '@atproto/api'
       - '@atproto/oauth-client-node'
@@ -7759,8 +7782,9 @@ snapshots:
       posthog-js: 1.363.4
       satori: 0.26.0
       tailwindcss: 4.2.2
-      wrangler: 4.77.0(@cloudflare/workers-types@4.20260307.1)
       zod: 4.3.6
+    optionalDependencies:
+      wrangler: 4.77.0(@cloudflare/workers-types@4.20260307.1)
     transitivePeerDependencies:
       - '@atproto/api'
       - '@atproto/oauth-client-node'
@@ -7885,8 +7909,9 @@ snapshots:
       posthog-js: 1.363.4
       satori: 0.26.0
       tailwindcss: 4.2.2
-      wrangler: 4.77.0(@cloudflare/workers-types@4.20260307.1)
       zod: 4.3.6
+    optionalDependencies:
+      wrangler: 4.77.0(@cloudflare/workers-types@4.20260307.1)
     transitivePeerDependencies:
       - '@atproto/api'
       - '@atproto/oauth-client-node'
@@ -10788,6 +10813,10 @@ snapshots:
       css-tree: 2.2.1
 
   csstype@3.2.3: {}
+
+  csv-parse@6.2.1: {}
+
+  csv-stringify@6.7.0: {}
 
   culori@4.0.2: {}
 
