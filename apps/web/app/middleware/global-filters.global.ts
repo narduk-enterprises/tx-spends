@@ -6,7 +6,7 @@ export default defineNuxtRouteMiddleware((to, from) => {
 
   // Keys that represent app-wide context that should follow the user unless explicitly cleared
   const preservedKeys = ['fy', 'include_confidential']
-  
+
   let needsUpdate = false
   const inheritedQuery = { ...to.query }
 

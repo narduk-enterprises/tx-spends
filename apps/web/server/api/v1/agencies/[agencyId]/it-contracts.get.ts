@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
   if (!agencyId) throw createError({ statusCode: 400, message: 'Missing agency_id' })
 
   const conditions = [eq(dirSalesFacts.agencyId, agencyId)]
-  
+
   if (query.fiscal_year) conditions.push(eq(dirSalesFacts.fiscalYear, query.fiscal_year))
   if (query.q) {
     const normalizedSearch = `%${normalizeSearchTerm(query.q)}%`
@@ -21,8 +21,8 @@ export default defineEventHandler(async (event) => {
       or(
         like(dirSalesFacts.vendorNameRaw, normalizedSearch),
         like(dirSalesFacts.rfoDescription, normalizedSearch),
-        like(dirSalesFacts.contractNumber, normalizedSearch)
-      )!
+        like(dirSalesFacts.contractNumber, normalizedSearch),
+      )!,
     )
   }
 
@@ -65,7 +65,7 @@ export default defineEventHandler(async (event) => {
     filters_applied: query,
     data: list.map((c) => ({
       ...c,
-      purchase_amount: Number(c.purchase_amount || 0)
+      purchase_amount: Number(c.purchase_amount || 0),
     })),
     meta: {
       currency: 'USD',

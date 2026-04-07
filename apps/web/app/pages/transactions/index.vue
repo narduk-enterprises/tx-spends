@@ -158,12 +158,13 @@ function updateSort(value: { column: string; direction: 'asc' | 'desc' }) {
   })
 }
 
+const requestFetch = useRequestFetch()
 async function searchCategories(q: string) {
   if (!q) return []
   try {
-    const response: any = await $fetch('/api/v1/categories', { query: { q, limit: 15 } })
+    const response: any = await requestFetch('/api/v1/categories', { query: { q, limit: 15 } })
     return response.data || []
-  } catch (error) {
+  } catch {
     return []
   }
 }

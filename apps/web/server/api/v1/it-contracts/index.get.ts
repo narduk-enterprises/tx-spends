@@ -12,15 +12,15 @@ export default defineEventHandler(async (event) => {
   const conditions = []
   if (query.fiscal_year) conditions.push(eq(dirSalesFacts.fiscalYear, query.fiscal_year))
   if (query.agency_id) conditions.push(eq(dirSalesFacts.agencyId, query.agency_id))
-  
+
   if (query.q) {
     const normalizedSearch = `%${normalizeSearchTerm(query.q)}%`
     conditions.push(
       or(
         like(dirSalesFacts.vendorNameRaw, normalizedSearch),
         like(dirSalesFacts.rfoDescription, normalizedSearch),
-        like(dirSalesFacts.contractNumber, normalizedSearch)
-      )!
+        like(dirSalesFacts.contractNumber, normalizedSearch),
+      )!,
     )
   }
 
@@ -65,7 +65,7 @@ export default defineEventHandler(async (event) => {
     filters_applied: query,
     data: list.map((c) => ({
       ...c,
-      purchase_amount: Number(c.purchase_amount || 0)
+      purchase_amount: Number(c.purchase_amount || 0),
     })),
     meta: {
       currency: 'USD',

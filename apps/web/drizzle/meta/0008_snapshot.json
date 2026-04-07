@@ -93,9 +93,7 @@
         "agencies_agency_name_normalized_unique": {
           "name": "agencies_agency_name_normalized_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "agency_name_normalized"
-          ]
+          "columns": ["agency_name_normalized"]
         }
       },
       "policies": {},
@@ -145,12 +143,8 @@
           "name": "agency_external_ids_agency_id_agencies_id_fk",
           "tableFrom": "agency_external_ids",
           "tableTo": "agencies",
-          "columnsFrom": [
-            "agency_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agency_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -160,10 +154,7 @@
         "agency_external_ids_system_uq": {
           "name": "agency_external_ids_system_uq",
           "nullsNotDistinct": false,
-          "columns": [
-            "system",
-            "external_id"
-          ]
+          "columns": ["system", "external_id"]
         }
       },
       "policies": {},
@@ -207,12 +198,8 @@
           "name": "agency_name_crosswalk_agency_id_agencies_id_fk",
           "tableFrom": "agency_name_crosswalk",
           "tableTo": "agencies",
-          "columnsFrom": [
-            "agency_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agency_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -312,12 +299,8 @@
           "name": "annual_cash_report_facts_fiscal_year_fiscal_years_fiscal_year_fk",
           "tableFrom": "annual_cash_report_facts",
           "tableTo": "fiscal_years",
-          "columnsFrom": [
-            "fiscal_year"
-          ],
-          "columnsTo": [
-            "fiscal_year"
-          ],
+          "columnsFrom": ["fiscal_year"],
+          "columnsTo": ["fiscal_year"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -327,11 +310,7 @@
         "acrf_unique_key": {
           "name": "acrf_unique_key",
           "nullsNotDistinct": false,
-          "columns": [
-            "fiscal_year",
-            "fund_number",
-            "source_table_name"
-          ]
+          "columns": ["fiscal_year", "fund_number", "source_table_name"]
         }
       },
       "policies": {},
@@ -432,12 +411,8 @@
           "name": "beverage_sales_facts_payee_id_payees_id_fk",
           "tableFrom": "beverage_sales_facts",
           "tableTo": "payees",
-          "columnsFrom": [
-            "payee_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["payee_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -447,9 +422,7 @@
         "beverage_sales_facts_source_row_hash_unique": {
           "name": "beverage_sales_facts_source_row_hash_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "source_row_hash"
-          ]
+          "columns": ["source_row_hash"]
         }
       },
       "policies": {},
@@ -539,12 +512,8 @@
           "name": "blog_analyzer_runs_angle_id_blog_angles_id_fk",
           "tableFrom": "blog_analyzer_runs",
           "tableTo": "blog_angles",
-          "columnsFrom": [
-            "angle_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["angle_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -763,12 +732,8 @@
           "name": "blog_posts_angle_id_blog_angles_id_fk",
           "tableFrom": "blog_posts",
           "tableTo": "blog_angles",
-          "columnsFrom": [
-            "angle_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["angle_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -776,12 +741,8 @@
           "name": "blog_posts_analyzer_run_id_blog_analyzer_runs_id_fk",
           "tableFrom": "blog_posts",
           "tableTo": "blog_analyzer_runs",
-          "columnsFrom": [
-            "analyzer_run_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["analyzer_run_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -791,9 +752,7 @@
         "blog_posts_slug_unique": {
           "name": "blog_posts_slug_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "slug"
-          ]
+          "columns": ["slug"]
         }
       },
       "policies": {},
@@ -843,12 +802,8 @@
           "name": "comptroller_object_category_map_comptroller_object_code_comptroller_objects_code_fk",
           "tableFrom": "comptroller_object_category_map",
           "tableTo": "comptroller_objects",
-          "columnsFrom": [
-            "comptroller_object_code"
-          ],
-          "columnsTo": [
-            "code"
-          ],
+          "columnsFrom": ["comptroller_object_code"],
+          "columnsTo": ["code"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -856,12 +811,8 @@
           "name": "comptroller_object_category_map_expenditure_category_code_expenditure_categories_code_fk",
           "tableFrom": "comptroller_object_category_map",
           "tableTo": "expenditure_categories",
-          "columnsFrom": [
-            "expenditure_category_code"
-          ],
-          "columnsTo": [
-            "code"
-          ],
+          "columnsFrom": ["expenditure_category_code"],
+          "columnsTo": ["code"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -869,10 +820,7 @@
       "compositePrimaryKeys": {
         "comptroller_object_category_map_comptroller_object_code_expenditure_category_code_pk": {
           "name": "comptroller_object_category_map_comptroller_object_code_expenditure_category_code_pk",
-          "columns": [
-            "comptroller_object_code",
-            "expenditure_category_code"
-          ]
+          "columns": ["comptroller_object_code", "expenditure_category_code"]
         }
       },
       "uniqueConstraints": {},
@@ -1088,12 +1036,8 @@
           "name": "county_expenditure_facts_fiscal_year_fiscal_years_fiscal_year_fk",
           "tableFrom": "county_expenditure_facts",
           "tableTo": "fiscal_years",
-          "columnsFrom": [
-            "fiscal_year"
-          ],
-          "columnsTo": [
-            "fiscal_year"
-          ],
+          "columnsFrom": ["fiscal_year"],
+          "columnsTo": ["fiscal_year"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1101,12 +1045,8 @@
           "name": "county_expenditure_facts_county_id_geographies_counties_id_fk",
           "tableFrom": "county_expenditure_facts",
           "tableTo": "geographies_counties",
-          "columnsFrom": [
-            "county_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["county_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1114,12 +1054,8 @@
           "name": "county_expenditure_facts_agency_id_agencies_id_fk",
           "tableFrom": "county_expenditure_facts",
           "tableTo": "agencies",
-          "columnsFrom": [
-            "agency_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agency_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1127,12 +1063,8 @@
           "name": "county_expenditure_facts_expenditure_category_code_expenditure_categories_code_fk",
           "tableFrom": "county_expenditure_facts",
           "tableTo": "expenditure_categories",
-          "columnsFrom": [
-            "expenditure_category_code"
-          ],
-          "columnsTo": [
-            "code"
-          ],
+          "columnsFrom": ["expenditure_category_code"],
+          "columnsTo": ["code"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1142,12 +1074,7 @@
         "cef_unique_key": {
           "name": "cef_unique_key",
           "nullsNotDistinct": false,
-          "columns": [
-            "fiscal_year",
-            "county_id",
-            "agency_name_raw",
-            "expenditure_type_raw"
-          ]
+          "columns": ["fiscal_year", "county_id", "agency_name_raw", "expenditure_type_raw"]
         }
       },
       "policies": {},
@@ -1258,9 +1185,7 @@
         "dir_contracts_source_row_hash_unique": {
           "name": "dir_contracts_source_row_hash_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "source_row_hash"
-          ]
+          "columns": ["source_row_hash"]
         }
       },
       "policies": {},
@@ -1450,12 +1375,8 @@
           "name": "dir_sales_facts_agency_id_agencies_id_fk",
           "tableFrom": "dir_sales_facts",
           "tableTo": "agencies",
-          "columnsFrom": [
-            "agency_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agency_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1465,9 +1386,7 @@
         "dir_sales_facts_source_row_hash_unique": {
           "name": "dir_sales_facts_source_row_hash_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "source_row_hash"
-          ]
+          "columns": ["source_row_hash"]
         }
       },
       "policies": {},
@@ -1563,12 +1482,8 @@
           "name": "economic_development_facts_fiscal_year_fiscal_years_fiscal_year_fk",
           "tableFrom": "economic_development_facts",
           "tableTo": "fiscal_years",
-          "columnsFrom": [
-            "fiscal_year"
-          ],
-          "columnsTo": [
-            "fiscal_year"
-          ],
+          "columnsFrom": ["fiscal_year"],
+          "columnsTo": ["fiscal_year"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1578,9 +1493,7 @@
         "economic_development_facts_source_row_hash_unique": {
           "name": "economic_development_facts_source_row_hash_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "source_row_hash"
-          ]
+          "columns": ["source_row_hash"]
         }
       },
       "policies": {},
@@ -1635,12 +1548,8 @@
           "name": "esbd_attachments_solicitation_id_esbd_solicitations_details_solicitation_id_fk",
           "tableFrom": "esbd_attachments",
           "tableTo": "esbd_solicitations_details",
-          "columnsFrom": [
-            "solicitation_id"
-          ],
-          "columnsTo": [
-            "solicitation_id"
-          ],
+          "columnsFrom": ["solicitation_id"],
+          "columnsTo": ["solicitation_id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1755,9 +1664,7 @@
         "esbd_solicitations_details_source_row_hash_unique": {
           "name": "esbd_solicitations_details_source_row_hash_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "source_row_hash"
-          ]
+          "columns": ["source_row_hash"]
         }
       },
       "policies": {},
@@ -1868,9 +1775,7 @@
         "esbd_solicitations_source_row_hash_unique": {
           "name": "esbd_solicitations_source_row_hash_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "source_row_hash"
-          ]
+          "columns": ["source_row_hash"]
         }
       },
       "policies": {},
@@ -2017,10 +1922,7 @@
         "counties_state_name_uq": {
           "name": "counties_state_name_uq",
           "nullsNotDistinct": false,
-          "columns": [
-            "state_code",
-            "county_name_normalized"
-          ]
+          "columns": ["state_code", "county_name_normalized"]
         }
       },
       "policies": {},
@@ -2332,9 +2234,7 @@
         "investigation_topics_slug_unique": {
           "name": "investigation_topics_slug_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "slug"
-          ]
+          "columns": ["slug"]
         }
       },
       "policies": {},
@@ -2541,17 +2441,12 @@
         "lbb_contracts_source_row_hash_unique": {
           "name": "lbb_contracts_source_row_hash_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "source_row_hash"
-          ]
+          "columns": ["source_row_hash"]
         },
         "lbb_contracts_agency_number_uq": {
           "name": "lbb_contracts_agency_number_uq",
           "nullsNotDistinct": false,
-          "columns": [
-            "agency_code",
-            "contract_number"
-          ]
+          "columns": ["agency_code", "contract_number"]
         }
       },
       "policies": {},
@@ -2669,12 +2564,8 @@
           "name": "payee_vendor_matches_payee_id_payees_id_fk",
           "tableFrom": "payee_vendor_matches",
           "tableTo": "payees",
-          "columnsFrom": [
-            "payee_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["payee_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2682,12 +2573,8 @@
           "name": "payee_vendor_matches_vendor_enrichment_id_vendor_enrichment_id_fk",
           "tableFrom": "payee_vendor_matches",
           "tableTo": "vendor_enrichment",
-          "columnsFrom": [
-            "vendor_enrichment_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["vendor_enrichment_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2697,9 +2584,7 @@
         "payee_vendor_matches_payee_id_uq": {
           "name": "payee_vendor_matches_payee_id_uq",
           "nullsNotDistinct": false,
-          "columns": [
-            "payee_id"
-          ]
+          "columns": ["payee_id"]
         }
       },
       "policies": {},
@@ -2780,10 +2665,7 @@
         "payees_normalized_confidential_uq": {
           "name": "payees_normalized_confidential_uq",
           "nullsNotDistinct": false,
-          "columns": [
-            "payee_name_normalized",
-            "is_confidential"
-          ]
+          "columns": ["payee_name_normalized", "is_confidential"]
         }
       },
       "policies": {},
@@ -2906,12 +2788,8 @@
           "name": "payment_agency_rollups_agency_id_agencies_id_fk",
           "tableFrom": "payment_agency_rollups",
           "tableTo": "agencies",
-          "columnsFrom": [
-            "agency_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agency_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2919,10 +2797,7 @@
       "compositePrimaryKeys": {
         "payment_agency_rollups_scope_fiscal_year_agency_id_pk": {
           "name": "payment_agency_rollups_scope_fiscal_year_agency_id_pk",
-          "columns": [
-            "scope_fiscal_year",
-            "agency_id"
-          ]
+          "columns": ["scope_fiscal_year", "agency_id"]
         }
       },
       "uniqueConstraints": {},
@@ -3063,10 +2938,7 @@
       "compositePrimaryKeys": {
         "payment_category_rollups_scope_fiscal_year_category_code_pk": {
           "name": "payment_category_rollups_scope_fiscal_year_category_code_pk",
-          "columns": [
-            "scope_fiscal_year",
-            "category_code"
-          ]
+          "columns": ["scope_fiscal_year", "category_code"]
         }
       },
       "uniqueConstraints": {},
@@ -3190,12 +3062,8 @@
           "name": "payment_object_rollups_object_code_comptroller_objects_code_fk",
           "tableFrom": "payment_object_rollups",
           "tableTo": "comptroller_objects",
-          "columnsFrom": [
-            "object_code"
-          ],
-          "columnsTo": [
-            "code"
-          ],
+          "columnsFrom": ["object_code"],
+          "columnsTo": ["code"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -3203,10 +3071,7 @@
       "compositePrimaryKeys": {
         "payment_object_rollups_scope_fiscal_year_object_code_pk": {
           "name": "payment_object_rollups_scope_fiscal_year_object_code_pk",
-          "columns": [
-            "scope_fiscal_year",
-            "object_code"
-          ]
+          "columns": ["scope_fiscal_year", "object_code"]
         }
       },
       "uniqueConstraints": {},
@@ -3411,12 +3276,8 @@
           "name": "payment_payee_rollups_payee_id_payees_id_fk",
           "tableFrom": "payment_payee_rollups",
           "tableTo": "payees",
-          "columnsFrom": [
-            "payee_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["payee_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -3424,10 +3285,7 @@
       "compositePrimaryKeys": {
         "payment_payee_rollups_scope_fiscal_year_payee_id_pk": {
           "name": "payment_payee_rollups_scope_fiscal_year_payee_id_pk",
-          "columns": [
-            "scope_fiscal_year",
-            "payee_id"
-          ]
+          "columns": ["scope_fiscal_year", "payee_id"]
         }
       },
       "uniqueConstraints": {},
@@ -3767,12 +3625,8 @@
           "name": "state_payment_facts_fiscal_year_fiscal_years_fiscal_year_fk",
           "tableFrom": "state_payment_facts",
           "tableTo": "fiscal_years",
-          "columnsFrom": [
-            "fiscal_year"
-          ],
-          "columnsTo": [
-            "fiscal_year"
-          ],
+          "columnsFrom": ["fiscal_year"],
+          "columnsTo": ["fiscal_year"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -3780,12 +3634,8 @@
           "name": "state_payment_facts_agency_id_agencies_id_fk",
           "tableFrom": "state_payment_facts",
           "tableTo": "agencies",
-          "columnsFrom": [
-            "agency_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agency_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -3793,12 +3643,8 @@
           "name": "state_payment_facts_payee_id_payees_id_fk",
           "tableFrom": "state_payment_facts",
           "tableTo": "payees",
-          "columnsFrom": [
-            "payee_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["payee_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -3806,12 +3652,8 @@
           "name": "state_payment_facts_comptroller_object_code_comptroller_objects_code_fk",
           "tableFrom": "state_payment_facts",
           "tableTo": "comptroller_objects",
-          "columnsFrom": [
-            "comptroller_object_code"
-          ],
-          "columnsTo": [
-            "code"
-          ],
+          "columnsFrom": ["comptroller_object_code"],
+          "columnsTo": ["code"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -3821,9 +3663,7 @@
         "state_payment_facts_source_row_hash_unique": {
           "name": "state_payment_facts_source_row_hash_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "source_row_hash"
-          ]
+          "columns": ["source_row_hash"]
         }
       },
       "policies": {},
@@ -5373,12 +5213,8 @@
           "name": "travel_payment_facts_agency_id_agencies_id_fk",
           "tableFrom": "travel_payment_facts",
           "tableTo": "agencies",
-          "columnsFrom": [
-            "agency_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agency_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -5386,12 +5222,8 @@
           "name": "travel_payment_facts_payee_id_payees_id_fk",
           "tableFrom": "travel_payment_facts",
           "tableTo": "payees",
-          "columnsFrom": [
-            "payee_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["payee_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -5399,12 +5231,8 @@
           "name": "travel_payment_facts_fiscal_year_fiscal_years_fiscal_year_fk",
           "tableFrom": "travel_payment_facts",
           "tableTo": "fiscal_years",
-          "columnsFrom": [
-            "fiscal_year"
-          ],
-          "columnsTo": [
-            "fiscal_year"
-          ],
+          "columnsFrom": ["fiscal_year"],
+          "columnsTo": ["fiscal_year"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -5414,9 +5242,7 @@
         "travel_payment_facts_source_row_hash_unique": {
           "name": "travel_payment_facts_source_row_hash_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "source_row_hash"
-          ]
+          "columns": ["source_row_hash"]
         }
       },
       "policies": {},
@@ -5544,9 +5370,7 @@
         "usaspending_award_transactions_source_row_hash_unique": {
           "name": "usaspending_award_transactions_source_row_hash_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "source_row_hash"
-          ]
+          "columns": ["source_row_hash"]
         }
       },
       "policies": {},
@@ -5607,12 +5431,8 @@
           "name": "vendor_aliases_vendor_entity_id_vendor_entities_vendor_entity_id_fk",
           "tableFrom": "vendor_aliases",
           "tableTo": "vendor_entities",
-          "columnsFrom": [
-            "vendor_entity_id"
-          ],
-          "columnsTo": [
-            "vendor_entity_id"
-          ],
+          "columnsFrom": ["vendor_entity_id"],
+          "columnsTo": ["vendor_entity_id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -5694,12 +5514,8 @@
           "name": "vendor_commodity_class_map_vendor_enrichment_id_vendor_enrichment_id_fk",
           "tableFrom": "vendor_commodity_class_map",
           "tableTo": "vendor_enrichment",
-          "columnsFrom": [
-            "vendor_enrichment_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["vendor_enrichment_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -5707,12 +5523,8 @@
           "name": "vendor_commodity_class_map_commodity_code_nigp_commodity_codes_code_fk",
           "tableFrom": "vendor_commodity_class_map",
           "tableTo": "nigp_commodity_codes",
-          "columnsFrom": [
-            "commodity_code"
-          ],
-          "columnsTo": [
-            "code"
-          ],
+          "columnsFrom": ["commodity_code"],
+          "columnsTo": ["code"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -6069,12 +5881,8 @@
           "name": "vendor_identifiers_vendor_entity_id_vendor_entities_vendor_entity_id_fk",
           "tableFrom": "vendor_identifiers",
           "tableTo": "vendor_entities",
-          "columnsFrom": [
-            "vendor_entity_id"
-          ],
-          "columnsTo": [
-            "vendor_entity_id"
-          ],
+          "columnsFrom": ["vendor_entity_id"],
+          "columnsTo": ["vendor_entity_id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -6084,10 +5892,7 @@
         "vendor_identifiers_type_val_uq": {
           "name": "vendor_identifiers_type_val_uq",
           "nullsNotDistinct": false,
-          "columns": [
-            "id_type",
-            "id_value"
-          ]
+          "columns": ["id_type", "id_value"]
         }
       },
       "policies": {},
@@ -6142,12 +5947,8 @@
           "name": "vendor_payee_links_payee_id_payees_id_fk",
           "tableFrom": "vendor_payee_links",
           "tableTo": "payees",
-          "columnsFrom": [
-            "payee_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["payee_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -6155,12 +5956,8 @@
           "name": "vendor_payee_links_vendor_entity_id_vendor_entities_vendor_entity_id_fk",
           "tableFrom": "vendor_payee_links",
           "tableTo": "vendor_entities",
-          "columnsFrom": [
-            "vendor_entity_id"
-          ],
-          "columnsTo": [
-            "vendor_entity_id"
-          ],
+          "columnsFrom": ["vendor_entity_id"],
+          "columnsTo": ["vendor_entity_id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -6170,9 +5967,7 @@
         "vendor_payee_links_payee_uq": {
           "name": "vendor_payee_links_payee_uq",
           "nullsNotDistinct": false,
-          "columns": [
-            "payee_id"
-          ]
+          "columns": ["payee_id"]
         }
       },
       "policies": {},

@@ -38,7 +38,9 @@ const agenciesKey = computed(() =>
 const categoriesKey = computed(() =>
   buildFetchKey(`payee-categories:${payeeId.value}`, requestQuery.value),
 )
-const beveragesKey = computed(() => buildFetchKey(`payee-beverages:${payeeId.value}`, requestQuery.value))
+const beveragesKey = computed(() =>
+  buildFetchKey(`payee-beverages:${payeeId.value}`, requestQuery.value),
+)
 const trendsKey = computed(() => buildFetchKey(`payee-trends:${payeeId.value}`, requestQuery.value))
 
 const [detailState, agenciesState, trendsState] = await Promise.all([
@@ -425,7 +427,7 @@ const matchMethodLabel = computed(() => {
           { key: 'permit_number', label: 'TABC Permit' },
           { key: 'total_sales', label: 'Total Receipts' },
           { key: 'total_taxable', label: 'Taxable Receipts' },
-          { key: 'obligation_end_date', label: 'Obligation Date' }
+          { key: 'obligation_end_date', label: 'Obligation Date' },
         ]"
         :loading="beveragesStatus === 'pending'"
         :rows="beverages?.data || []"
@@ -434,7 +436,9 @@ const matchMethodLabel = computed(() => {
       >
         <template #location_name-data="{ row }">
           <div class="flex flex-col items-start">
-            <span class="font-semibold text-primary">{{ row.location_name || 'Unknown location' }}</span>
+            <span class="font-semibold text-primary">{{
+              row.location_name || 'Unknown location'
+            }}</span>
             <span v-if="row.location_city" class="text-xs text-muted">
               {{ row.location_city }}
             </span>
@@ -450,10 +454,13 @@ const matchMethodLabel = computed(() => {
           <span class="font-semibold text-default">{{ formatUsd(row.total_taxable, 2) }}</span>
         </template>
         <template #obligation_end_date-data="{ row }">
-          <span class="text-sm text-default">{{ row.obligation_end_date ? new Date(row.obligation_end_date).toLocaleDateString() : 'Unknown' }}</span>
+          <span class="text-sm text-default">{{
+            row.obligation_end_date
+              ? new Date(row.obligation_end_date).toLocaleDateString()
+              : 'Unknown'
+          }}</span>
         </template>
       </DataTableCard>
-
 
       <TrendChartCard
         v-else

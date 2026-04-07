@@ -176,16 +176,20 @@ export const nigpCommodityCodes = pgTable('nigp_commodity_codes', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 })
 
-export const vendorCommodityClassMap = pgTable('vendor_commodity_class_map', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  vendorEnrichmentId: uuid('vendor_enrichment_id').references(() => vendorEnrichment.id),
-  cmblVendorNo: text('cmbl_vendor_no'),
-  commodityCode: text('commodity_code').notNull().references(() => nigpCommodityCodes.code),
-  sourceSnapshotDate: date('source_snapshot_date'),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-}, (table) => [
-  index('idx_vendor_commodity').on(table.vendorEnrichmentId, table.commodityCode),
-])
+export const vendorCommodityClassMap = pgTable(
+  'vendor_commodity_class_map',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    vendorEnrichmentId: uuid('vendor_enrichment_id').references(() => vendorEnrichment.id),
+    cmblVendorNo: text('cmbl_vendor_no'),
+    commodityCode: text('commodity_code')
+      .notNull()
+      .references(() => nigpCommodityCodes.code),
+    sourceSnapshotDate: date('source_snapshot_date'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [index('idx_vendor_commodity').on(table.vendorEnrichmentId, table.commodityCode)],
+)
 
 // ========== FACTS ==========
 
@@ -323,62 +327,77 @@ export const dirSalesFacts = pgTable(
   ],
 )
 
-export const travelPaymentFacts = pgTable('travel_payment_facts', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  sourceRowHash: text('source_row_hash').notNull().unique(),
-  agencyId: uuid('agency_id').notNull().references(() => agencies.id),
-  payeeNameRaw: text('payee_name_raw').notNull(),
-  payeeId: uuid('payee_id').references(() => payees.id),
-  paymentDate: date('payment_date').notNull(),
-  fiscalYear: integer('fiscal_year').notNull().references(() => fiscalYears.fiscalYear),
-  amount: numeric('amount', { precision: 16, scale: 2 }).notNull(),
-  travelExpenseTypeRaw: text('travel_expense_type_raw').notNull(),
-  sourceLoadedAt: timestamp('source_loaded_at', { withTimezone: true }).notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-}, (table) => [
-  index('idx_tpf_agency_fy').on(table.agencyId, table.fiscalYear),
-  index('idx_tpf_payee').on(table.payeeId),
-])
+export const travelPaymentFacts = pgTable(
+  'travel_payment_facts',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    sourceRowHash: text('source_row_hash').notNull().unique(),
+    agencyId: uuid('agency_id')
+      .notNull()
+      .references(() => agencies.id),
+    payeeNameRaw: text('payee_name_raw').notNull(),
+    payeeId: uuid('payee_id').references(() => payees.id),
+    paymentDate: date('payment_date').notNull(),
+    fiscalYear: integer('fiscal_year')
+      .notNull()
+      .references(() => fiscalYears.fiscalYear),
+    amount: numeric('amount', { precision: 16, scale: 2 }).notNull(),
+    travelExpenseTypeRaw: text('travel_expense_type_raw').notNull(),
+    sourceLoadedAt: timestamp('source_loaded_at', { withTimezone: true }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index('idx_tpf_agency_fy').on(table.agencyId, table.fiscalYear),
+    index('idx_tpf_payee').on(table.payeeId),
+  ],
+)
 
-export const economicDevelopmentFacts = pgTable('economic_development_facts', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  sourceRowHash: text('source_row_hash').notNull().unique(),
-  recipientNameRaw: text('recipient_name_raw').notNull(),
-  fundRaw: text('fund_raw'),
-  expenditureCategoryRaw: text('expenditure_category_raw'),
-  fiscalYear: integer('fiscal_year').notNull().references(() => fiscalYears.fiscalYear),
-  amount: numeric('amount', { precision: 18, scale: 2 }).notNull(),
-  sourceLoadedAt: timestamp('source_loaded_at', { withTimezone: true }).notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-}, (table) => [
-  index('idx_edf_fy_recipient').on(table.fiscalYear, table.recipientNameRaw),
-])
+export const economicDevelopmentFacts = pgTable(
+  'economic_development_facts',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    sourceRowHash: text('source_row_hash').notNull().unique(),
+    recipientNameRaw: text('recipient_name_raw').notNull(),
+    fundRaw: text('fund_raw'),
+    expenditureCategoryRaw: text('expenditure_category_raw'),
+    fiscalYear: integer('fiscal_year')
+      .notNull()
+      .references(() => fiscalYears.fiscalYear),
+    amount: numeric('amount', { precision: 18, scale: 2 }).notNull(),
+    sourceLoadedAt: timestamp('source_loaded_at', { withTimezone: true }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [index('idx_edf_fy_recipient').on(table.fiscalYear, table.recipientNameRaw)],
+)
 
-export const vendorDebarments = pgTable('vendor_debarments', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  vendorIdRaw: text('vendor_id_raw').notNull(),
-  vendorNameRaw: text('vendor_name_raw').notNull(),
-  addressRaw: text('address_raw'),
-  debarmentDate: date('debarment_date').notNull(),
-  durationMonths: integer('duration_months'),
-  sourceLoadedAt: timestamp('source_loaded_at', { withTimezone: true }).notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-}, (table) => [
-  index('idx_vd_vendor_id').on(table.vendorIdRaw),
-])
+export const vendorDebarments = pgTable(
+  'vendor_debarments',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    vendorIdRaw: text('vendor_id_raw').notNull(),
+    vendorNameRaw: text('vendor_name_raw').notNull(),
+    addressRaw: text('address_raw'),
+    debarmentDate: date('debarment_date').notNull(),
+    durationMonths: integer('duration_months'),
+    sourceLoadedAt: timestamp('source_loaded_at', { withTimezone: true }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [index('idx_vd_vendor_id').on(table.vendorIdRaw)],
+)
 
-export const vendorPerformanceReports = pgTable('vendor_performance_reports', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  vendorIdRaw: text('vendor_id_raw').notNull(),
-  grade: text('grade').notNull(),
-  reportingAgencyRaw: text('reporting_agency_raw'),
-  reportDate: date('report_date').notNull(),
-  sourceLoadedAt: timestamp('source_loaded_at', { withTimezone: true }).notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-}, (table) => [
-  index('idx_vpr_vendor_id').on(table.vendorIdRaw),
-])
-
+export const vendorPerformanceReports = pgTable(
+  'vendor_performance_reports',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    vendorIdRaw: text('vendor_id_raw').notNull(),
+    grade: text('grade').notNull(),
+    reportingAgencyRaw: text('reporting_agency_raw'),
+    reportDate: date('report_date').notNull(),
+    sourceLoadedAt: timestamp('source_loaded_at', { withTimezone: true }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [index('idx_vpr_vendor_id').on(table.vendorIdRaw)],
+)
 
 export const paymentOverviewRollups = pgTable('payment_overview_rollups', {
   scopeFiscalYear: integer('scope_fiscal_year').primaryKey(),
@@ -896,24 +915,24 @@ export const beverageSalesFacts = pgTable(
     obligationEndDate: timestamp('obligation_end_date', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
-  (table) => [
-    index('idx_bsf_payee_id').on(table.payeeId),
-  ],
+  (table) => [index('idx_bsf_payee_id').on(table.payeeId)],
 )
-
-
 
 // ========== VENDOR IDENTITY GRAPH ==========
 
-export const agencyExternalIds = pgTable('agency_external_ids', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  agencyId: uuid('agency_id').notNull().references(() => agencies.id),
-  system: text('system').notNull(),
-  externalId: text('external_id').notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-}, (table) => [
-  unique('agency_external_ids_system_uq').on(table.system, table.externalId)
-])
+export const agencyExternalIds = pgTable(
+  'agency_external_ids',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    agencyId: uuid('agency_id')
+      .notNull()
+      .references(() => agencies.id),
+    system: text('system').notNull(),
+    externalId: text('external_id').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [unique('agency_external_ids_system_uq').on(table.system, table.externalId)],
+)
 
 export const vendorEntities = pgTable('vendor_entities', {
   vendorEntityId: text('vendor_entity_id').primaryKey(),
@@ -924,21 +943,27 @@ export const vendorEntities = pgTable('vendor_entities', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 })
 
-export const vendorIdentifiers = pgTable('vendor_identifiers', {
-  id: text('id').primaryKey(),
-  vendorEntityId: text('vendor_entity_id').notNull().references(() => vendorEntities.vendorEntityId),
-  idType: text('id_type').notNull(),
-  idValue: text('id_value').notNull(),
-  sourceSystem: text('source_system').notNull(),
-  firstSeenAt: timestamp('first_seen_at', { withTimezone: true }).defaultNow().notNull(),
-  lastSeenAt: timestamp('last_seen_at', { withTimezone: true }).defaultNow().notNull(),
-}, (table) => [
-  unique('vendor_identifiers_type_val_uq').on(table.idType, table.idValue)
-])
+export const vendorIdentifiers = pgTable(
+  'vendor_identifiers',
+  {
+    id: text('id').primaryKey(),
+    vendorEntityId: text('vendor_entity_id')
+      .notNull()
+      .references(() => vendorEntities.vendorEntityId),
+    idType: text('id_type').notNull(),
+    idValue: text('id_value').notNull(),
+    sourceSystem: text('source_system').notNull(),
+    firstSeenAt: timestamp('first_seen_at', { withTimezone: true }).defaultNow().notNull(),
+    lastSeenAt: timestamp('last_seen_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [unique('vendor_identifiers_type_val_uq').on(table.idType, table.idValue)],
+)
 
 export const vendorAliases = pgTable('vendor_aliases', {
   id: text('id').primaryKey(),
-  vendorEntityId: text('vendor_entity_id').notNull().references(() => vendorEntities.vendorEntityId),
+  vendorEntityId: text('vendor_entity_id')
+    .notNull()
+    .references(() => vendorEntities.vendorEntityId),
   aliasName: text('alias_name').notNull(),
   aliasNameNormalized: text('alias_name_normalized').notNull(),
   sourceSystem: text('source_system').notNull(),
@@ -946,54 +971,62 @@ export const vendorAliases = pgTable('vendor_aliases', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 })
 
-export const vendorPayeeLinks = pgTable('vendor_payee_links', {
-  id: text('id').primaryKey(),
-  payeeId: uuid('payee_id').notNull().references(() => payees.id),
-  vendorEntityId: text('vendor_entity_id').notNull().references(() => vendorEntities.vendorEntityId),
-  matchMethod: text('match_method').notNull(),
-  confidence: numeric('confidence', { precision: 5, scale: 4 }).notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-}, (table) => [
-  unique('vendor_payee_links_payee_uq').on(table.payeeId)
-])
+export const vendorPayeeLinks = pgTable(
+  'vendor_payee_links',
+  {
+    id: text('id').primaryKey(),
+    payeeId: uuid('payee_id')
+      .notNull()
+      .references(() => payees.id),
+    vendorEntityId: text('vendor_entity_id')
+      .notNull()
+      .references(() => vendorEntities.vendorEntityId),
+    matchMethod: text('match_method').notNull(),
+    confidence: numeric('confidence', { precision: 5, scale: 4 }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [unique('vendor_payee_links_payee_uq').on(table.payeeId)],
+)
 
 // ========== PROCUREMENT & CONTRACT EXTENSIONS ==========
 
-export const lbbContracts = pgTable('lbb_contracts', {
-  id: text('id').primaryKey(),
-  agencyCode: text('agency_code').notNull(),
-  contractNumber: text('contract_number').notNull(),
-  subject: text('subject'),
-  purchaseRequisitionNumber: text('purchase_requisition_number'),
-  agencyApprovalDate: timestamp('agency_approval_date', { withTimezone: true }),
-  solicitationPostDate: timestamp('solicitation_post_date', { withTimezone: true }),
-  awardDate: timestamp('award_date', { withTimezone: true }),
-  requisitionDate: timestamp('requisition_date', { withTimezone: true }),
-  completionDate: timestamp('completion_date', { withTimezone: true }),
-  currentValueUsd: numeric('current_value_usd', { precision: 18, scale: 2 }),
-  maximumValueUsd: numeric('maximum_value_usd', { precision: 18, scale: 2 }),
-  competitiveType: text('competitive_type'),
-  revenueGenerating: boolean('revenue_generating'),
-  pccCodesJson: jsonb('pcc_codes_json'),
-  reportRequirementCodesJson: jsonb('report_requirement_codes_json'),
-  vendorNameRaw: text('vendor_name_raw'),
-  vendorAddress1: text('vendor_address1'),
-  vendorAddress2: text('vendor_address2'),
-  vendorAddress3: text('vendor_address3'),
-  vendorAddress4: text('vendor_address4'),
-  vendorCity: text('vendor_city'),
-  vendorState: text('vendor_state'),
-  vendorPostalCode: text('vendor_postal_code'),
-  vendorAreaCode: text('vendor_area_code'),
-  vendorPhoneNumber: text('vendor_phone_number'),
-  attachmentsCount: integer('attachments_count'),
-  ingestionRunId: text('ingestion_run_id').notNull(),
-  sourceRowHash: text('source_row_hash').notNull().unique(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
-}, (table) => [
-  unique('lbb_contracts_agency_number_uq').on(table.agencyCode, table.contractNumber)
-])
+export const lbbContracts = pgTable(
+  'lbb_contracts',
+  {
+    id: text('id').primaryKey(),
+    agencyCode: text('agency_code').notNull(),
+    contractNumber: text('contract_number').notNull(),
+    subject: text('subject'),
+    purchaseRequisitionNumber: text('purchase_requisition_number'),
+    agencyApprovalDate: timestamp('agency_approval_date', { withTimezone: true }),
+    solicitationPostDate: timestamp('solicitation_post_date', { withTimezone: true }),
+    awardDate: timestamp('award_date', { withTimezone: true }),
+    requisitionDate: timestamp('requisition_date', { withTimezone: true }),
+    completionDate: timestamp('completion_date', { withTimezone: true }),
+    currentValueUsd: numeric('current_value_usd', { precision: 18, scale: 2 }),
+    maximumValueUsd: numeric('maximum_value_usd', { precision: 18, scale: 2 }),
+    competitiveType: text('competitive_type'),
+    revenueGenerating: boolean('revenue_generating'),
+    pccCodesJson: jsonb('pcc_codes_json'),
+    reportRequirementCodesJson: jsonb('report_requirement_codes_json'),
+    vendorNameRaw: text('vendor_name_raw'),
+    vendorAddress1: text('vendor_address1'),
+    vendorAddress2: text('vendor_address2'),
+    vendorAddress3: text('vendor_address3'),
+    vendorAddress4: text('vendor_address4'),
+    vendorCity: text('vendor_city'),
+    vendorState: text('vendor_state'),
+    vendorPostalCode: text('vendor_postal_code'),
+    vendorAreaCode: text('vendor_area_code'),
+    vendorPhoneNumber: text('vendor_phone_number'),
+    attachmentsCount: integer('attachments_count'),
+    ingestionRunId: text('ingestion_run_id').notNull(),
+    sourceRowHash: text('source_row_hash').notNull().unique(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [unique('lbb_contracts_agency_number_uq').on(table.agencyCode, table.contractNumber)],
+)
 
 export const esbdSolicitations = pgTable('esbd_solicitations', {
   id: text('id').primaryKey(),
@@ -1033,7 +1066,9 @@ export const esbdSolicitationDetails = pgTable('esbd_solicitations_details', {
 
 export const esbdAttachments = pgTable('esbd_attachments', {
   id: text('id').primaryKey(),
-  solicitationId: text('solicitation_id').notNull().references(() => esbdSolicitationDetails.solicitationId),
+  solicitationId: text('solicitation_id')
+    .notNull()
+    .references(() => esbdSolicitationDetails.solicitationId),
   attachmentName: text('attachment_name').notNull(),
   attachmentDescription: text('attachment_description'),
   attachmentUrl: text('attachment_url').notNull(),

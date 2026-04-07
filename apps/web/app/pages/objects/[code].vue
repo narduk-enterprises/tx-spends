@@ -1,9 +1,5 @@
 <script setup lang="ts">
-import {
-  buildFetchKey,
-  formatUsd,
-  formatUsdCompact,
-} from '~/utils/explorer'
+import { buildFetchKey, formatUsd, formatUsdCompact } from '~/utils/explorer'
 
 const route = useRoute()
 const router = useRouter()
@@ -14,16 +10,16 @@ const backBreadcrumb = ref({ label: 'Objects', to: '/objects' })
 onMounted(() => {
   const back = router.options.history.state.back
   if (typeof back === 'string' && back !== '/') {
-    const splitPath = back.split('?')[0]
+    const splitPath = back.split('?')[0] ?? ''
     const segment = splitPath.split('/')[1]
-    const label = segment ? segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, ' ') : 'Back'
+    const label = segment
+      ? segment.charAt(0).toUpperCase() + segment.slice(1).replaceAll('-', ' ')
+      : 'Back'
     backBreadcrumb.value = { label, to: back }
   }
 })
 
-const detailKey = computed(() =>
-  buildFetchKey(`object-detail:${objectCode.value}`),
-)
+const detailKey = computed(() => buildFetchKey(`object-detail:${objectCode.value}`))
 
 const { data: detail, status } = await useLazyFetch(() => `/api/v1/objects/${objectCode.value}`, {
   key: detailKey,
@@ -70,7 +66,9 @@ useWebPageSchema({
         eyebrow="Object detail"
         :title="objectDetail.object_title"
         :subtitle="
-          objectDetail.category_title || objectDetail.object_group || 'Comptroller object detail from the state payment feed.'
+          objectDetail.category_title ||
+          objectDetail.object_group ||
+          'Comptroller object detail from the state payment feed.'
         "
         :breadcrumbs="[
           { label: 'Home', to: '/' },

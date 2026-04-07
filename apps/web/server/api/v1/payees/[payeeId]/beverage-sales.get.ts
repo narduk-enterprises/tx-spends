@@ -1,27 +1,32 @@
 import { getRouterParam, getValidatedQuery } from 'h3'
+import { z } from 'zod'
 import { and, asc, desc, eq, like, or, sql } from 'drizzle-orm'
 import { useAppDatabase } from '#server/utils/database'
 import { normalizeSearchTerm } from '#server/utils/explorer'
 import { beverageSalesFacts } from '#server/database/schema'
 import { globalQuerySchema } from '#server/utils/query'
 
+const beverageQuerySchema = globalQuerySchema.extend({
+  sort: z.enum(['sales', 'date', 'amount', 'payment_date']).optional(),
+})
+
 export default defineEventHandler(async (event) => {
   const payeeId = getRouterParam(event, 'payeeId')
-  const query = await getValidatedQuery(event, globalQuerySchema.parse)
+  const query = await getValidatedQuery(event, beverageQuerySchema.parse)
   const db = useAppDatabase(event)
 
   if (!payeeId) throw createError({ statusCode: 400, message: 'Missing payee_id' })
 
   const conditions = [eq(beverageSalesFacts.payeeId, payeeId)]
-  
+
   if (query.q) {
     const normalizedSearch = `%${normalizeSearchTerm(query.q)}%`
     conditions.push(
       or(
         like(beverageSalesFacts.locationNameRaw, normalizedSearch),
         like(beverageSalesFacts.locationCity, normalizedSearch),
-        like(beverageSalesFacts.tabcPermitNumber, normalizedSearch)
-      )!
+        like(beverageSalesFacts.tabcPermitNumber, normalizedSearch),
+      )!,
     )
   }
 
@@ -63,7 +68,7 @@ export default defineEventHandler(async (event) => {
     data: list.map((c) => ({
       ...c,
       total_sales: Number(c.total_sales || 0),
-      total_taxable: Number(c.total_taxable || 0)
+      total_taxable: Number(c.total_taxable || 0),
     })),
     meta: {
       currency: 'USD',

@@ -42,12 +42,14 @@ const meta = computed(() => data.value?.meta)
 
 useSeo({
   title: 'Texas State IT Contracts',
-  description: 'Explore granular line-item records of state IT procurement, staffing, and services.',
+  description:
+    'Explore granular line-item records of state IT procurement, staffing, and services.',
 })
 
 useWebPageSchema({
   name: 'Texas State IT Contracts',
-  description: 'Explore granular line-item records of state IT procurement, staffing, and services.',
+  description:
+    'Explore granular line-item records of state IT procurement, staffing, and services.',
   type: 'CollectionPage',
 })
 
@@ -152,7 +154,9 @@ function updateSort(value: { column: string; direction: 'asc' | 'desc' }) {
       </template>
       <template #contract-data="{ row }">
         <div class="flex flex-col items-start justify-center">
-          <span class="font-semibold text-default leading-tight whitespace-normal">{{ row.contract_number }}</span>
+          <span class="font-semibold text-default leading-tight whitespace-normal">{{
+            row.contract_number
+          }}</span>
           <span class="mt-0.5 text-xs text-muted line-clamp-2">
             {{ row.rfo_description }}
           </span>

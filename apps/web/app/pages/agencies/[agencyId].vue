@@ -417,7 +417,9 @@ const tabs = [
         </template>
         <template #contract-data="{ row }">
           <div class="flex flex-col items-start justify-center">
-            <span class="font-semibold text-default leading-tight whitespace-normal">{{ row.contract_number }}</span>
+            <span class="font-semibold text-default leading-tight whitespace-normal">{{
+              row.contract_number
+            }}</span>
             <span class="mt-0.5 text-xs text-muted line-clamp-2">
               {{ row.rfo_description }}
             </span>
@@ -427,7 +429,6 @@ const tabs = [
           <span class="font-semibold text-default">{{ formatUsd(row.purchase_amount, 2) }}</span>
         </template>
       </DataTableCard>
-
 
       <TrendChartCard
         v-else
