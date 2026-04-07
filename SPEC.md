@@ -47,9 +47,49 @@ does not support.
 
 ---
 
+## 0. Precedence and implementation guardrails
+
+This document defines **product behavior, public API truth, and UX constraints** for the Texas State Spending Explorer core public surfaces.
+
+### Precedence order
+If instructions conflict, follow this order:
+1. Hard runtime/project constraints for this repo
+2. Existing repo architecture and shared layer conventions
+3. This SPEC.md
+4. Research notes, unresolved source-discovery notes, and historical docs
+
+Do **not** rewrite repo reality just to satisfy a stale section of this document.
+If this document conflicts with current repo architecture, update the document or record an exception.
+
+### Hard implementation guardrails
+- Cloudflare Workers runtime for app/server code: no Node built-ins, no `process.env`, no mutable shared request state.
+- Use Web Crypto in Worker/runtime code.
+- Application DB access uses Drizzle ORM and the existing app schema in `apps/web/server/database/app-schema.ts`.
+- All deployed request-time DB reads go through `useAppDatabase(event)`.
+- Never shadow or replace the shared layer database entry points.
+- Public `/api/v1` routes are GET-only in v1.
+- `state_payment_facts` must never gain `county_id` or transaction geography fields.
+- Vendor matching remains probabilistic and must never be presented as authoritative fact.
+- Confidential payees are never vendor-matched.
+- Zero warnings policy: no `eslint-disable`, `@ts-ignore`, or similar suppressions unless explicitly tracked.
+
+### Scope of this SPEC
+This document governs the **core public spending explorer** unless a task explicitly states otherwise:
+- overview
+- agencies
+- payees
+- categories
+- objects
+- counties
+- transactions
+- search
+- methodology/about/data-sources/disclaimers
+
+Adjacent modules such as blog/newsroom, admin investigations, auth flows, DIR-specific explorers, mixed beverage routes, and other non-core surfaces are out of scope for this document unless explicitly requested.
+
 ## 1. How to use this document
 
-- Treat this file as the **single source of truth** for v1 behavior, schema, and
+- Treat this file as the **source of truth for product behavior and UX truth within the core explorer scope** for v1 behavior, schema, and
   boundaries.
 - If implementation reality conflicts with a source file, **fix ingestion or
   document the exception**—do not silently change product claims.
@@ -119,15 +159,17 @@ does not support.
 
 ---
 
-## 4. Canonical data model and PostgreSQL DDL
+## 4. Canonical relational model (conceptual)
+
+The canonical application schema is defined in TypeScript/Drizzle in `apps/web/server/database/app-schema.ts`.
+SQL shown here is conceptual or migration-oriented reference, not permission to create a parallel schema definition outside the repo’s established schema layer.
 
 ### 4.1 Design principles
 
 - **Two fact tables:** `state_payment_facts` (transactions) and
   `county_expenditure_facts` (annual geo aggregates).
 - **Dimensions** for agency, payee, taxonomy, county, fiscal year.
-- **Optional** `vendor_enrichment` + `payee_vendor_matches` for soft enrichment
-  only.
+- **Optional** the vendor entity graph (`vendor_entities`, `vendor_identifiers`, `vendor_aliases`, `vendor_payee_links`) as the primary identity layer. Legacy `vendor_enrichment` + `payee_vendor_matches` tables should be treated only as compatibility surfaces if the repo still exposes them.
 
 ### 4.2 Extensions and conventions
 
@@ -360,9 +402,9 @@ CREATE INDEX idx_ingestion_runs_job_started ON ingestion_runs (job_name, started
 `payees(payee_name_normalized gin_trgm_ops)` if `/search` and `q` filters are
 implemented in-database.
 
-**Rollup / materialized views (see §27):** `mv_overview_by_fy`,
-`mv_agency_rollup_by_fy`, `mv_payee_rollup_by_fy`, `mv_county_rollup_by_fy`,
-`mv_category_rollup_by_fy`, `mv_object_rollup_by_fy` — define in raw SQL
+**Rollup / materialized views (see §27):** `payment_overview_rollups`,
+`payment_agency_rollups`, `payment_payee_rollups`, `county_expenditure_facts (annual aggregates)`,
+`payment_category_rollups`, `payment_object_rollups` — define in raw SQL
 migrations; refresh after ETL.
 
 ### 4.4 Notes on the DDL
@@ -378,7 +420,14 @@ migrations; refresh after ETL.
 
 ## 5. Staging layer
 
-Every raw ingest lands in **staging** before core tables.
+Every raw source lands in a dedicated `stg_*` table.
+All source columns are stored as text in staging.
+Every staging row includes provenance columns:
+- `source_file_name`
+- `source_url`
+- `source_loaded_at`
+- `source_snapshot_date`
+- `row_number`
 
 ### 5.1 Required staging metadata columns
 
@@ -386,7 +435,7 @@ For each `stg_*` table (or wide JSON + metadata):
 
 - `source_file_name`, `source_url`, `source_loaded_at`, `source_snapshot_date`,
   `row_number`
-- Original columns preserved **as text** where type ambiguity exists
+- Original columns preserved **as text**
 
 ### 5.2 Staging table names
 
@@ -412,7 +461,7 @@ For each `stg_*` table (or wide JSON + metadata):
 | Object codes           | Taxonomy             | `comptroller_objects`                                          |
 | Category codes         | Taxonomy             | `expenditure_categories`                                       |
 | Object–category map    | Crosswalk            | `comptroller_object_category_map`                              |
-| Vendor master          | Enrichment           | `vendor_enrichment`, `payee_vendor_matches` (via job)          |
+| Vendor master          | Enrichment           | `vendor_entities`, `vendor_identifiers`, `vendor_aliases`, `vendor_payee_links` (legacy `vendor_enrichment`, `payee_vendor_matches` via job) |
 | Annual cash report     | Macro reconciliation | `annual_cash_report_facts`, `fiscal_years`                     |
 
 **Required fields (payments):** `payment_date`, agency, payee name, amount,
@@ -653,7 +702,7 @@ section summarizes **how** to ingest each source.
 
 ## 9. MVP product contract
 
-### 9.1 First five pages
+### 9.1 Core explorer pages governed by this SPEC
 
 1. **State Spending Overview** (`/`) — totals, trends, top
    agencies/payees/categories, county preview, transactions preview.
@@ -668,6 +717,10 @@ section summarizes **how** to ingest each source.
 
 **Plus:** `/transactions` (table explorer), `/search`, static `/about`,
 `/methodology`, `/data-sources`, `/disclaimers`.
+
+### 9.2 Adjacent modules (out of scope unless explicitly touched)
+
+Move `/it-contracts`, `/analysis`, `/data-health`, `/blog`, `/auth`, `/admin/investigations` out of the core locked page list unless this doc is expanded to fully specify them.
 
 ### 9.2 First ten filters (MVP)
 
@@ -1081,7 +1134,8 @@ transactions/[transactionId].get.ts
 - Read DB access through `useAppDatabase(event)` from
   `apps/web/server/utils/database.ts`; this is the Hyperdrive-backed PostgreSQL
   entry point for deployed app requests.
-- Use `#server/database/schema` and `#server/utils/*` imports only.
+- Use the repo’s existing server schema import path that resolves to `apps/web/server/database/app-schema.ts` and `#server/utils/*` imports only.
+- Do not create a second competing schema module.
 - Future mutation routes must use the layer mutation wrappers
   (`withValidatedBody`, `withOptionalValidatedBody`, `define*Mutation`), but v1
   of this product is read-only and should not invent writes.
@@ -1874,9 +1928,8 @@ All production loads **must** insert/update rows in `ingestion_runs`
 
 ### 26.2 Migrations (locked)
 
-- **Migrations:** versioned **raw SQL** files in repo.
-- **Runner:** simple Node script or `dbmate` / `psql`-style runner — **no ORM
-  required**.
+Primary schema changes must remain aligned with the repo’s Drizzle schema and migration workflow.
+Raw SQL migrations are allowed only where necessary for extensions, specialized indexes, materialized views, or ETL/admin support that cannot be expressed cleanly otherwise.
 
 ### 26.3 Seed data (locked)
 
@@ -1897,12 +1950,12 @@ All production loads **must** insert/update rows in `ingestion_runs`
 
 Maintain **materialized views** or equivalent rollup tables (refresh after ETL):
 
-- `mv_overview_by_fy`
-- `mv_agency_rollup_by_fy`
-- `mv_payee_rollup_by_fy`
-- `mv_county_rollup_by_fy`
-- `mv_category_rollup_by_fy`
-- `mv_object_rollup_by_fy`
+- `payment_overview_rollups`
+- `payment_agency_rollups`
+- `payment_payee_rollups`
+- `county_expenditure_facts (annual aggregates)`
+- `payment_category_rollups`
+- `payment_object_rollups`
 
 ### 27.2 Live compute
 
@@ -1989,6 +2042,11 @@ search is in-DB ([§4.4](#44-notes-on-the-ddl)).
 ### 30.2 API contract tests
 
 - `GET /transactions?county_id=…` → `UNSUPPORTED_COMBINATION`.
+- no non-GET `/api/v1` handlers introduced
+- no route-time `process.env` usage in server code
+- no Node built-ins imported from Worker/runtime server code
+- no duplicate schema module introduced outside `app-schema.ts`
+- zero warnings / no suppression directives added without tracked exception
 - `include_confidential=false` excludes confidential rows from totals and lists.
 - `include_confidential=true` includes confidential amounts; `payee_id` null;
   payee name `CONFIDENTIAL` where applicable; `distinct_payee_count` treats
