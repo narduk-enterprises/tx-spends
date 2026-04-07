@@ -22,6 +22,11 @@
       "id": "58a6e8df972d4201a3e55db5e7ea4de1"
     }
   ],
+  "tail_consumers": [
+    {
+      "service": "platform-runtime-logs"
+    }
+  ],
   "ratelimits": [
     {
       "name": "RL_10",
